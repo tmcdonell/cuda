@@ -1,0 +1,35 @@
+Name:                   cuda
+Version:                0.1
+Synopsis:               A binding to the "C for CUDA" interface for programming NVIDIA GPUs
+Description:    
+    A binding to the "C for CUDA" interface for programming NVIDIA GPUs
+    .
+    The CUDA library provides a direct, general purpose SPMD programming model
+    for NVIDIA graphics cards (G8x series onwards).
+
+Copyright:              Copyright (c) 2009 Trevor L. McDonell
+License:                BSD3
+License-file:           LICENSE
+Copyright:              (c) 2009. Trevor L. McDonell <trevor.mcdonell@gmail.com>
+Author:                 Trevor L. McDonell
+Maintainer:             Trevor L. McDonell <trevor.mcdonell@gmail.com>
+Homepage:
+Category:               Foreign
+Stability:              none
+Cabal-version:          >=1.2
+
+Build-type:             Configure
+Extra-source-files:     configure, cuda.buildinfo.in
+Extra-tmp-files:        cuda.buildinfo
+
+Library
+  Exposed-Modules:      Foreign.CUDA,
+                        Foreign.CUDA.Runtime
+
+  Include-dirs:         .
+  Build-tools:          c2hs
+  Build-depends:        base, haskell98
+  Extensions:           ForeignFunctionInterface
+  ghc-options:          -Wall
+  extra-libraries:      cudart
+
