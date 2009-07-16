@@ -24,7 +24,11 @@ Extra-tmp-files:        cuda.buildinfo
 
 Library
   Exposed-Modules:      Foreign.CUDA,
-                        Foreign.CUDA.Runtime
+                        Foreign.CUDA.Runtime,
+                        Foreign.CUDA.Types,
+                        Foreign.CUDA.Utils
+
+  Other-modules:        Foreign.CUDA.C2HS
 
   Include-dirs:         .
   Build-tools:          c2hs

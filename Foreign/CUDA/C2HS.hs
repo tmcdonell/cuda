@@ -34,7 +34,7 @@
 --  with the C->HS-specific higher-level marshalling routines.
 --
 
-module C2HS (
+module Foreign.CUDA.C2HS (
 
   -- * Re-export the language-independent component of the FFI 
   module Foreign,
@@ -63,7 +63,7 @@ import Foreign
 		    -- compilers that export them
 import CForeign
 
-import Monad        (when, liftM)
+import Monad        (liftM)
 
 
 -- Composite marshalling functions
@@ -71,8 +71,11 @@ import Monad        (when, liftM)
 
 -- Strings with explicit length
 --
-withCStringLenIntConv s f    = withCStringLen s $ \(p, n) -> f (p, cIntConv n)
-peekCStringLenIntConv (s, n) = peekCStringLen (s, cIntConv n)
+withCStringLenIntConv     :: String -> (CStringLen -> IO a) -> IO a
+withCStringLenIntConv s f  = withCStringLen s $ \(p, n) -> f (p, cIntConv n)
+
+peekCStringLenIntConv        :: CStringLen -> IO String
+peekCStringLenIntConv (s, n)  = peekCStringLen (s, cIntConv n)
 
 -- Marshalling of numerals
 --
