@@ -6,7 +6,7 @@
 
 module Foreign.CUDA.Utils
   (
-    checkError
+    resultIfSuccess, nothingIfSuccess
   )
   where
 
@@ -30,9 +30,16 @@ import Foreign.CUDA.Internal.C2HS
     { cFromEnum `Result' } -> `String' #}
 
 
-checkError :: (Result, a) -> IO (Either String a)
-checkError (status,result) =
+resultIfSuccess :: (Result, a) -> IO (Either String a)
+resultIfSuccess (status,result) =
     case status of
         Success -> (return.Right) result
         _       -> getErrorString status >>= (return.Left)
+
+
+nothingIfSuccess :: Result -> IO (Maybe String)
+nothingIfSuccess status =
+    case status of
+        Success -> return Nothing
+        _       -> getErrorString status >>= (return.Just)
 

@@ -6,7 +6,12 @@
 
 module Foreign.CUDA.Types
   (
-    Result(..), CopyDirection(..), ComputeMode(..), DeviceProperties(..)
+    Result(..),
+    CopyDirection(..),
+    ComputeMode(..),
+    DeviceProperties(..),
+
+    DevicePtr
   ) where
 
 
@@ -132,4 +137,11 @@ instance Storable DeviceProperties where
               integrated               = tg,
               canMapHostMemory         = hm
             }
+
+
+--------------------------------------------------------------------------------
+-- Memory Management
+--------------------------------------------------------------------------------
+
+type DevicePtr = Ptr ()
 
