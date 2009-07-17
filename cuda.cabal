@@ -19,8 +19,9 @@ Stability:              none
 Cabal-version:          >=1.2
 
 Build-type:             Configure
-Extra-source-files:     configure, cuda.buildinfo.in
 Extra-tmp-files:        cuda.buildinfo
+Extra-source-files:     configure
+                        cuda.buildinfo.in
 
 Library
   Exposed-Modules:      Foreign.CUDA,
@@ -28,9 +29,12 @@ Library
                         Foreign.CUDA.Types,
                         Foreign.CUDA.Utils
 
-  Other-modules:        Foreign.CUDA.C2HS
+  Other-modules:        Foreign.CUDA.Internal.C2HS
+                        Foreign.CUDA.Internal.Offsets
 
   Include-dirs:         .
+  C-sources:            cbits/stubs.c
+
   Build-tools:          c2hs
   Build-depends:        base, haskell98
   Extensions:           ForeignFunctionInterface

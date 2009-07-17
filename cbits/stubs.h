@@ -9,4 +9,9 @@
 
 typedef struct cudaDeviceProp cudaDeviceProp;
 
+extern int offset_devName();
+extern int offset_devMaxThreadDim();
+extern int offset_devMaxGridSize();
+
+
 #endif

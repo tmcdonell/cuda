@@ -2,14 +2,16 @@
  - CUDA data types
  -}
 
+{-# LANGUAGE ForeignFunctionInterface #-}
+
 module Foreign.CUDA.Types
   (
     Result(..), CopyDirection(..), ComputeMode(..), DeviceProperties(..)
   ) where
 
 
-import Foreign.CUDA.C2HS
-import Control.Monad (liftM)
+import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Internal.Offsets
 
 #include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
@@ -44,6 +46,8 @@ import Control.Monad (liftM)
 -- Device Properties
 --------------------------------------------------------------------------------
 
+{# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
+
 --
 -- Store all device properties
 --
@@ -71,35 +75,42 @@ data DeviceProperties = DeviceProperties
   }
   deriving (Show)
 
+
 instance Storable DeviceProperties where
     sizeOf _    = {#sizeof cudaDeviceProp#}
     alignment _ = alignment (undefined :: Ptr ())
 
     peek p      = do
-        gm <- liftM cIntConv $ {#get cudaDeviceProp.totalGlobalMem#} p
-        sm <- liftM cIntConv $ {#get cudaDeviceProp.sharedMemPerBlock#} p
-        rb <- liftM cIntConv $ {#get cudaDeviceProp.regsPerBlock#} p
-        ws <- liftM cIntConv $ {#get cudaDeviceProp.warpSize#} p
-        mp <- liftM cIntConv $ {#get cudaDeviceProp.memPitch#} p
-        tb <- liftM cIntConv $ {#get cudaDeviceProp.maxThreadsPerBlock#} p
-        cl <- liftM cIntConv $ {#get cudaDeviceProp.clockRate#} p
-        cm <- liftM cIntConv $ {#get cudaDeviceProp.totalConstMem#} p
-        v1 <- liftM cIntConv $ {#get cudaDeviceProp.major#} p
-        v2 <- liftM cIntConv $ {#get cudaDeviceProp.minor#} p
-        ta <- liftM cIntConv $ {#get cudaDeviceProp.textureAlignment#} p
-        ov <- liftM cToBool  $ {#get cudaDeviceProp.deviceOverlap#} p
-        pc <- liftM cIntConv $ {#get cudaDeviceProp.multiProcessorCount#} p
-        ke <- liftM cToBool  $ {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
-        tg <- liftM cToBool  $ {#get cudaDeviceProp.integrated#} p
-        hm <- liftM cToBool  $ {#get cudaDeviceProp.canMapHostMemory#} p
-        md <- liftM cToEnum  $ {#get cudaDeviceProp.computeMode#} p
+        gm <- cIntConv `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
+        sm <- cIntConv `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
+        rb <- cIntConv `fmap` {#get cudaDeviceProp.regsPerBlock#} p
+        ws <- cIntConv `fmap` {#get cudaDeviceProp.warpSize#} p
+        mp <- cIntConv `fmap` {#get cudaDeviceProp.memPitch#} p
+        tb <- cIntConv `fmap` {#get cudaDeviceProp.maxThreadsPerBlock#} p
+        cl <- cIntConv `fmap` {#get cudaDeviceProp.clockRate#} p
+        cm <- cIntConv `fmap` {#get cudaDeviceProp.totalConstMem#} p
+        v1 <- cIntConv `fmap` {#get cudaDeviceProp.major#} p
+        v2 <- cIntConv `fmap` {#get cudaDeviceProp.minor#} p
+        ta <- cIntConv `fmap` {#get cudaDeviceProp.textureAlignment#} p
+        ov <- cToBool  `fmap` {#get cudaDeviceProp.deviceOverlap#} p
+        pc <- cIntConv `fmap` {#get cudaDeviceProp.multiProcessorCount#} p
+        ke <- cToBool  `fmap` {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
+        tg <- cToBool  `fmap` {#get cudaDeviceProp.integrated#} p
+        hm <- cToBool  `fmap` {#get cudaDeviceProp.canMapHostMemory#} p
+        md <- cToEnum  `fmap` {#get cudaDeviceProp.computeMode#} p
 
-        with p $ \p' -> do
-          n            <- {#get cudaDeviceProp.name#} p' >>= peekCString
-          (t1:t2:t3:_) <- liftM (map cIntConv) $ {#get cudaDeviceProp.maxThreadsDim#} p' >>= (peekArray 3)
-          (g1:g2:g3:_) <- liftM (map cIntConv) $ {#get cudaDeviceProp.maxGridSize#} p'   >>= (peekArray 3)
+        --
+        -- XXX:
+        --
+        -- C->Haskell returns the wrong type when accessing static arrays in
+        -- structs, returning the dereferenced element but with a Ptr type. Work
+        -- around this with manual pointer arithmetic...
+        --
+        n            <- peekCString (p `plusPtr` devNameOffset)
+        (t1:t2:t3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxThreadDimOffset :: Ptr CInt)
+        (g1:g2:g3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxGridSizeOffset  :: Ptr CInt)
 
-          return DeviceProperties
+        return DeviceProperties
             {
               deviceName               = n,
               computeCapability        = (v1,v2),
@@ -121,6 +132,4 @@ instance Storable DeviceProperties where
               integrated               = tg,
               canMapHostMemory         = hm
             }
-
-{# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 

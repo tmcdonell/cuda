@@ -12,9 +12,10 @@ module Foreign.CUDA.Runtime
     getDeviceCount, getDeviceProperties
   ) where
 
-import Foreign.CUDA.C2HS
 import Foreign.CUDA.Types
 import Foreign.CUDA.Utils
+
+import Foreign.CUDA.Internal.C2HS
 
 
 #include <cuda_runtime_api.h>
