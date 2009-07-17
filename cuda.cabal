@@ -35,7 +35,7 @@ Library
   Include-dirs:         .
   C-sources:            cbits/stubs.c
 
-  Build-tools:          c2hs
+  Build-tools:          c2hs, hsc2hs
   Build-depends:        base, haskell98
   Extensions:           ForeignFunctionInterface
   ghc-options:          -Wall
