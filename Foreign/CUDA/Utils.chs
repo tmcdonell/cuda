@@ -6,7 +6,7 @@
 
 module Foreign.CUDA.Utils
   (
-    resultIfSuccess, nothingIfSuccess
+    getErrorString, resultIfOk, nothingIfOk
   )
   where
 
@@ -24,22 +24,20 @@ import Foreign.CUDA.Internal.C2HS
 --------------------------------------------------------------------------------
 
 --
--- Return the descriptive string associated with a particular error code
+-- Return the descriptive string associated with a particular error code.
+-- Logically, this must a pure function, returning a pointer to a statically
+-- defined string constant.
 --
-{# fun unsafe GetErrorString as ^
+{# fun pure unsafe GetErrorString as ^
     { cFromEnum `Result' } -> `String' #}
 
 
-resultIfSuccess :: (Result, a) -> IO (Either String a)
-resultIfSuccess (status,result) =
+resultIfOk :: (Result, a) -> Either String a
+resultIfOk (status,result) =
     case status of
-        Success -> (return.Right) result
-        _       -> getErrorString status >>= (return.Left)
+        Success -> Right result
+        _       -> Left (getErrorString status)
 
-
-nothingIfSuccess :: Result -> IO (Maybe String)
-nothingIfSuccess status =
-    case status of
-        Success -> return Nothing
-        _       -> getErrorString status >>= (return.Just)
+nothingIfOk :: Result -> Maybe String
+nothingIfOk = nothingIf (/= Success) getErrorString
 
