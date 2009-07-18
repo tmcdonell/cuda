@@ -11,7 +11,7 @@ module Foreign.CUDA.Types
     ComputeMode(..),
     DeviceProperties(..),
 
-    DevicePtr
+    DevicePtr, newDevicePtr, withDevicePtr
   ) where
 
 
@@ -105,8 +105,6 @@ instance Storable DeviceProperties where
         md <- cToEnum  `fmap` {#get cudaDeviceProp.computeMode#} p
 
         --
-        -- XXX:
-        --
         -- C->Haskell returns the wrong type when accessing static arrays in
         -- structs, returning the dereferenced element but with a Ptr type. Work
         -- around this with manual pointer arithmetic...
@@ -143,5 +141,11 @@ instance Storable DeviceProperties where
 -- Memory Management
 --------------------------------------------------------------------------------
 
-type DevicePtr = Ptr ()
+newtype DevicePtr = DevicePtr (ForeignPtr ())
+
+withDevicePtr :: DevicePtr -> (Ptr () -> IO b) -> IO b
+withDevicePtr (DevicePtr fptr) = withForeignPtr fptr
+
+newDevicePtr      :: FinalizerPtr () -> Ptr () -> IO DevicePtr
+newDevicePtr fp p =  newForeignPtr fp p >>= \dp -> return (DevicePtr dp)
 

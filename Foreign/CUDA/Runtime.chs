@@ -17,13 +17,13 @@ module Foreign.CUDA.Runtime
     --
     -- Memory management
     --
-    cmalloc, cfree
+    malloc
   ) where
 
 import Foreign.CUDA.Types
 import Foreign.CUDA.Utils
 
-import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Internal.C2HS hiding (malloc)
 
 
 #include <cuda_runtime_api.h>
@@ -39,7 +39,7 @@ import Foreign.CUDA.Internal.C2HS
 -- Returns the number of compute-capable devices
 --
 getDeviceCount :: IO (Either String Int)
-getDeviceCount = resultIfSuccess =<< cudaGetDeviceCount
+getDeviceCount = resultIfOk `fmap` cudaGetDeviceCount
 
 {# fun unsafe cudaGetDeviceCount
     { alloca- `Int' peekIntConv* } -> `Result' cToEnum #}
@@ -48,7 +48,7 @@ getDeviceCount = resultIfSuccess =<< cudaGetDeviceCount
 -- Return information about the selected compute device
 --
 getDeviceProperties   :: Int -> IO (Either String DeviceProperties)
-getDeviceProperties n  = resultIfSuccess =<< cudaGetDeviceProperties n
+getDeviceProperties n  = resultIfOk `fmap` cudaGetDeviceProperties n
 
 {# fun unsafe cudaGetDeviceProperties
     { alloca- `DeviceProperties' peek*,
@@ -58,17 +58,31 @@ getDeviceProperties n  = resultIfSuccess =<< cudaGetDeviceProperties n
 -- Memory Management
 --------------------------------------------------------------------------------
 
-cmalloc       :: Integer -> IO (Either String DevicePtr)
-cmalloc bytes  = resultIfSuccess =<< cudaMalloc bytes
+--
+-- Allocate the specified number of bytes in linear memory on the device. The
+-- memory is suitably aligned for any kind of variable, and is not cleared.
+--
+malloc       :: Integer -> IO (Either String DevicePtr)
+malloc bytes = do
+    (rv,ptr) <- cudaMalloc bytes
+    case rv of
+        Success -> doAutoRelease cudaFree_ >>= \fp ->
+                   newDevicePtr fp ptr >>= (return.Right)
+        _       -> return (Left (getErrorString rv))
 
 {# fun unsafe cudaMalloc
-    { alloca-  `DevicePtr' peek*,
-      cIntConv `Integer'        } -> `Result' cToEnum #}
+    { alloca-  `Ptr ()'  peek*,
+      cIntConv `Integer'      } -> `Result' cToEnum #}
 
 
-cfree     :: DevicePtr -> IO (Maybe String)
-cfree dptr = nothingIfSuccess =<< cudaFree dptr
+--
+-- Free previously allocated memory on the device
+--
+cudaFree_   :: Ptr () -> IO ()
+cudaFree_ p =  throwIf_ (/= Success) (getErrorString) (cudaFree p)
 
 {# fun unsafe cudaFree
-    { castPtr `DevicePtr' } -> `Result' cToEnum #}
+    { id `Ptr ()' } -> `Result' cToEnum #}
 
+foreign import ccall "wrapper"
+    doAutoRelease   :: (Ptr () -> IO ()) -> IO (FunPtr (Ptr () -> IO ()))

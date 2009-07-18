@@ -8,6 +8,5 @@
 #include <cuda_runtime_api.h>
 
 typedef struct cudaDeviceProp   cudaDeviceProp;
-typedef void*                   cudaDevicePtr;
 
 #endif
