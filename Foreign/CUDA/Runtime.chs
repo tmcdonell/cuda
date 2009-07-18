@@ -13,6 +13,7 @@ module Foreign.CUDA.Runtime
     -- Device management
     --
     getDeviceCount, getDeviceProperties,
+    setDevice,
 
     --
     -- Memory management
@@ -53,6 +54,15 @@ getDeviceProperties n  = resultIfOk `fmap` cudaGetDeviceProperties n
 {# fun unsafe cudaGetDeviceProperties
     { alloca- `DeviceProperties' peek*,
               `Int'                   } -> `Result' cToEnum #}
+
+--
+-- Set device to be used for GPU execution
+--
+setDevice   :: Int -> IO (Maybe String)
+setDevice n  = nothingIfOk `fmap` cudaSetDevice n
+
+{# fun unsafe cudaSetDevice
+    { `Int' } -> `Result' cToEnum #}
 
 --------------------------------------------------------------------------------
 -- Memory Management
