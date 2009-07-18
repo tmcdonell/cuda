@@ -39,5 +39,5 @@ resultIfOk (status,result) =
         _       -> Left (getErrorString status)
 
 nothingIfOk :: Result -> Maybe String
-nothingIfOk = nothingIf (/= Success) getErrorString
+nothingIfOk = nothingIf (== Success) getErrorString
 
