@@ -10,6 +10,7 @@ module Foreign.CUDA.Types
     CopyDirection(..),
     ComputeMode(..),
     DeviceProperties(..),
+    Stream,
 
     DevicePtr, newDevicePtr, withDevicePtr
   ) where
@@ -148,4 +149,11 @@ withDevicePtr (DevicePtr fptr) = withForeignPtr fptr
 
 newDevicePtr      :: FinalizerPtr () -> Ptr () -> IO DevicePtr
 newDevicePtr fp p =  newForeignPtr fp p >>= \dp -> return (DevicePtr dp)
+
+
+--------------------------------------------------------------------------------
+-- Stream Management
+--------------------------------------------------------------------------------
+
+type Stream = {# type cudaStream_t #}
 

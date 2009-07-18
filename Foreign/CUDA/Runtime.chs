@@ -18,7 +18,12 @@ module Foreign.CUDA.Runtime
     --
     -- Memory management
     --
-    malloc
+    malloc,
+
+    --
+    -- Stream management
+    --
+    streamCreate, streamDestroy, streamQuery, streamSynchronize
   ) where
 
 import Foreign.CUDA.Types
@@ -40,7 +45,7 @@ import Foreign.CUDA.Internal.C2HS hiding (malloc)
 -- Returns the number of compute-capable devices
 --
 getDeviceCount :: IO (Either String Int)
-getDeviceCount = resultIfOk `fmap` cudaGetDeviceCount
+getDeviceCount =  resultIfOk `fmap` cudaGetDeviceCount
 
 {# fun unsafe cudaGetDeviceCount
     { alloca- `Int' peekIntConv* } -> `Result' cToEnum #}
@@ -49,7 +54,7 @@ getDeviceCount = resultIfOk `fmap` cudaGetDeviceCount
 -- Return information about the selected compute device
 --
 getDeviceProperties   :: Int -> IO (Either String DeviceProperties)
-getDeviceProperties n  = resultIfOk `fmap` cudaGetDeviceProperties n
+getDeviceProperties n =  resultIfOk `fmap` cudaGetDeviceProperties n
 
 {# fun unsafe cudaGetDeviceProperties
     { alloca- `DeviceProperties' peek*,
@@ -59,7 +64,7 @@ getDeviceProperties n  = resultIfOk `fmap` cudaGetDeviceProperties n
 -- Set device to be used for GPU execution
 --
 setDevice   :: Int -> IO (Maybe String)
-setDevice n  = nothingIfOk `fmap` cudaSetDevice n
+setDevice n =  nothingIfOk `fmap` cudaSetDevice n
 
 {# fun unsafe cudaSetDevice
     { `Int' } -> `Result' cToEnum #}
@@ -72,13 +77,16 @@ setDevice n  = nothingIfOk `fmap` cudaSetDevice n
 -- Allocate the specified number of bytes in linear memory on the device. The
 -- memory is suitably aligned for any kind of variable, and is not cleared.
 --
+-- If the allocation is successful, it is marked to be automatically released
+-- when no longer needed.
+--
 malloc       :: Integer -> IO (Either String DevicePtr)
 malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
         Success -> doAutoRelease cudaFree_ >>= \fp ->
                    newDevicePtr fp ptr >>= (return.Right)
-        _       -> return (Left (getErrorString rv))
+        _       -> return.Left $ getErrorString rv
 
 {# fun unsafe cudaMalloc
     { alloca-  `Ptr ()'  peek*,
@@ -96,3 +104,49 @@ cudaFree_ p =  throwIf_ (/= Success) (getErrorString) (cudaFree p)
 
 foreign import ccall "wrapper"
     doAutoRelease   :: (Ptr () -> IO ()) -> IO (FunPtr (Ptr () -> IO ()))
+
+
+--------------------------------------------------------------------------------
+-- Stream Management
+--------------------------------------------------------------------------------
+
+--
+-- Create an asynchronous stream
+--
+streamCreate :: IO (Either String Stream)
+streamCreate =  resultIfOk `fmap` cudaStreamCreate
+
+{# fun unsafe cudaStreamCreate
+    { alloca- `Stream' peek* } -> `Result' cToEnum #}
+
+--
+-- Destroy and clean up an asynchronous stream
+--
+streamDestroy   :: Stream -> IO (Maybe String)
+streamDestroy s =  nothingIfOk `fmap` cudaStreamDestroy s
+
+{# fun unsafe cudaStreamDestroy
+    { cIntConv `Stream' } -> `Result' cToEnum #}
+
+--
+-- Determine if all operations in a stream have completed
+--
+streamQuery   :: Stream -> IO (Either String Bool)
+streamQuery s = cudaStreamQuery s >>= \rv -> do
+    return $ case rv of
+        Success  -> Right True
+        NotReady -> Right False
+        _        -> Left (getErrorString rv)
+
+{# fun unsafe cudaStreamQuery
+    { cIntConv `Stream' } -> `Result' cToEnum #}
+
+--
+-- Block until all operations have been completed
+--
+streamSynchronize   :: Stream -> IO (Maybe String)
+streamSynchronize s =  nothingIfOk `fmap` cudaStreamSynchronize s
+
+{# fun unsafe cudaStreamSynchronize
+    { cIntConv `Stream' } -> `Result' cToEnum #}
+
