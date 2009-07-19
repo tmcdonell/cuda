@@ -23,12 +23,18 @@ module Foreign.CUDA.Runtime
     --
     -- Memory management
     --
-    malloc,
+    malloc, mallocPitch,
+    memcpy, memcpyAsync,
+    memset,
+
 
     --
     -- Stream management
     --
-    streamCreate, streamDestroy, streamQuery, streamSynchronize
+    streamCreate,
+    streamDestroy,
+    streamQuery,
+    streamSynchronize
   ) where
 
 import Foreign.CUDA.Types
@@ -84,8 +90,8 @@ getDeviceProperties   :: Int -> IO (Either String DeviceProperties)
 getDeviceProperties n =  resultIfOk `fmap` cudaGetDeviceProperties n
 
 {# fun unsafe cudaGetDeviceProperties
-    { alloca- `DeviceProperties' peek*,
-              `Int'                   } -> `Result' cToEnum #}
+    { alloca- `DeviceProperties' peek* ,
+              `Int'                    } -> `Result' cToEnum #}
 
 --
 -- Set device to be used for GPU execution
@@ -138,9 +144,25 @@ malloc bytes = do
         _       -> return.Left $ getErrorString rv
 
 {# fun unsafe cudaMalloc
-    { alloca-  `Ptr ()'  peek*,
-      cIntConv `Integer'      } -> `Result' cToEnum #}
+    { alloca-  `Ptr ()'  peek* ,
+      cIntConv `Integer'       } -> `Result' cToEnum #}
 
+--
+-- Allocate pitched memory on the device
+--
+mallocPitch              :: Integer -> Integer -> IO (Either String (DevicePtr,Integer))
+mallocPitch width height =  do
+    (rv,ptr,pitch) <- cudaMallocPitch width height
+    case rv of
+        Success -> doAutoRelease cudaFree_ >>= \fp ->
+                   newDevicePtr fp ptr >>= \dp -> return.Right $ (dp,pitch)
+        _       -> return.Left $ getErrorString rv
+
+{# fun unsafe cudaMallocPitch
+    { alloca-  `Ptr ()' peek*         ,
+      alloca-  `Integer' peekIntConv* ,
+      cIntConv `Integer'              ,
+      cIntConv `Integer'              } -> `Result' cToEnum #}
 
 --
 -- Free previously allocated memory on the device
@@ -154,6 +176,41 @@ cudaFree_ p =  throwIf_ (/= Success) (getErrorString) (cudaFree p)
 foreign import ccall "wrapper"
     doAutoRelease   :: (Ptr () -> IO ()) -> IO (FunPtr (Ptr () -> IO ()))
 
+--
+-- Copy data between host and device
+--
+memcpy :: DevicePtr -> DevicePtr -> Integer -> CopyDirection -> IO (Maybe String)
+memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
+
+{# fun unsafe cudaMemcpy
+    { withDevicePtr* `DevicePtr'     ,
+      withDevicePtr* `DevicePtr'     ,
+      cIntConv       `Integer'       ,
+      cFromEnum      `CopyDirection' } -> `Result' cToEnum #}
+
+--
+-- Copy data between host and device asynchronously
+--
+memcpyAsync :: DevicePtr -> DevicePtr -> Integer -> CopyDirection -> Stream -> IO (Maybe String)
+memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
+
+{# fun unsafe cudaMemcpyAsync
+    { withDevicePtr* `DevicePtr'     ,
+      withDevicePtr* `DevicePtr'     ,
+      cIntConv       `Integer'       ,
+      cFromEnum      `CopyDirection' ,
+      cIntConv       `Stream'        } -> `Result' cToEnum #}
+
+--
+-- Initialize device memory to a given value
+--
+memset                  :: DevicePtr -> Integer -> Int -> IO (Maybe String)
+memset ptr symbol bytes =  nothingIfOk `fmap` cudaMemset ptr bytes symbol
+
+{# fun unsafe cudaMemset
+    { withDevicePtr* `DevicePtr' ,
+                     `Int'       ,
+      cIntConv       `Integer'   } -> `Result' cToEnum #}
 
 --------------------------------------------------------------------------------
 -- Stream Management
