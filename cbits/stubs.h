@@ -9,4 +9,13 @@
 
 typedef struct cudaDeviceProp   cudaDeviceProp;
 
+typedef enum
+{
+    cudaDeviceFlagScheduleAuto      = cudaDeviceScheduleAuto,
+    cudaDeviceFlagScheduleSpin      = cudaDeviceScheduleSpin,
+    cudaDeviceFlagScheduleYield     = cudaDeviceScheduleYield,
+    cudaDeviceFlagBlockingSync      = cudaDeviceBlockingSync,
+    cudaDeviceFlagMapHost           = cudaDeviceMapHost
+} cudaDeviceFlags;
+
 #endif

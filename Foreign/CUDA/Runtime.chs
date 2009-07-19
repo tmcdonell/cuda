@@ -12,8 +12,13 @@ module Foreign.CUDA.Runtime
     --
     -- Device management
     --
-    getDeviceCount, getDeviceProperties,
+    chooseDevice,
+    getDevice,
+    getDeviceCount,
+    getDeviceProperties,
     setDevice,
+    setDeviceFlags,
+    setValidDevices,
 
     --
     -- Memory management
@@ -37,9 +42,31 @@ import Foreign.CUDA.Internal.C2HS hiding (malloc)
 
 {# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 
+
 --------------------------------------------------------------------------------
 -- Device Management
 --------------------------------------------------------------------------------
+
+--
+-- Select compute device which best matches criteria
+--
+chooseDevice     :: DeviceProperties -> IO (Either String Int)
+chooseDevice dev =  resultIfOk `fmap` cudaChooseDevice dev
+
+{# fun unsafe cudaChooseDevice
+    { alloca-      `Int'              peekIntConv* ,
+      withDevProp* `DeviceProperties'              } -> `Result' cToEnum #}
+    where
+        withDevProp = with
+
+--
+-- Returns which device is currently being used
+--
+getDevice :: IO (Either String Int)
+getDevice =  resultIfOk `fmap` cudaGetDevice
+
+{# fun unsafe cudaGetDevice
+    { alloca- `Int' peekIntConv* } -> `Result' cToEnum #}
 
 --
 -- Returns the number of compute-capable devices
@@ -68,6 +95,28 @@ setDevice n =  nothingIfOk `fmap` cudaSetDevice n
 
 {# fun unsafe cudaSetDevice
     { `Int' } -> `Result' cToEnum #}
+
+--
+-- Set flags to be used for device executions
+--
+setDeviceFlags   :: [DeviceFlags] -> IO (Maybe String)
+setDeviceFlags f =  nothingIfOk `fmap` cudaSetDeviceFlags (combineBitMasks f)
+
+{# fun unsafe cudaSetDeviceFlags
+    { `Int' } -> `Result' cToEnum #}
+
+--
+-- Set list of devices for CUDA execution in priority order
+--
+setValidDevices   :: [Int] -> IO (Maybe String)
+setValidDevices l =  nothingIfOk `fmap` cudaSetValidDevices l (length l)
+
+{# fun unsafe cudaSetValidDevices
+    { withArrayIntConv* `[Int]' ,
+                        `Int'   } -> `Result' cToEnum #}
+    where
+        withArrayIntConv = withArray . map cIntConv
+
 
 --------------------------------------------------------------------------------
 -- Memory Management

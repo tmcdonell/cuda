@@ -9,6 +9,7 @@ module Foreign.CUDA.Types
     Result(..),
     CopyDirection(..),
     ComputeMode(..),
+    DeviceFlags(..),
     DeviceProperties(..),
     Stream,
 
@@ -47,6 +48,11 @@ import Foreign.CUDA.Internal.Offsets
 {# enum ComputeMode {}
     with prefix="cudaComputeMode" deriving (Eq, Show) #}
 
+--
+-- Device execution flags
+--
+{# enum DeviceFlags {}
+    with prefix="cudaDeviceFlag" deriving (Eq, Show) #}
 
 --------------------------------------------------------------------------------
 -- Device Properties
