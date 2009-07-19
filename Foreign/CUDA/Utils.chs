@@ -29,15 +29,15 @@ import Foreign.CUDA.Internal.C2HS
 -- defined string constant.
 --
 {# fun pure unsafe GetErrorString as ^
-    { cFromEnum `Result' } -> `String' #}
+    { cFromEnum `Status' } -> `String' #}
 
 
-resultIfOk :: (Result, a) -> Either String a
+resultIfOk :: (Status, a) -> Either String a
 resultIfOk (status,result) =
     case status of
         Success -> Right result
         _       -> Left (getErrorString status)
 
-nothingIfOk :: Result -> Maybe String
+nothingIfOk :: Status -> Maybe String
 nothingIfOk = nothingIf (== Success) getErrorString
 

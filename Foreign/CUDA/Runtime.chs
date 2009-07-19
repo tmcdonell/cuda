@@ -61,7 +61,7 @@ chooseDevice dev =  resultIfOk `fmap` cudaChooseDevice dev
 
 {# fun unsafe cudaChooseDevice
     { alloca-      `Int'              peekIntConv* ,
-      withDevProp* `DeviceProperties'              } -> `Result' cToEnum #}
+      withDevProp* `DeviceProperties'              } -> `Status' cToEnum #}
     where
         withDevProp = with
 
@@ -72,7 +72,7 @@ getDevice :: IO (Either String Int)
 getDevice =  resultIfOk `fmap` cudaGetDevice
 
 {# fun unsafe cudaGetDevice
-    { alloca- `Int' peekIntConv* } -> `Result' cToEnum #}
+    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
 --
 -- Returns the number of compute-capable devices
@@ -81,7 +81,7 @@ getDeviceCount :: IO (Either String Int)
 getDeviceCount =  resultIfOk `fmap` cudaGetDeviceCount
 
 {# fun unsafe cudaGetDeviceCount
-    { alloca- `Int' peekIntConv* } -> `Result' cToEnum #}
+    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
 --
 -- Return information about the selected compute device
@@ -91,7 +91,7 @@ getDeviceProperties n =  resultIfOk `fmap` cudaGetDeviceProperties n
 
 {# fun unsafe cudaGetDeviceProperties
     { alloca- `DeviceProperties' peek* ,
-              `Int'                    } -> `Result' cToEnum #}
+              `Int'                    } -> `Status' cToEnum #}
 
 --
 -- Set device to be used for GPU execution
@@ -100,7 +100,7 @@ setDevice   :: Int -> IO (Maybe String)
 setDevice n =  nothingIfOk `fmap` cudaSetDevice n
 
 {# fun unsafe cudaSetDevice
-    { `Int' } -> `Result' cToEnum #}
+    { `Int' } -> `Status' cToEnum #}
 
 --
 -- Set flags to be used for device executions
@@ -109,7 +109,7 @@ setDeviceFlags   :: [DeviceFlags] -> IO (Maybe String)
 setDeviceFlags f =  nothingIfOk `fmap` cudaSetDeviceFlags (combineBitMasks f)
 
 {# fun unsafe cudaSetDeviceFlags
-    { `Int' } -> `Result' cToEnum #}
+    { `Int' } -> `Status' cToEnum #}
 
 --
 -- Set list of devices for CUDA execution in priority order
@@ -119,7 +119,7 @@ setValidDevices l =  nothingIfOk `fmap` cudaSetValidDevices l (length l)
 
 {# fun unsafe cudaSetValidDevices
     { withArrayIntConv* `[Int]' ,
-                        `Int'   } -> `Result' cToEnum #}
+                        `Int'   } -> `Status' cToEnum #}
     where
         withArrayIntConv = withArray . map cIntConv
 
@@ -145,7 +145,7 @@ malloc bytes = do
 
 {# fun unsafe cudaMalloc
     { alloca-  `Ptr ()'  peek* ,
-      cIntConv `Integer'       } -> `Result' cToEnum #}
+      cIntConv `Integer'       } -> `Status' cToEnum #}
 
 --
 -- Allocate pitched memory on the device
@@ -162,7 +162,7 @@ mallocPitch width height =  do
     { alloca-  `Ptr ()' peek*         ,
       alloca-  `Integer' peekIntConv* ,
       cIntConv `Integer'              ,
-      cIntConv `Integer'              } -> `Result' cToEnum #}
+      cIntConv `Integer'              } -> `Status' cToEnum #}
 
 --
 -- Free previously allocated memory on the device
@@ -171,7 +171,7 @@ cudaFree_   :: Ptr () -> IO ()
 cudaFree_ p =  throwIf_ (/= Success) (getErrorString) (cudaFree p)
 
 {# fun unsafe cudaFree
-    { id `Ptr ()' } -> `Result' cToEnum #}
+    { id `Ptr ()' } -> `Status' cToEnum #}
 
 foreign import ccall "wrapper"
     doAutoRelease   :: (Ptr () -> IO ()) -> IO (FunPtr (Ptr () -> IO ()))
@@ -186,7 +186,7 @@ memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
     { withDevicePtr* `DevicePtr'     ,
       withDevicePtr* `DevicePtr'     ,
       cIntConv       `Integer'       ,
-      cFromEnum      `CopyDirection' } -> `Result' cToEnum #}
+      cFromEnum      `CopyDirection' } -> `Status' cToEnum #}
 
 --
 -- Copy data between host and device asynchronously
@@ -199,7 +199,7 @@ memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst s
       withDevicePtr* `DevicePtr'     ,
       cIntConv       `Integer'       ,
       cFromEnum      `CopyDirection' ,
-      cIntConv       `Stream'        } -> `Result' cToEnum #}
+      cIntConv       `Stream'        } -> `Status' cToEnum #}
 
 --
 -- Initialize device memory to a given value
@@ -210,7 +210,7 @@ memset ptr symbol bytes =  nothingIfOk `fmap` cudaMemset ptr bytes symbol
 {# fun unsafe cudaMemset
     { withDevicePtr* `DevicePtr' ,
                      `Int'       ,
-      cIntConv       `Integer'   } -> `Result' cToEnum #}
+      cIntConv       `Integer'   } -> `Status' cToEnum #}
 
 --------------------------------------------------------------------------------
 -- Stream Management
@@ -223,7 +223,7 @@ streamCreate :: IO (Either String Stream)
 streamCreate =  resultIfOk `fmap` cudaStreamCreate
 
 {# fun unsafe cudaStreamCreate
-    { alloca- `Stream' peek* } -> `Result' cToEnum #}
+    { alloca- `Stream' peek* } -> `Status' cToEnum #}
 
 --
 -- Destroy and clean up an asynchronous stream
@@ -232,7 +232,7 @@ streamDestroy   :: Stream -> IO (Maybe String)
 streamDestroy s =  nothingIfOk `fmap` cudaStreamDestroy s
 
 {# fun unsafe cudaStreamDestroy
-    { cIntConv `Stream' } -> `Result' cToEnum #}
+    { cIntConv `Stream' } -> `Status' cToEnum #}
 
 --
 -- Determine if all operations in a stream have completed
@@ -245,7 +245,7 @@ streamQuery s = cudaStreamQuery s >>= \rv -> do
         _        -> Left (getErrorString rv)
 
 {# fun unsafe cudaStreamQuery
-    { cIntConv `Stream' } -> `Result' cToEnum #}
+    { cIntConv `Stream' } -> `Status' cToEnum #}
 
 --
 -- Block until all operations have been completed
@@ -254,5 +254,5 @@ streamSynchronize   :: Stream -> IO (Maybe String)
 streamSynchronize s =  nothingIfOk `fmap` cudaStreamSynchronize s
 
 {# fun unsafe cudaStreamSynchronize
-    { cIntConv `Stream' } -> `Result' cToEnum #}
+    { cIntConv `Stream' } -> `Status' cToEnum #}
 

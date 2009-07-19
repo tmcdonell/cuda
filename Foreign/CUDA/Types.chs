@@ -6,7 +6,7 @@
 
 module Foreign.CUDA.Types
   (
-    Result(..),
+    Status(..),
     CopyDirection(..),
     ComputeMode(..),
     DeviceFlags(..),
@@ -32,7 +32,7 @@ import Foreign.CUDA.Internal.Offsets
 --
 -- Error Codes
 --
-{# enum cudaError as Result
+{# enum cudaError as Status
     { cudaSuccess as Success }
     with prefix="cudaError" deriving (Eq, Show) #}
 
