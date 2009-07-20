@@ -1,15 +1,21 @@
-{-
- - Haskell bindings to the "C for CUDA" interface and runtime library.
- - Thread management functions
- -}
-
 {-# LANGUAGE ForeignFunctionInterface #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module    : Foreign.CUDA.Thread
+-- Copyright : (c) 2009 Trevor L. McDonell
+-- License   : BSD
+--
+-- Thread management routines
+--
+--------------------------------------------------------------------------------
+
 
 module Foreign.CUDA.Thread
   (
     exit,
     sync
-  ) where
+  )
+  where
 
 import Foreign.CUDA.Error
 import Foreign.CUDA.Internal.C2HS

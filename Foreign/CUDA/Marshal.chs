@@ -1,18 +1,32 @@
-{-
- - Haskell bindings to the "C for CUDA" interface and runtime library.
- - Memory management functions.
- -}
-
 {-# LANGUAGE ForeignFunctionInterface #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module    : Foreign.CUDA.Marshal
+-- Copyright : (c) 2009 Trevor L. McDonell
+-- License   : BSD
+--
+-- Memory allocation and marshalling support for CUDA devices
+--
+--------------------------------------------------------------------------------
 
 module Foreign.CUDA.Marshal
   (
     DevicePtr,
 
-    malloc, mallocPitch,
-    memcpy, memcpyAsync,
+    -- ** Allocation
+    malloc,
+    malloc2D,
     memset,
-  ) where
+
+    -- ** Marshalling
+
+    -- ** Combined allocation and marshalling
+
+    -- ** Copying
+    memcpy,
+    memcpyAsync,
+  )
+  where
 
 import Foreign.CUDA.Error
 import Foreign.CUDA.Stream
@@ -43,8 +57,9 @@ newDevicePtr fp p =  newForeignPtr fp p >>= (return.DevicePtr)
 {# enum cudaMemcpyKind as CopyDirection {}
     with prefix="cudaMemcpy" deriving (Eq, Show) #}
 
+
 --------------------------------------------------------------------------------
--- Functions
+-- Allocation
 --------------------------------------------------------------------------------
 
 -- |
@@ -55,8 +70,8 @@ malloc       :: Integer -> IO (Either String DevicePtr)
 malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
-        Success -> doAutoRelease cudaFree_ >>= \fp ->
-                   newDevicePtr fp ptr     >>= (return.Right)
+        Success -> doAutoRelease free_ >>= \fp ->
+                   newDevicePtr fp ptr >>= (return.Right)
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMalloc
@@ -64,18 +79,18 @@ malloc bytes = do
       cIntConv `Integer'       } -> `Status' cToEnum #}
 
 -- |
--- Allocate at least 'width' * 'height' bytes of linear memory on the device.
--- The function may pad the allocation to ensure corresponding pointers in each
--- row meet coalescing requirements. The actual allocation width is returned.
+-- Allocate at least @width * height@ bytes of linear memory on the device. The
+-- function may pad the allocation to ensure corresponding pointers in each row
+-- meet coalescing requirements. The actual allocation width is returned.
 --
-mallocPitch :: Integer          -- ^ allocation width in bytes
-            -> Integer          -- ^ allocation height in bytes
-            -> IO (Either String (DevicePtr,Integer))
-mallocPitch width height =  do
+malloc2D :: Integer          -- ^ width in bytes
+         -> Integer          -- ^ height in bytes
+         -> IO (Either String (DevicePtr,Integer))
+malloc2D width height =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
-        Success -> doAutoRelease cudaFree_ >>= \fp ->
-                   newDevicePtr fp ptr     >>= \dp -> return.Right $ (dp,pitch)
+        Success -> doAutoRelease free_ >>= \fp ->
+                   newDevicePtr fp ptr >>= \dp -> return.Right $ (dp,pitch)
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMallocPitch
@@ -84,12 +99,22 @@ mallocPitch width height =  do
       cIntConv `Integer'              ,
       cIntConv `Integer'              } -> `Status' cToEnum #}
 
+
 -- |
--- Free previously allocated memory on the device, from a previous call to
--- 'malloc' or 'mallocPitch'.
+-- Allocate at least @width * height * depth@ bytes of linear memory on the
+-- device. The function may pad the allocation to ensure hardware alignment
+-- requirements are met. The actual allocation width is returned
 --
-cudaFree_   :: Ptr () -> IO ()
-cudaFree_ p =  throwIf_ (/= Success) (describe) (cudaFree p)
+
+
+-- |
+-- Free previously allocated memory on the device
+--
+-- free   :: Ptr () -> IO (Maybe String)
+-- free p =  nothingIfOk `fmap` cudaFree p
+
+free_   :: Ptr () -> IO ()
+free_ p =  throwIf_ (/= Success) (describe) (cudaFree p)
 
 {# fun unsafe cudaFree
     { id `Ptr ()' } -> `Status' cToEnum #}

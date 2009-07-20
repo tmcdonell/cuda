@@ -30,6 +30,7 @@ Library
                         Foreign.CUDA.Marshal
                         Foreign.CUDA.Stream
                         Foreign.CUDA.Thread
+                        Foreign.CUDA.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
                         Foreign.CUDA.Internal.Offsets

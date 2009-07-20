@@ -1,18 +1,20 @@
-{-
- - Haskell bindings to the "C for CUDA" interface and runtime library.
- - Error handling utilities.
- -}
-
 {-# LANGUAGE ForeignFunctionInterface #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module    : Foreign.CUDA.Error
+-- Copyright : (c) 2009 Trevor L. McDonell
+-- License   : BSD
+--
+-- Error handling functions
+--
+--------------------------------------------------------------------------------
 
 module Foreign.CUDA.Error
   (
     Status(..),
-
     describe,
     resultIfOk,
-    nothingIfOk,
-    forceEither
+    nothingIfOk
   )
   where
 
@@ -65,12 +67,4 @@ resultIfOk (status,result) =
 --
 nothingIfOk :: Status -> Maybe String
 nothingIfOk = nothingIf (== Success) describe
-
-
--- |
--- Unwrap an Either construct, throwing an error for non-right values
---
-forceEither :: Either String a -> a
-forceEither (Left  s) = error s
-forceEither (Right r) = r
 

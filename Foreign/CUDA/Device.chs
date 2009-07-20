@@ -1,15 +1,21 @@
-{-
- - Haskell bindings to the /C for CUDA/ interface and runtime library.
- - Device management functions.
- -}
-
 {-# LANGUAGE ForeignFunctionInterface #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module    : Foreign.CUDA.Marshal
+-- Copyright : (c) 2009 Trevor L. McDonell
+-- License   : BSD
+--
+-- Device management routines
+--
+--------------------------------------------------------------------------------
 
 module Foreign.CUDA.Device
   (
     ComputeMode,
     DeviceFlags,
+    DeviceProperties,
 
+    -- ** Device management
     choose,
     get,
     count,
@@ -17,7 +23,8 @@ module Foreign.CUDA.Device
     set,
     setFlags,
     setOrder
-  ) where
+  )
+  where
 
 import Foreign.CUDA.Error
 import Foreign.CUDA.Internal.C2HS hiding (malloc)

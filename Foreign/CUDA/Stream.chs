@@ -1,19 +1,26 @@
-{-
- - Haskell bindings to the "C for CUDA" interface and runtime library.
- - Stream management functions.
- -}
-
 {-# LANGUAGE ForeignFunctionInterface #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module    : Foreign.CUDA.Stream
+-- Copyright : (c) 2009 Trevor L. McDonell
+-- License   : BSD
+--
+-- Stream management routines
+--
+--------------------------------------------------------------------------------
+
 
 module Foreign.CUDA.Stream
   (
     Stream,
 
+    -- ** Stream management
     create,
     destroy,
     finished,
     sync
-  ) where
+  )
+  where
 
 import Foreign.CUDA.Error
 import Foreign.CUDA.Internal.C2HS hiding (malloc)
