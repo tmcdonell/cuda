@@ -16,7 +16,6 @@ module Foreign.CUDA.Types
     DevicePtr, newDevicePtr, withDevicePtr
   ) where
 
-
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets
 
@@ -66,7 +65,7 @@ import Foreign.CUDA.Internal.Offsets
 data DeviceProperties = DeviceProperties
   {
     deviceName               :: String,
-    computeCapability        :: (Int,Int),
+    computeCapability        :: Float,
     totalGlobalMem           :: Integer,
     totalConstMem            :: Integer,
     sharedMemPerBlock        :: Integer,
@@ -93,23 +92,23 @@ instance Storable DeviceProperties where
     alignment _ = alignment (undefined :: Ptr ())
 
     peek p      = do
-        gm <- cIntConv `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
-        sm <- cIntConv `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
-        rb <- cIntConv `fmap` {#get cudaDeviceProp.regsPerBlock#} p
-        ws <- cIntConv `fmap` {#get cudaDeviceProp.warpSize#} p
-        mp <- cIntConv `fmap` {#get cudaDeviceProp.memPitch#} p
-        tb <- cIntConv `fmap` {#get cudaDeviceProp.maxThreadsPerBlock#} p
-        cl <- cIntConv `fmap` {#get cudaDeviceProp.clockRate#} p
-        cm <- cIntConv `fmap` {#get cudaDeviceProp.totalConstMem#} p
-        v1 <- cIntConv `fmap` {#get cudaDeviceProp.major#} p
-        v2 <- cIntConv `fmap` {#get cudaDeviceProp.minor#} p
-        ta <- cIntConv `fmap` {#get cudaDeviceProp.textureAlignment#} p
-        ov <- cToBool  `fmap` {#get cudaDeviceProp.deviceOverlap#} p
-        pc <- cIntConv `fmap` {#get cudaDeviceProp.multiProcessorCount#} p
-        ke <- cToBool  `fmap` {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
-        tg <- cToBool  `fmap` {#get cudaDeviceProp.integrated#} p
-        hm <- cToBool  `fmap` {#get cudaDeviceProp.canMapHostMemory#} p
-        md <- cToEnum  `fmap` {#get cudaDeviceProp.computeMode#} p
+        gm <- cIntConv     `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
+        sm <- cIntConv     `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
+        rb <- cIntConv     `fmap` {#get cudaDeviceProp.regsPerBlock#} p
+        ws <- cIntConv     `fmap` {#get cudaDeviceProp.warpSize#} p
+        mp <- cIntConv     `fmap` {#get cudaDeviceProp.memPitch#} p
+        tb <- cIntConv     `fmap` {#get cudaDeviceProp.maxThreadsPerBlock#} p
+        cl <- cIntConv     `fmap` {#get cudaDeviceProp.clockRate#} p
+        cm <- cIntConv     `fmap` {#get cudaDeviceProp.totalConstMem#} p
+        v1 <- fromIntegral `fmap` {#get cudaDeviceProp.major#} p
+        v2 <- fromIntegral `fmap` {#get cudaDeviceProp.minor#} p
+        ta <- cIntConv     `fmap` {#get cudaDeviceProp.textureAlignment#} p
+        ov <- cToBool      `fmap` {#get cudaDeviceProp.deviceOverlap#} p
+        pc <- cIntConv     `fmap` {#get cudaDeviceProp.multiProcessorCount#} p
+        ke <- cToBool      `fmap` {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
+        tg <- cToBool      `fmap` {#get cudaDeviceProp.integrated#} p
+        hm <- cToBool      `fmap` {#get cudaDeviceProp.canMapHostMemory#} p
+        md <- cToEnum      `fmap` {#get cudaDeviceProp.computeMode#} p
 
         --
         -- C->Haskell returns the wrong type when accessing static arrays in
@@ -123,7 +122,7 @@ instance Storable DeviceProperties where
         return DeviceProperties
             {
               deviceName               = n,
-              computeCapability        = (v1,v2),
+              computeCapability        = v1 + v2 / max 10 (10^ ((ceiling . logBase 10) v2 :: Int)),
               totalGlobalMem           = gm,
               totalConstMem            = cm,
               sharedMemPerBlock        = sm,
