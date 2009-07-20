@@ -6,12 +6,13 @@
 
 module Foreign.CUDA.Utils
   (
-    getErrorString, resultIfOk, nothingIfOk
+    getErrorString,
+    resultIfOk, nothingIfOk,
+    forceEither
   )
   where
 
 import Foreign.CUDA.Types
-
 import Foreign.CUDA.Internal.C2HS
 
 
@@ -40,4 +41,8 @@ resultIfOk (status,result) =
 
 nothingIfOk :: Status -> Maybe String
 nothingIfOk = nothingIf (== Success) getErrorString
+
+forceEither :: Either String a -> a
+forceEither (Left  s) = error s
+forceEither (Right r) = r
 
