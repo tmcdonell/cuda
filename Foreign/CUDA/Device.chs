@@ -1,66 +1,53 @@
 {-
- - CUDA data types
+ - Haskell bindings to the /C for CUDA/ interface and runtime library.
+ - Device management functions.
  -}
 
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module Foreign.CUDA.Types
+module Foreign.CUDA.Device
   (
-    Status(..),
-    CopyDirection(..),
-    ComputeMode(..),
-    DeviceFlags(..),
-    DeviceProperties(..),
-    Stream,
+    ComputeMode,
+    DeviceFlags,
 
-    DevicePtr, newDevicePtr, withDevicePtr
+    choose,
+    get,
+    count,
+    props,
+    set,
+    setFlags,
+    setOrder
   ) where
 
-import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Error
+import Foreign.CUDA.Internal.C2HS hiding (malloc)
 import Foreign.CUDA.Internal.Offsets
 
 #include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
-{#context lib="cudart" prefix="cuda"#}
+{# context lib="cudart" #}
 
 
 --------------------------------------------------------------------------------
--- Enumerations
---------------------------------------------------------------------------------
-
---
--- Error Codes
---
-{# enum cudaError as Status
-    { cudaSuccess as Success }
-    with prefix="cudaError" deriving (Eq, Show) #}
-
---
--- Memory copy
---
-{# enum cudaMemcpyKind as CopyDirection {}
-    with prefix="cudaMemcpy" deriving (Eq, Show) #}
-
---
--- Compute mode
---
-{# enum ComputeMode {}
-    with prefix="cudaComputeMode" deriving (Eq, Show) #}
-
---
--- Device execution flags
---
-{# enum DeviceFlags {}
-    with prefix="cudaDeviceFlag" deriving (Eq, Show) #}
-
---------------------------------------------------------------------------------
--- Device Properties
+-- Data Types
 --------------------------------------------------------------------------------
 
 {# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 
+-- |
+-- The compute mode the device is currently in
 --
--- Store all device properties
+{# enum cudaComputeMode as ComputeMode { }
+    with prefix="cudaComputeMode" deriving (Eq, Show) #}
+
+-- |
+-- Device execution flags
+--
+{# enum cudaDeviceFlags as DeviceFlags { }
+    with prefix="cudaDeviceFlag" deriving (Eq, Show) #}
+
+-- |
+-- The properties of a compute device
 --
 data DeviceProperties = DeviceProperties
   {
@@ -144,21 +131,77 @@ instance Storable DeviceProperties where
 
 
 --------------------------------------------------------------------------------
--- Memory Management
+-- Functions
 --------------------------------------------------------------------------------
 
-newtype DevicePtr = DevicePtr (ForeignPtr ())
+-- |
+-- Select the compute device which best matches the given criteria
+--
+choose     :: DeviceProperties -> IO (Either String Int)
+choose dev =  resultIfOk `fmap` cudaChooseDevice dev
 
-withDevicePtr :: DevicePtr -> (Ptr () -> IO b) -> IO b
-withDevicePtr (DevicePtr fptr) = withForeignPtr fptr
+{# fun unsafe cudaChooseDevice
+    { alloca-      `Int'              peekIntConv* ,
+      withDevProp* `DeviceProperties'              } -> `Status' cToEnum #}
+    where
+        withDevProp = with
 
-newDevicePtr      :: FinalizerPtr () -> Ptr () -> IO DevicePtr
-newDevicePtr fp p =  newForeignPtr fp p >>= \dp -> return (DevicePtr dp)
+-- |
+-- Returns which device is currently being used
+--
+get :: IO (Either String Int)
+get =  resultIfOk `fmap` cudaGetDevice
 
+{# fun unsafe cudaGetDevice
+    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
---------------------------------------------------------------------------------
--- Stream Management
---------------------------------------------------------------------------------
+-- |
+-- Returns the number of devices available for execution, with compute
+-- capability >= 1.0
+--
+count :: IO (Either String Int)
+count =  resultIfOk `fmap` cudaGetDeviceCount
 
-type Stream = {# type cudaStream_t #}
+{# fun unsafe cudaGetDeviceCount
+    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
+
+-- |
+-- Return information about the selected compute device
+--
+props   :: Int -> IO (Either String DeviceProperties)
+props n =  resultIfOk `fmap` cudaGetDeviceProperties n
+
+{# fun unsafe cudaGetDeviceProperties
+    { alloca- `DeviceProperties' peek* ,
+              `Int'                    } -> `Status' cToEnum #}
+
+-- |
+-- Set device to be used for GPU execution
+--
+set   :: Int -> IO (Maybe String)
+set n =  nothingIfOk `fmap` cudaSetDevice n
+
+{# fun unsafe cudaSetDevice
+    { `Int' } -> `Status' cToEnum #}
+
+-- |
+-- Set flags to be used for device executions
+--
+setFlags   :: [DeviceFlags] -> IO (Maybe String)
+setFlags f =  nothingIfOk `fmap` cudaSetDeviceFlags (combineBitMasks f)
+
+{# fun unsafe cudaSetDeviceFlags
+    { `Int' } -> `Status' cToEnum #}
+
+-- |
+-- Set list of devices for CUDA execution in priority order
+--
+setOrder   :: [Int] -> IO (Maybe String)
+setOrder l =  nothingIfOk `fmap` cudaSetValidDevices l (length l)
+
+{# fun unsafe cudaSetValidDevices
+    { withArrayIntConv* `[Int]' ,
+                        `Int'   } -> `Status' cToEnum #}
+    where
+        withArrayIntConv = withArray . map cIntConv
 

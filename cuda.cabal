@@ -1,8 +1,8 @@
 Name:                   cuda
 Version:                0.1
-Synopsis:               A binding to the "C for CUDA" interface for programming NVIDIA GPUs
+Synopsis:               Haskell+CUDA
 Description:    
-    A binding to the "C for CUDA" interface for programming NVIDIA GPUs
+    A binding to the /C for CUDA/ interface for programming NVIDIA GPUs
     .
     The CUDA library provides a direct, general purpose SPMD programming model
     for NVIDIA graphics cards (G8x series onwards).
@@ -24,16 +24,18 @@ Extra-source-files:     configure
                         cuda.buildinfo.in
 
 Library
-  Exposed-Modules:      Foreign.CUDA,
-                        Foreign.CUDA.Runtime,
-                        Foreign.CUDA.Types,
-                        Foreign.CUDA.Utils
+  Exposed-Modules:      Foreign.CUDA
+                        Foreign.CUDA.Device
+                        Foreign.CUDA.Error
+                        Foreign.CUDA.Marshal
+                        Foreign.CUDA.Stream
+                        Foreign.CUDA.Thread
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
                         Foreign.CUDA.Internal.Offsets
 
   Include-dirs:         .
-  C-sources:            cbits/stubs.c
+  C-sources:            
 
   Build-tools:          c2hs, hsc2hs
   Build-depends:        base, haskell98
