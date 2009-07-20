@@ -158,7 +158,7 @@ malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
         Success -> doAutoRelease cudaFree_ >>= \fp ->
-                   newDevicePtr fp ptr >>= (return.Right)
+                   newDevicePtr fp ptr     >>= (return.Right)
         _       -> return.Left $ getErrorString rv
 
 {# fun unsafe cudaMalloc
@@ -173,11 +173,11 @@ mallocPitch width height =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
         Success -> doAutoRelease cudaFree_ >>= \fp ->
-                   newDevicePtr fp ptr >>= \dp -> return.Right $ (dp,pitch)
+                   newDevicePtr fp ptr     >>= \dp -> return.Right $ (dp,pitch)
         _       -> return.Left $ getErrorString rv
 
 {# fun unsafe cudaMallocPitch
-    { alloca-  `Ptr ()' peek*         ,
+    { alloca-  `Ptr ()'  peek*        ,
       alloca-  `Integer' peekIntConv* ,
       cIntConv `Integer'              ,
       cIntConv `Integer'              } -> `Status' cToEnum #}
@@ -222,7 +222,7 @@ memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst s
 --
 -- Initialize device memory to a given value
 --
-memset                  :: DevicePtr -> Integer -> Int -> IO (Maybe String)
+memset                  :: DevicePtr -> Int -> Integer -> IO (Maybe String)
 memset ptr symbol bytes =  nothingIfOk `fmap` cudaMemset ptr bytes symbol
 
 {# fun unsafe cudaMemset
