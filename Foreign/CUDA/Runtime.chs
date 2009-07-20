@@ -10,6 +10,11 @@
 module Foreign.CUDA.Runtime
   (
     --
+    -- Thread management
+    --
+    threadSynchronize,
+
+    --
     -- Device management
     --
     chooseDevice,
@@ -48,6 +53,19 @@ import Foreign.CUDA.Internal.C2HS hiding (malloc)
 
 {# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 
+
+--------------------------------------------------------------------------------
+-- Thread Management
+--------------------------------------------------------------------------------
+
+--
+-- Block until the device has completed all preceding requests
+--
+threadSynchronize :: IO (Maybe String)
+threadSynchronize =  nothingIfOk `fmap` cudaThreadSynchronize
+
+{# fun unsafe cudaThreadSynchronize
+    { } -> `Status' cToEnum #}
 
 --------------------------------------------------------------------------------
 -- Device Management
