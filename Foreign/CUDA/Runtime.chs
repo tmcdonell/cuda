@@ -222,8 +222,8 @@ memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst s
 --
 -- Initialize device memory to a given value
 --
-memset                  :: DevicePtr -> Int -> Integer -> IO (Maybe String)
-memset ptr symbol bytes =  nothingIfOk `fmap` cudaMemset ptr bytes symbol
+memset                  :: DevicePtr -> Integer -> Int -> IO (Maybe String)
+memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
     { withDevicePtr* `DevicePtr' ,
