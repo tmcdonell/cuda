@@ -67,7 +67,7 @@ newDevicePtr fp p =  newForeignPtr fp p >>= (return.DevicePtr)
 -- Allocate the specified number of bytes in linear memory on the device. The
 -- memory is suitably aligned for any kind of variable, and is not cleared.
 --
-malloc       :: Integer -> IO (Either String DevicePtr)
+malloc       :: Int64 -> IO (Either String DevicePtr)
 malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
@@ -76,16 +76,16 @@ malloc bytes = do
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMalloc
-    { alloca-  `Ptr ()'  peek* ,
-      cIntConv `Integer'       } -> `Status' cToEnum #}
+    { alloca-  `Ptr ()' peek* ,
+      cIntConv `Int64'        } -> `Status' cToEnum #}
 
 -- |
 -- Allocate at least @width * height@ bytes of linear memory on the device. The
 -- function may pad the allocation to ensure corresponding pointers in each row
 -- meet coalescing requirements. The actual allocation width is returned.
 --
-malloc2D :: (Integer, Integer)          -- ^ allocation (width,height) in bytes
-         -> IO (Either String (DevicePtr,Integer))
+malloc2D :: (Int64, Int64)              -- ^ allocation (width,height) in bytes
+         -> IO (Either String (DevicePtr,Int64))
 malloc2D (width,height) =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
@@ -94,10 +94,10 @@ malloc2D (width,height) =  do
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMallocPitch
-    { alloca-  `Ptr ()'  peek*        ,
-      alloca-  `Integer' peekIntConv* ,
-      cIntConv `Integer'              ,
-      cIntConv `Integer'              } -> `Status' cToEnum #}
+    { alloca-  `Ptr ()' peek*        ,
+      alloca-  `Int64'  peekIntConv* ,
+      cIntConv `Int64'               ,
+      cIntConv `Int64'               } -> `Status' cToEnum #}
 
 
 -- |
@@ -105,8 +105,8 @@ malloc2D (width,height) =  do
 -- device. The function may pad the allocation to ensure hardware alignment
 -- requirements are met. The actual allocation pitch is returned
 --
-malloc3D :: (Integer,Integer,Integer)   -- ^ allocation (width,height,depth) in bytes
-         -> IO (Either String (DevicePtr,Integer))
+malloc3D :: (Int64,Int64,Int64)         -- ^ allocation (width,height,depth) in bytes
+         -> IO (Either String (DevicePtr,Int64))
 malloc3D = error "not implemented yet"
 
 
@@ -129,39 +129,39 @@ foreign import ccall "wrapper"
 -- |
 -- Initialise device memory to a given value
 --
-memset                  :: DevicePtr -> Integer -> Int -> IO (Maybe String)
+memset                  :: DevicePtr -> Int64 -> Int -> IO (Maybe String)
 memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
     { withDevicePtr* `DevicePtr' ,
                      `Int'       ,
-      cIntConv       `Integer'   } -> `Status' cToEnum #}
+      cIntConv       `Int64'     } -> `Status' cToEnum #}
 
 
 -- |
 -- Initialise a matrix to a given value
 --
 memset2D :: DevicePtr                   -- ^ The device memory
-         -> (Integer,Integer)           -- ^ The (width,height) of the matrix in bytes
-         -> Integer                     -- ^ The allocation pitch, as returned by 'malloc2D'
+         -> (Int64,Int64)               -- ^ The (width,height) of the matrix in bytes
+         -> Int64                       -- ^ The allocation pitch, as returned by 'malloc2D'
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
 memset2D ptr (width,height) pitch symbol = nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
 
 {# fun unsafe cudaMemset2D
     { withDevicePtr* `DevicePtr' ,
-      cIntConv       `Integer'   ,
+      cIntConv       `Int64'     ,
                      `Int'       ,
-      cIntConv       `Integer'   ,
-      cIntConv       `Integer'   } -> `Status' cToEnum #}
+      cIntConv       `Int64'     ,
+      cIntConv       `Int64'     } -> `Status' cToEnum #}
 
 
 -- |
 -- Initialise the elements of a 3D array to a given value
 --
 memset3D :: DevicePtr                   -- ^ The device memory
-         -> (Integer,Integer,Integer)   -- ^ The (width,height,depth) of the array in bytes
-         -> Integer                     -- ^ The allocation pitch, as returned by 'malloc3D'
+         -> (Int64,Int64,Int64)         -- ^ The (width,height,depth) of the array in bytes
+         -> Int64                       -- ^ The allocation pitch, as returned by 'malloc3D'
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
 memset3D = error "not implemented yet"
@@ -192,7 +192,7 @@ memset3D = error "not implemented yet"
 --
 memcpy :: Ptr a                 -- ^ destination
        -> Ptr a                 -- ^ source
-       -> Integer               -- ^ number of bytes
+       -> Int64                 -- ^ number of bytes
        -> CopyDirection
        -> IO (Maybe String)
 memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
@@ -200,7 +200,7 @@ memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
 {# fun unsafe cudaMemcpy
     { castPtr   `Ptr a'         ,
       castPtr   `Ptr a'         ,
-      cIntConv  `Integer'       ,
+      cIntConv  `Int64'         ,
       cFromEnum `CopyDirection' } -> `Status' cToEnum #}
 
 -- |
@@ -208,7 +208,7 @@ memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
 --
 memcpyAsync :: Ptr a            -- ^ destination
             -> Ptr a            -- ^ source
-            -> Integer          -- ^ number of bytes
+            -> Int64            -- ^ number of bytes
             -> CopyDirection
             -> Stream
             -> IO (Maybe String)
@@ -217,8 +217,7 @@ memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst s
 {# fun unsafe cudaMemcpyAsync
     { castPtr    `Ptr a'         ,
       castPtr    `Ptr a'         ,
-      cIntConv   `Integer'       ,
+      cIntConv   `Int64'         ,
       cFromEnum  `CopyDirection' ,
       cIntConv   `Stream'        } -> `Status' cToEnum #}
-
 
