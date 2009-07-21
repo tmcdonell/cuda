@@ -44,13 +44,13 @@ import Foreign.CUDA.Internal.C2HS hiding (malloc)
 -- |
 -- A reference to data stored on the device. It is automatically freed.
 --
-newtype DevicePtr = DevicePtr (ForeignPtr ())
+type DevicePtr a = ForeignPtr a
 
-withDevicePtr               :: DevicePtr -> (Ptr () -> IO b) -> IO b
-withDevicePtr (DevicePtr d) =  withForeignPtr d
+withDevicePtr :: DevicePtr a -> (Ptr a -> IO b) -> IO b
+withDevicePtr =  withForeignPtr
 
-newDevicePtr      :: FinalizerPtr () -> Ptr () -> IO DevicePtr
-newDevicePtr fp p =  newForeignPtr fp p >>= (return.DevicePtr)
+newDevicePtr   :: Ptr () -> IO (DevicePtr ())
+newDevicePtr p =  (doAutoRelease free_) >>= \f -> newForeignPtr f p
 
 --
 -- Memory copy
@@ -67,12 +67,11 @@ newDevicePtr fp p =  newForeignPtr fp p >>= (return.DevicePtr)
 -- Allocate the specified number of bytes in linear memory on the device. The
 -- memory is suitably aligned for any kind of variable, and is not cleared.
 --
-malloc       :: Int64 -> IO (Either String DevicePtr)
+malloc       :: Int64 -> IO (Either String (DevicePtr ()))
 malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
-        Success -> doAutoRelease free_ >>= \fp ->
-                   newDevicePtr fp ptr >>= (return.Right)
+        Success -> newDevicePtr ptr >>= (return.Right)
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMalloc
@@ -85,12 +84,11 @@ malloc bytes = do
 -- meet coalescing requirements. The actual allocation width is returned.
 --
 malloc2D :: (Int64, Int64)              -- ^ allocation (width,height) in bytes
-         -> IO (Either String (DevicePtr,Int64))
+         -> IO (Either String (DevicePtr (),Int64))
 malloc2D (width,height) =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
-        Success -> doAutoRelease free_ >>= \fp ->
-                   newDevicePtr fp ptr >>= \dp -> return.Right $ (dp,pitch)
+        Success -> newDevicePtr ptr >>= \dp -> return.Right $ (dp,pitch)
         _       -> return.Left $ describe rv
 
 {# fun unsafe cudaMallocPitch
@@ -106,7 +104,7 @@ malloc2D (width,height) =  do
 -- requirements are met. The actual allocation pitch is returned
 --
 malloc3D :: (Int64,Int64,Int64)         -- ^ allocation (width,height,depth) in bytes
-         -> IO (Either String (DevicePtr,Int64))
+         -> IO (Either String (DevicePtr (),Int64))
 malloc3D = error "not implemented yet"
 
 
@@ -129,19 +127,19 @@ foreign import ccall "wrapper"
 -- |
 -- Initialise device memory to a given value
 --
-memset                  :: DevicePtr -> Int64 -> Int -> IO (Maybe String)
+memset                  :: DevicePtr () -> Int64 -> Int -> IO (Maybe String)
 memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
-    { withDevicePtr* `DevicePtr' ,
-                     `Int'       ,
-      cIntConv       `Int64'     } -> `Status' cToEnum #}
+    { withDevicePtr* `DevicePtr ()' ,
+                     `Int'          ,
+      cIntConv       `Int64'        } -> `Status' cToEnum #}
 
 
 -- |
 -- Initialise a matrix to a given value
 --
-memset2D :: DevicePtr                   -- ^ The device memory
+memset2D :: DevicePtr ()                -- ^ The device memory
          -> (Int64,Int64)               -- ^ The (width,height) of the matrix in bytes
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc2D'
          -> Int                         -- ^ Value to set for each byte
@@ -149,17 +147,17 @@ memset2D :: DevicePtr                   -- ^ The device memory
 memset2D ptr (width,height) pitch symbol = nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
 
 {# fun unsafe cudaMemset2D
-    { withDevicePtr* `DevicePtr' ,
-      cIntConv       `Int64'     ,
-                     `Int'       ,
-      cIntConv       `Int64'     ,
-      cIntConv       `Int64'     } -> `Status' cToEnum #}
+    { withDevicePtr* `DevicePtr ()' ,
+      cIntConv       `Int64'        ,
+                     `Int'          ,
+      cIntConv       `Int64'        ,
+      cIntConv       `Int64'        } -> `Status' cToEnum #}
 
 
 -- |
 -- Initialise the elements of a 3D array to a given value
 --
-memset3D :: DevicePtr                   -- ^ The device memory
+memset3D :: DevicePtr ()                -- ^ The device memory
          -> (Int64,Int64,Int64)         -- ^ The (width,height,depth) of the array in bytes
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc3D'
          -> Int                         -- ^ Value to set for each byte
