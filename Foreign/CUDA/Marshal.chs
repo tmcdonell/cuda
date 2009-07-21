@@ -105,7 +105,7 @@ malloc2D (width,height) =  do
 --
 malloc3D :: (Int64,Int64,Int64)         -- ^ allocation (width,height,depth) in bytes
          -> IO (Either String (DevicePtr (),Int64))
-malloc3D = error "not implemented yet"
+malloc3D = moduleErr "malloc3D" "not implemented yet"
 
 
 -- |
@@ -162,7 +162,7 @@ memset3D :: DevicePtr ()                -- ^ The device memory
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc3D'
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
-memset3D = error "not implemented yet"
+memset3D = moduleErr "memset3D" "not implemented yet"
 
 
 --------------------------------------------------------------------------------
@@ -218,4 +218,12 @@ memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst s
       cIntConv   `Int64'         ,
       cFromEnum  `CopyDirection' ,
       cIntConv   `Stream'        } -> `Status' cToEnum #}
+
+
+--------------------------------------------------------------------------------
+-- Internal utilities
+--------------------------------------------------------------------------------
+
+moduleErr :: String -> String -> a
+moduleErr fun msg =  error ("Foreign.CUDA." ++ fun ++ ':':' ':msg)
 
