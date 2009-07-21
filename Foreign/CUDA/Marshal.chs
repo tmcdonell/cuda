@@ -13,18 +13,19 @@ module Foreign.CUDA.Marshal
   (
     DevicePtr,
 
-    -- ** Allocation
+    -- ** Dynamic allocation
     malloc,
     malloc2D,
+    malloc3D,
     memset,
+    memset2D,
+    memset3D,
 
     -- ** Marshalling
 
     -- ** Combined allocation and marshalling
 
     -- ** Copying
-    memcpy,
-    memcpyAsync,
   )
   where
 
@@ -41,7 +42,7 @@ import Foreign.CUDA.Internal.C2HS hiding (malloc)
 --------------------------------------------------------------------------------
 
 -- |
--- A reference to data stored on the device
+-- A reference to data stored on the device. It is automatically freed.
 --
 newtype DevicePtr = DevicePtr (ForeignPtr ())
 
@@ -59,7 +60,7 @@ newDevicePtr fp p =  newForeignPtr fp p >>= (return.DevicePtr)
 
 
 --------------------------------------------------------------------------------
--- Allocation
+-- Dynamic allocation
 --------------------------------------------------------------------------------
 
 -- |
@@ -83,10 +84,9 @@ malloc bytes = do
 -- function may pad the allocation to ensure corresponding pointers in each row
 -- meet coalescing requirements. The actual allocation width is returned.
 --
-malloc2D :: Integer          -- ^ width in bytes
-         -> Integer          -- ^ height in bytes
+malloc2D :: (Integer, Integer)          -- ^ allocation (width,height) in bytes
          -> IO (Either String (DevicePtr,Integer))
-malloc2D width height =  do
+malloc2D (width,height) =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
         Success -> doAutoRelease free_ >>= \fp ->
@@ -103,8 +103,11 @@ malloc2D width height =  do
 -- |
 -- Allocate at least @width * height * depth@ bytes of linear memory on the
 -- device. The function may pad the allocation to ensure hardware alignment
--- requirements are met. The actual allocation width is returned
+-- requirements are met. The actual allocation pitch is returned
 --
+malloc3D :: (Integer,Integer,Integer)   -- ^ allocation (width,height,depth) in bytes
+         -> IO (Either String (DevicePtr,Integer))
+malloc3D = error "not implemented yet"
 
 
 -- |
@@ -122,33 +125,9 @@ free_ p =  throwIf_ (/= Success) (describe) (cudaFree p)
 foreign import ccall "wrapper"
     doAutoRelease   :: (Ptr () -> IO ()) -> IO (FunPtr (Ptr () -> IO ()))
 
--- |
--- Copy data between host and device
---
-memcpy :: DevicePtr -> DevicePtr -> Integer -> CopyDirection -> IO (Maybe String)
-memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
-
-{# fun unsafe cudaMemcpy
-    { withDevicePtr* `DevicePtr'     ,
-      withDevicePtr* `DevicePtr'     ,
-      cIntConv       `Integer'       ,
-      cFromEnum      `CopyDirection' } -> `Status' cToEnum #}
 
 -- |
--- Copy data between host and device asynchronously
---
-memcpyAsync :: DevicePtr -> DevicePtr -> Integer -> CopyDirection -> Stream -> IO (Maybe String)
-memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
-
-{# fun unsafe cudaMemcpyAsync
-    { withDevicePtr* `DevicePtr'     ,
-      withDevicePtr* `DevicePtr'     ,
-      cIntConv       `Integer'       ,
-      cFromEnum      `CopyDirection' ,
-      cIntConv       `Stream'        } -> `Status' cToEnum #}
-
--- |
--- Initialize device memory to a given value
+-- Initialise device memory to a given value
 --
 memset                  :: DevicePtr -> Integer -> Int -> IO (Maybe String)
 memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
@@ -157,4 +136,89 @@ memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
     { withDevicePtr* `DevicePtr' ,
                      `Int'       ,
       cIntConv       `Integer'   } -> `Status' cToEnum #}
+
+
+-- |
+-- Initialise a matrix to a given value
+--
+memset2D :: DevicePtr                   -- ^ The device memory
+         -> (Integer,Integer)           -- ^ The (width,height) of the matrix in bytes
+         -> Integer                     -- ^ The allocation pitch, as returned by 'malloc2D'
+         -> Int                         -- ^ Value to set for each byte
+         -> IO (Maybe String)
+memset2D ptr (width,height) pitch symbol = nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
+
+{# fun unsafe cudaMemset2D
+    { withDevicePtr* `DevicePtr' ,
+      cIntConv       `Integer'   ,
+                     `Int'       ,
+      cIntConv       `Integer'   ,
+      cIntConv       `Integer'   } -> `Status' cToEnum #}
+
+
+-- |
+-- Initialise the elements of a 3D array to a given value
+--
+memset3D :: DevicePtr                   -- ^ The device memory
+         -> (Integer,Integer,Integer)   -- ^ The (width,height,depth) of the array in bytes
+         -> Integer                     -- ^ The allocation pitch, as returned by 'malloc3D'
+         -> Int                         -- ^ Value to set for each byte
+         -> IO (Maybe String)
+memset3D = error "not implemented yet"
+
+
+--------------------------------------------------------------------------------
+-- Marshalling
+--------------------------------------------------------------------------------
+
+-- peek
+-- poke
+
+
+--------------------------------------------------------------------------------
+-- Combined allocation and marshalling
+--------------------------------------------------------------------------------
+
+-- newArray
+-- withArray
+
+
+--------------------------------------------------------------------------------
+-- Copying
+--------------------------------------------------------------------------------
+
+-- |
+-- Copy data between host and device
+--
+memcpy :: Ptr a                 -- ^ destination
+       -> Ptr a                 -- ^ source
+       -> Integer               -- ^ number of bytes
+       -> CopyDirection
+       -> IO (Maybe String)
+memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
+
+{# fun unsafe cudaMemcpy
+    { castPtr   `Ptr a'         ,
+      castPtr   `Ptr a'         ,
+      cIntConv  `Integer'       ,
+      cFromEnum `CopyDirection' } -> `Status' cToEnum #}
+
+-- |
+-- Copy data between host and device asynchronously
+--
+memcpyAsync :: Ptr a            -- ^ destination
+            -> Ptr a            -- ^ source
+            -> Integer          -- ^ number of bytes
+            -> CopyDirection
+            -> Stream
+            -> IO (Maybe String)
+memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
+
+{# fun unsafe cudaMemcpyAsync
+    { castPtr    `Ptr a'         ,
+      castPtr    `Ptr a'         ,
+      cIntConv   `Integer'       ,
+      cFromEnum  `CopyDirection' ,
+      cIntConv   `Stream'        } -> `Status' cToEnum #}
+
 
