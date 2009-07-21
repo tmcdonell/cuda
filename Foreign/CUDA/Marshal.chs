@@ -71,8 +71,8 @@ malloc       :: Int64 -> IO (Either String (DevicePtr ()))
 malloc bytes = do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
-        Success -> newDevicePtr ptr >>= (return.Right)
-        _       -> return.Left $ describe rv
+        Success -> Right `fmap` newDevicePtr ptr
+        _       -> return . Left . describe $ rv
 
 {# fun unsafe cudaMalloc
     { alloca-  `Ptr ()' peek* ,
@@ -88,8 +88,8 @@ malloc2D :: (Int64, Int64)              -- ^ allocation (width,height) in bytes
 malloc2D (width,height) =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
-        Success -> newDevicePtr ptr >>= \dp -> return.Right $ (dp,pitch)
-        _       -> return.Left $ describe rv
+        Success -> (\p -> Right (p,pitch)) `fmap` newDevicePtr ptr
+        _       -> return . Left . describe $ rv
 
 {# fun unsafe cudaMallocPitch
     { alloca-  `Ptr ()' peek*        ,
