@@ -329,13 +329,13 @@ memcpy dst src bytes dir =
 -- |
 -- Copy data between host and device asynchronously
 --
-memcpyAsync :: Ptr a            -- ^ destination
+memcpyAsync :: Stream           -- ^ asynchronous stream to operate over
+            -> Ptr a            -- ^ destination
             -> Ptr a            -- ^ source
             -> Int64            -- ^ number of bytes
             -> CopyDirection
-            -> Stream
             -> IO (Maybe String)
-memcpyAsync dst src bytes dir stream =
+memcpyAsync stream dst src bytes dir =
     nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
 
 {# fun unsafe cudaMemcpyAsync
