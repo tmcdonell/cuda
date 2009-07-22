@@ -61,25 +61,25 @@ import Foreign.CUDA.Internal.Offsets
 --
 data DeviceProperties = DeviceProperties
   {
-    deviceName               :: String,
-    computeCapability        :: Float,
-    totalGlobalMem           :: Int64,
-    totalConstMem            :: Int64,
-    sharedMemPerBlock        :: Int64,
-    regsPerBlock             :: Int,
-    warpSize                 :: Int,
-    maxThreadsPerBlock       :: Int,
-    maxThreadsDim            :: (Int,Int,Int),
-    maxGridSize              :: (Int,Int,Int),
-    clockRate                :: Int,
-    multiProcessorCount      :: Int,
-    memPitch                 :: Int64,
-    textureAlignment         :: Int64,
+    deviceName               :: String,         -- ^ Identifier
+    computeCapability        :: Float,          -- ^ Supported compute capability
+    totalGlobalMem           :: Int64,          -- ^ Available global memory on the device in bytes
+    totalConstMem            :: Int64,          -- ^ Available constant memory on the device in bytes
+    sharedMemPerBlock        :: Int64,          -- ^ Available shared memory per block in bytes
+    regsPerBlock             :: Int,            -- ^ 32-bit registers per block
+    warpSize                 :: Int,            -- ^ Warp size in threads
+    maxThreadsPerBlock       :: Int,            -- ^ Max number of threads per block
+    maxThreadsDim            :: (Int,Int,Int),  -- ^ Max size of each dimension of a block
+    maxGridSize              :: (Int,Int,Int),  -- ^ Max size of each dimension of a grid
+    clockRate                :: Int,            -- ^ Clock frequency in kilohertz
+    multiProcessorCount      :: Int,            -- ^ Number of multiprocessors on the device
+    memPitch                 :: Int64,          -- ^ Max pitch in bytes allowed by memory copies
+    textureAlignment         :: Int64,          -- ^ Alignment requirement for textures
     computeMode              :: ComputeMode,
-    deviceOverlap            :: Bool,
-    kernelExecTimeoutEnabled :: Bool,
-    integrated               :: Bool,
-    canMapHostMemory         :: Bool
+    deviceOverlap            :: Bool,           -- ^ Device can concurrently copy memory and execute a kernel
+    kernelExecTimeoutEnabled :: Bool,           -- ^ Whether there is a runtime limit on kernels
+    integrated               :: Bool,           -- ^ As opposed to discrete
+    canMapHostMemory         :: Bool            -- ^ Device can use pinned memory
   }
   deriving (Show)
 
