@@ -28,6 +28,10 @@ module Foreign.CUDA.Marshal
     pokeArray,
 
     -- ** Combined allocation and marshalling
+    new,
+    with,
+    newArray,
+    withArray,
 
     -- ** Copying
   )
@@ -43,6 +47,7 @@ import Foreign.Storable (Storable)
 import qualified Foreign.Storable as F
 import qualified Foreign.Marshal  as F
 
+import Foreign.CUDA.Utils
 import Foreign.CUDA.Error
 import Foreign.CUDA.Stream
 import Foreign.CUDA.Internal.C2HS
@@ -260,8 +265,44 @@ pokeArray d = doPoke undefined
 -- Combined allocation and marshalling
 --------------------------------------------------------------------------------
 
--- newArray
--- withArray
+-- |
+-- Allocate a block of memory on the device and transfer a value into it
+--
+new :: Storable a => a -> IO (DevicePtr a)
+new v =
+    let bytes = fromIntegral (F.sizeOf v) in
+    forceEither `fmap` malloc bytes >>= \dptr ->
+    poke dptr v >> return dptr
+
+
+-- |
+-- Write the list of storable elements into a newly allocated linear array on
+-- the device
+--
+newArray   :: Storable a => [a] -> IO (DevicePtr a)
+newArray v =
+    let bytes = fromIntegral (length v) * fromIntegral (F.sizeOf (head v)) in
+    forceEither `fmap` malloc bytes >>= \dptr ->
+    pokeArray dptr v >> return dptr
+
+
+-- |
+-- Execute a computation passing a pointer to a temporarily allocated block of
+-- device memory containing the value
+--
+with :: Storable a => a -> (DevicePtr a -> IO b) -> IO b
+with v f =
+    new v  >>= \dptr ->
+    f dptr >>= return
+
+
+-- |
+-- Temporarily store a list of variable in device memory and operate on them
+--
+withArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
+withArray v f =
+    newArray v >>= \dptr ->
+    f dptr     >>= return
 
 
 --------------------------------------------------------------------------------
