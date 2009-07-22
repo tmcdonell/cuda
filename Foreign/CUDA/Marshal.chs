@@ -95,7 +95,7 @@ malloc bytes = do
 -- meet coalescing requirements. The actual allocation width is returned.
 --
 malloc2D :: (Int64, Int64)              -- ^ allocation (width,height) in bytes
-         -> IO (Either String (DevicePtr a,Int64))
+         -> IO (Either String (DevicePtr a, Int64))
 malloc2D (width,height) =  do
     (rv,ptr,pitch) <- cudaMallocPitch width height
     case rv of
@@ -120,18 +120,21 @@ malloc2D (width,height) =  do
 -- requirements are met. The actual allocation pitch is returned
 --
 malloc3D :: (Int64,Int64,Int64)         -- ^ allocation (width,height,depth) in bytes
-         -> IO (Either String (DevicePtr a,Int64))
+         -> IO (Either String (DevicePtr a, Int64))
 malloc3D = moduleErr "malloc3D" "not implemented yet"
 
 
 -- |
 -- Free previously allocated memory on the device
 --
--- free   :: Ptr () -> IO (Maybe String)
--- free p =  nothingIfOk `fmap` cudaFree p
+free   :: Ptr a -> IO (Maybe String)
+free p =  nothingIfOk `fmap` cudaFree p
 
 free_   :: Ptr a -> IO ()
-free_ p =  throwIf_ (/= Success) (describe) (cudaFree p)
+free_ p =  cudaFree p >>= \rv ->
+    case rv of
+        Success -> return ()
+        _       -> moduleErr "free" (describe rv)
 
 {# fun unsafe cudaFree
     { castPtr `Ptr a' } -> `Status' cToEnum #}
@@ -156,7 +159,7 @@ memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
 -- Initialise a matrix to a given value
 --
 memset2D :: DevicePtr a                 -- ^ The device memory
-         -> (Int64,Int64)               -- ^ The (width,height) of the matrix in bytes
+         -> (Int64, Int64)              -- ^ The (width,height) of the matrix in bytes
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc2D'
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
@@ -209,7 +212,8 @@ memcpy :: Ptr a                 -- ^ destination
        -> Int64                 -- ^ number of bytes
        -> CopyDirection
        -> IO (Maybe String)
-memcpy dst src bytes dir =  nothingIfOk `fmap` cudaMemcpy dst src bytes dir
+memcpy dst src bytes dir =
+    nothingIfOk `fmap` cudaMemcpy dst src bytes dir
 
 {# fun unsafe cudaMemcpy
     { castPtr   `Ptr a'         ,
@@ -226,7 +230,8 @@ memcpyAsync :: Ptr a            -- ^ destination
             -> CopyDirection
             -> Stream
             -> IO (Maybe String)
-memcpyAsync dst src bytes dir stream =  nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
+memcpyAsync dst src bytes dir stream =
+    nothingIfOk `fmap` cudaMemcpyAsync dst src bytes dir stream
 
 {# fun unsafe cudaMemcpyAsync
     { castPtr    `Ptr a'         ,
