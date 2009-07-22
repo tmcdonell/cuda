@@ -14,12 +14,13 @@ module Foreign.CUDA.Marshal
     DevicePtr,
 
     -- ** Dynamic allocation
+    free,
     malloc,
-    malloc2D,
-    malloc3D,
+--    malloc2D,
+--    malloc3D,
     memset,
-    memset2D,
-    memset3D,
+--    memset2D,
+--    memset3D,
 
     -- ** Marshalling
     peek,
@@ -325,6 +326,7 @@ memcpy dst src bytes dir =
       castPtr   `Ptr a'         ,
       cIntConv  `Int64'         ,
       cFromEnum `CopyDirection' } -> `Status' cToEnum #}
+
 
 -- |
 -- Copy data between host and device asynchronously
