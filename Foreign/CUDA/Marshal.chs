@@ -22,6 +22,8 @@ module Foreign.CUDA.Marshal
     memset3D,
 
     -- ** Marshalling
+    peek,
+    poke,
     peekArray,
     pokeArray,
 
@@ -36,9 +38,10 @@ import Data.Int
 import Foreign.C
 import Foreign.Ptr
 import Foreign.ForeignPtr
-import Foreign.Storable
+import Foreign.Storable (Storable)
 
-import qualified Foreign.Marshal as F
+import qualified Foreign.Storable as F
+import qualified Foreign.Marshal  as F
 
 import Foreign.CUDA.Error
 import Foreign.CUDA.Stream
@@ -86,9 +89,10 @@ malloc bytes = do
         _       -> return . Left . describe $ rv
 
 {# fun unsafe cudaMalloc
-    { alloca-  `Ptr ()' peek* ,
-      cIntConv  `Int64'       } -> `Status' cToEnum #}
-    where alloca = F.alloca
+    { alloca'-  `Ptr ()' peek'* ,
+      cIntConv  `Int64'         } -> `Status' cToEnum #}
+    where alloca' = F.alloca
+          peek'   = F.peek
 
 
 -- |
@@ -105,15 +109,16 @@ malloc2D (width,height) =  do
         _       -> return . Left . describe $ rv
 
 {# fun unsafe cudaMallocPitch
-    { alloca-  `Ptr ()' peek*        ,
-      alloca-  `Int64'  peekIntConv* ,
-      cIntConv `Int64'               ,
-      cIntConv `Int64'               } -> `Status' cToEnum #}
+    { alloca'-  `Ptr ()' peek'*       ,
+      alloca'-  `Int64'  peekIntConv* ,
+      cIntConv  `Int64'               ,
+      cIntConv  `Int64'               } -> `Status' cToEnum #}
     where
         -- C->Haskell doesn't like qualified imports
         --
-        alloca :: Storable a => (Ptr a -> IO b) -> IO b
-        alloca =  F.alloca
+        alloca' :: Storable a => (Ptr a -> IO b) -> IO b
+        alloca' =  F.alloca
+        peek'   =  F.peek
 
 
 -- |
@@ -191,6 +196,21 @@ memset3D = moduleErr "memset3D" "not implemented yet"
 --------------------------------------------------------------------------------
 
 -- |
+-- Retrieve the specified value from device memory
+--
+peek :: Storable a => DevicePtr a -> IO a
+peek d = doPeek undefined
+  where
+    doPeek   :: Storable a' => a' -> IO a'
+    doPeek x =  F.alloca        $ \hptr ->
+                withDevicePtr d $ \dptr ->
+                memcpy hptr dptr (fromIntegral (F.sizeOf x)) DeviceToHost >>= \rv ->
+                case rv of
+                    Nothing -> F.peek hptr
+                    Just s  -> moduleErr "peek" s
+
+
+-- |
 -- Retrieve the specified number of elements from device memory and return as a
 -- Haskell list
 --
@@ -198,13 +218,26 @@ peekArray :: Storable a => Int -> DevicePtr a -> IO [a]
 peekArray n d = doPeek undefined
   where
     doPeek   :: Storable a' => a' -> IO [a']
-    doPeek x =  let bytes = fromIntegral n * (fromIntegral (sizeOf x)) in
+    doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
                 F.allocaArray n $ \hptr ->
                 withDevicePtr d $ \dptr ->
                 memcpy hptr dptr bytes DeviceToHost >>= \rv ->
                 case rv of
                    Nothing -> F.peekArray n hptr
                    Just s  -> moduleErr "peekArray" s
+
+
+-- |
+-- Store the given value to device memory
+--
+poke :: Storable a => DevicePtr a -> a -> IO ()
+poke d v =
+    F.with v        $ \hptr ->
+    withDevicePtr d $ \dptr ->
+    memcpy dptr hptr (fromIntegral (F.sizeOf v)) HostToDevice >>= \rv ->
+    case rv of
+        Nothing -> return ()
+        Just s  -> moduleErr "poke" s
 
 
 -- |
@@ -216,7 +249,7 @@ pokeArray d = doPoke undefined
     doPoke     :: Storable a' => a' -> [a'] -> IO ()
     doPoke x v =  F.withArrayLen v $ \n hptr ->
                   withDevicePtr  d $ \dptr ->
-                  let bytes = (fromIntegral n) * (fromIntegral (sizeOf x)) in
+                  let bytes = (fromIntegral n) * (fromIntegral (F.sizeOf x)) in
                   memcpy dptr hptr bytes HostToDevice >>= \rv ->
                   case rv of
                       Nothing -> return ()
