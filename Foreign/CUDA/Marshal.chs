@@ -22,6 +22,8 @@ module Foreign.CUDA.Marshal
     memset3D,
 
     -- ** Marshalling
+    peekArray,
+    pokeArray,
 
     -- ** Combined allocation and marshalling
 
@@ -188,8 +190,37 @@ memset3D = moduleErr "memset3D" "not implemented yet"
 -- Marshalling
 --------------------------------------------------------------------------------
 
--- peek
--- poke
+-- |
+-- Retrieve the specified number of elements from device memory and return as a
+-- Haskell list
+--
+peekArray :: Storable a => Int -> DevicePtr a -> IO [a]
+peekArray n d = doPeek undefined
+  where
+    doPeek   :: Storable a' => a' -> IO [a']
+    doPeek x =  let bytes = fromIntegral n * (fromIntegral (sizeOf x)) in
+                F.allocaArray n $ \hptr ->
+                withDevicePtr d $ \dptr ->
+                memcpy hptr dptr bytes DeviceToHost >>= \rv ->
+                case rv of
+                   Nothing -> F.peekArray n hptr
+                   Just s  -> moduleErr "peekArray" s
+
+
+-- |
+-- Store the list elements consecutively in device memory
+--
+pokeArray :: Storable a => DevicePtr a -> [a] -> IO ()
+pokeArray d = doPoke undefined
+  where
+    doPoke     :: Storable a' => a' -> [a'] -> IO ()
+    doPoke x v =  F.withArrayLen v $ \n hptr ->
+                  withDevicePtr  d $ \dptr ->
+                  let bytes = (fromIntegral n) * (fromIntegral (sizeOf x)) in
+                  memcpy dptr hptr bytes HostToDevice >>= \rv ->
+                  case rv of
+                      Nothing -> return ()
+                      Just s  -> moduleErr "pokeArray" s
 
 
 --------------------------------------------------------------------------------
