@@ -36,11 +36,11 @@
 
 module Foreign.CUDA.Internal.C2HS (
 
-  -- * Re-export the language-independent component of the FFI 
-  module Foreign,
-
-  -- * Re-export the C language component of the FFI
-  module CForeign,
+--  -- * Re-export the language-independent component of the FFI 
+--  module Foreign,
+--
+--  -- * Re-export the C language component of the FFI
+--  module CForeign,
 
   -- * Composite marshalling functions
   withCStringLenIntConv, peekCStringLenIntConv, withIntConv, withFloatConv,

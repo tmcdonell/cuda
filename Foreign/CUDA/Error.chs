@@ -18,6 +18,9 @@ module Foreign.CUDA.Error
   )
   where
 
+import Foreign
+import Foreign.C
+
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

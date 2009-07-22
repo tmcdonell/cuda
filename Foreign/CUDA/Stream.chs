@@ -22,8 +22,11 @@ module Foreign.CUDA.Stream
   )
   where
 
+import Foreign
+import Foreign.C
+
 import Foreign.CUDA.Error
-import Foreign.CUDA.Internal.C2HS hiding (malloc)
+import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}

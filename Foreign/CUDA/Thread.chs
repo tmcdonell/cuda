@@ -17,6 +17,8 @@ module Foreign.CUDA.Thread
   )
   where
 
+import Foreign.C
+
 import Foreign.CUDA.Error
 import Foreign.CUDA.Internal.C2HS
 

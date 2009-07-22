@@ -29,9 +29,18 @@ module Foreign.CUDA.Marshal
   )
   where
 
+import Data.Int
+
+import Foreign.C
+import Foreign.Ptr
+import Foreign.ForeignPtr
+import Foreign.Storable
+
+import qualified Foreign.Marshal as F
+
 import Foreign.CUDA.Error
 import Foreign.CUDA.Stream
-import Foreign.CUDA.Internal.C2HS hiding (malloc)
+import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
@@ -76,7 +85,9 @@ malloc bytes = do
 
 {# fun unsafe cudaMalloc
     { alloca-  `Ptr ()' peek* ,
-      cIntConv `Int64'        } -> `Status' cToEnum #}
+      cIntConv  `Int64'       } -> `Status' cToEnum #}
+    where alloca = F.alloca
+
 
 -- |
 -- Allocate at least @width * height@ bytes of linear memory on the device. The
@@ -96,6 +107,11 @@ malloc2D (width,height) =  do
       alloca-  `Int64'  peekIntConv* ,
       cIntConv `Int64'               ,
       cIntConv `Int64'               } -> `Status' cToEnum #}
+    where
+        -- C->Haskell doesn't like qualified imports
+        --
+        alloca :: Storable a => (Ptr a -> IO b) -> IO b
+        alloca =  F.alloca
 
 
 -- |

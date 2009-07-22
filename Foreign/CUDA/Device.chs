@@ -26,8 +26,11 @@ module Foreign.CUDA.Device
   )
   where
 
+import Foreign
+import Foreign.C
+
 import Foreign.CUDA.Error
-import Foreign.CUDA.Internal.C2HS hiding (malloc)
+import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets
 
 #include "cbits/stubs.h"
