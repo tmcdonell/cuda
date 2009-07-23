@@ -13,7 +13,7 @@ module Foreign.CUDA.Device
   (
     ComputeMode,
     DeviceFlags,
-    DeviceProperties,
+    DeviceProperties(..),
 
     -- ** Device management
     choose,
