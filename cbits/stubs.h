@@ -7,6 +7,13 @@
 
 #include <cuda_runtime_api.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+ * Enums
+ */
 typedef struct cudaDeviceProp   cudaDeviceProp;
 
 typedef enum
@@ -18,4 +25,13 @@ typedef enum
     cudaDeviceFlagMapHost           = cudaDeviceMapHost
 } cudaDeviceFlags;
 
+
+/*
+ * Functions
+ */
+
+
+#ifdef __cplusplus
+}
+#endif
 #endif
