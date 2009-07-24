@@ -23,6 +23,10 @@ module Foreign.CUDA.Marshal
 --    memset2D,
 --    memset3D,
 
+    -- ** Local allocation
+    alloca,
+    allocaBytes,
+
     -- ** Marshalling
     peek,
     poke,
@@ -34,12 +38,14 @@ module Foreign.CUDA.Marshal
     with,
     newArray,
     withArray,
+    withArrayLen,
 
     -- ** Copying
   )
   where
 
 import Data.Int
+import Control.Exception
 
 import Foreign.C
 import Foreign.Ptr
@@ -91,7 +97,7 @@ newDevicePtr p =  newForeignPtr p (free_ p)
 -- memory is suitably aligned for any kind of variable, and is not cleared.
 --
 malloc       :: Int64 -> IO (Either String (DevicePtr a))
-malloc bytes = do
+malloc bytes =  do
     (rv,ptr) <- cudaMalloc bytes
     case rv of
         Success -> Right `fmap` newDevicePtr (castPtr ptr)
@@ -162,8 +168,12 @@ foreign import ccall "wrapper"
 -- |
 -- Initialise device memory to a given value
 --
-memset                  :: DevicePtr a -> Int64 -> Int -> IO (Maybe String)
-memset ptr bytes symbol =  nothingIfOk `fmap` cudaMemset ptr symbol bytes
+memset :: DevicePtr a                   -- ^ The device memory
+       -> Int64                         -- ^ Number of bytes
+       -> Int                           -- ^ Value to set for each byte
+       -> IO (Maybe String)
+memset ptr bytes symbol =
+    nothingIfOk `fmap` cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
     { withDevicePtr* `DevicePtr a' ,
@@ -179,7 +189,8 @@ memset2D :: DevicePtr a                 -- ^ The device memory
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc2D'
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
-memset2D ptr (width,height) pitch symbol = nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
+memset2D ptr (width,height) pitch symbol =
+    nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
 
 {# fun unsafe cudaMemset2D
     { withDevicePtr* `DevicePtr a' ,
@@ -198,6 +209,27 @@ memset3D :: DevicePtr a                 -- ^ The device memory
          -> Int                         -- ^ Value to set for each byte
          -> IO (Maybe String)
 memset3D = moduleErr "memset3D" "not implemented yet"
+
+
+--------------------------------------------------------------------------------
+-- Local allocation
+--------------------------------------------------------------------------------
+
+-- |
+-- Execute a computation, passing a pointer to a temporarily allocated block of
+-- memory
+--
+alloca :: (Storable a) => a -> (DevicePtr a -> IO b) -> IO b
+alloca =  allocaBytes . fromIntegral . F.sizeOf
+
+
+-- |
+-- Execute a computation, passing a pointer to a block of 'n' bytes of memory
+--
+allocaBytes :: Int64 -> (DevicePtr a -> IO b) -> IO b
+allocaBytes bytes fun =
+    forceEither `fmap` malloc bytes >>= \dptr ->
+    fun dptr                        >>= return
 
 
 --------------------------------------------------------------------------------
@@ -307,6 +339,16 @@ withArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
 withArray v f =
     newArray v >>= \dptr ->
     f dptr     >>= return
+
+
+withArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
+withArrayLen vals fun =
+    let len   = length vals
+        bytes = fromIntegral len * fromIntegral (F.sizeOf (head vals))
+    in do
+        dptr <- forceEither `fmap` malloc bytes
+        pokeArray dptr vals
+        fun len dptr
 
 
 --------------------------------------------------------------------------------
