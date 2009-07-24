@@ -12,6 +12,7 @@
 module Foreign.CUDA.Marshal
   (
     DevicePtr,
+    withDevicePtr,
 
     -- ** Dynamic allocation
     free,
@@ -42,7 +43,8 @@ import Data.Int
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.ForeignPtr
+import Foreign.ForeignPtr hiding (newForeignPtr)
+import Foreign.Concurrent (newForeignPtr)
 import Foreign.Storable (Storable)
 
 import qualified Foreign.Storable as F
@@ -70,7 +72,8 @@ withDevicePtr :: DevicePtr a -> (Ptr b -> IO c) -> IO c
 withDevicePtr =  withForeignPtr . castForeignPtr
 
 newDevicePtr   :: Ptr a -> IO (DevicePtr a)
-newDevicePtr p =  (doAutoRelease free_) >>= \f -> newForeignPtr f p
+newDevicePtr p =  newForeignPtr p (free_ p)
+--newDevicePtr p =  (doAutoRelease free_) >>= \f -> newForeignPtr f p
 
 --
 -- Memory copy
@@ -140,8 +143,8 @@ malloc3D = moduleErr "malloc3D" "not implemented yet"
 -- |
 -- Free previously allocated memory on the device
 --
-free   :: Ptr a -> IO (Maybe String)
-free p =  nothingIfOk `fmap` cudaFree p
+free   :: DevicePtr a -> IO (Maybe String)
+free p =  nothingIfOk `fmap` (withDevicePtr p cudaFree)
 
 free_   :: Ptr a -> IO ()
 free_ p =  cudaFree p >>= \rv ->
