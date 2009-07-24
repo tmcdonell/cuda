@@ -62,7 +62,7 @@ import Foreign.CUDA.Internal.Offsets
 data DeviceProperties = DeviceProperties
   {
     deviceName               :: String,         -- ^ Identifier
-    computeCapability        :: Float,          -- ^ Supported compute capability
+    computeCapability        :: Double,         -- ^ Supported compute capability
     totalGlobalMem           :: Int64,          -- ^ Available global memory on the device in bytes
     totalConstMem            :: Int64,          -- ^ Available constant memory on the device in bytes
     sharedMemPerBlock        :: Int64,          -- ^ Available shared memory per block in bytes
