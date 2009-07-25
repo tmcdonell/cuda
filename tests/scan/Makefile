@@ -1,27 +1,31 @@
 CUDA_INSTALL_PATH	?= /usr/local/cuda
 NVCC			?= $(CUDA_INSTALL_PATH)/bin/nvcc
-INCLUDES		+= $(CUDA_INSTALL_PATH)/include
+INCLUDES		+= . $(CUDA_INSTALL_PATH)/include
 LIB			+= $(CUDA_INSTALL_PATH)/lib
+BUILD   		?= build
 
-TARGET			 = Main
+MAIN			 = Main
 CUFILES			 = scan_kernel.cu
-CUOBJS			 = $(addsuffix .o,$(CUFILES))
+CUOBJS			 = $(addprefix $(BUILD)/,$(addsuffix .o,$(CUFILES)))
 NVCCFLAGS		+= $(addprefix -I,$(INCLUDES))
 
 ifeq ($(emu),1)
     NVCCFLAGS 		+= -deviceemu
 endif
 
-%.cu.o : %.cu
+$(BUILD)/%.cu.o : %.cu
 	$(NVCC) $(NVCCFLAGS) -o $@ -c $<
 
-%.hs : %.chs
-	c2hs $(addprefix --cppopts=-I,$(INCLUDES)) $<
+$(BUILD)/%.hs : %.chs
+	c2hs $(addprefix --cppopts=-I,$(INCLUDES)) --output-dir=$(BUILD) $<
 
-$(TARGET) : $(TARGET).hs $(CUOBJS)
-	ghc --make -lstdc++ -lcudart $(CUOBJS) $<
+$(MAIN) : mkdirs $(BUILD)/$(MAIN).hs $(CUOBJS)
+	ghc --make -lstdc++ -lcudart $(CUOBJS) -odir $(BUILD) -hidir $(BUILD) $(BUILD)/$(MAIN).hs -o $@
+
+mkdirs :
+	mkdir -p $(BUILD)
 
 clean:
-	$(RM) $(TARGET) $(CUOBJS) $(patsubst %.cu,%.linkinfo,$(CUFILES))
-	$(RM) $(TARGET).{hi,chi,chs.h,hs,o}
+	$(RM) $(MAIN) $(patsubst %.cu,%.linkinfo,$(CUFILES))
+	$(RM) -r $(BUILD)
 
