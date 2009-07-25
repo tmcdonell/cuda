@@ -24,6 +24,7 @@ import Foreign.CUDA.Internal.C2HS
 data DeviceArray d t = DeviceArray
   {
     aShape :: Shape d,                  -- ^ Dimensions of the data
+                                        -- ^ Memory pitch (for alignment restrictions)
     aSize  :: Int64,                    -- ^ Size of the data in bytes
     aPtr   :: ForeignPtr t              -- ^ Location of the data
   }

@@ -15,25 +15,41 @@ module Foreign.CUDA.Marshal
     withDevicePtr,
 
     -- ** Dynamic allocation
+    --
+    -- Basic methods to allocate a block of memory on the device. The memory
+    -- should be deallocated using 'free' when no longer necessary. The
+    -- advantage is that failed allocations will not raise an exception.
+    --
     free,
     malloc,
---    malloc2D,
---    malloc3D,
+    malloc2D,
+    malloc3D,
     memset,
---    memset2D,
---    memset3D,
+    memset2D,
+    memset3D,
 
     -- ** Local allocation
+    --
+    -- Execute a computation, passing as argument a pointer to a newly allocated
+    -- block of memory. The memory is freed when the computation terminates.
+    --
     alloca,
     allocaBytes,
 
     -- ** Marshalling
+    --
+    -- Store and retrieve Haskell lists as arrays on the device
+    --
     peek,
     poke,
     peekArray,
     pokeArray,
 
     -- ** Combined allocation and marshalling
+    --
+    -- Write Haskell values (or lists) to newly allocated device memory. This
+    -- may be a temporary store.
+    --
     new,
     with,
     newArray,
@@ -41,6 +57,9 @@ module Foreign.CUDA.Marshal
     withArrayLen,
 
     -- ** Copying
+    --
+    -- Copy data between the host and device
+    --
   )
   where
 
@@ -49,8 +68,7 @@ import Control.Exception
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.ForeignPtr hiding (newForeignPtr)
-import Foreign.Concurrent (newForeignPtr)
+import Foreign.ForeignPtr
 import Foreign.Storable (Storable)
 
 import qualified Foreign.Storable as F
@@ -70,16 +88,16 @@ import Foreign.CUDA.Internal.C2HS
 --------------------------------------------------------------------------------
 
 -- |
--- A reference to data stored on the device. It is automatically freed.
+-- A reference to data stored on the device
 --
 type DevicePtr a = ForeignPtr a
 
 withDevicePtr :: DevicePtr a -> (Ptr b -> IO c) -> IO c
 withDevicePtr =  withForeignPtr . castForeignPtr
 
-newDevicePtr   :: Ptr a -> IO (DevicePtr a)
-newDevicePtr p =  newForeignPtr p (free_ p)
---newDevicePtr p =  (doAutoRelease free_) >>= \f -> newForeignPtr f p
+newDevicePtr :: Ptr a -> IO (DevicePtr a)
+newDevicePtr =  newForeignPtr_
+
 
 --
 -- Memory copy
@@ -219,17 +237,19 @@ memset3D = moduleErr "memset3D" "not implemented yet"
 -- Execute a computation, passing a pointer to a temporarily allocated block of
 -- memory
 --
-alloca :: (Storable a) => a -> (DevicePtr a -> IO b) -> IO b
-alloca =  allocaBytes . fromIntegral . F.sizeOf
+alloca :: Storable a => (DevicePtr a -> IO b) -> IO b
+alloca =  doAlloca undefined
+  where
+    doAlloca   :: Storable a' => a' -> (DevicePtr a' -> IO b') -> IO b'
+    doAlloca x =  allocaBytes (fromIntegral (F.sizeOf x))
 
 
 -- |
 -- Execute a computation, passing a pointer to a block of 'n' bytes of memory
 --
 allocaBytes :: Int64 -> (DevicePtr a -> IO b) -> IO b
-allocaBytes bytes fun =
-    forceEither `fmap` malloc bytes >>= \dptr ->
-    fun dptr                        >>= return
+allocaBytes bytes =
+    bracket (forceEither `fmap` malloc bytes) free
 
 
 --------------------------------------------------------------------------------
@@ -239,62 +259,56 @@ allocaBytes bytes fun =
 -- |
 -- Retrieve the specified value from device memory
 --
-peek :: Storable a => DevicePtr a -> IO a
+peek :: Storable a => DevicePtr a -> IO (Either String a)
 peek d = doPeek undefined
   where
-    doPeek   :: Storable a' => a' -> IO a'
+    doPeek   :: Storable a' => a' -> IO (Either String a')
     doPeek x =  F.alloca        $ \hptr ->
                 withDevicePtr d $ \dptr ->
                 memcpy hptr dptr (fromIntegral (F.sizeOf x)) DeviceToHost >>= \rv ->
                 case rv of
-                    Nothing -> F.peek hptr
-                    Just s  -> moduleErr "peek" s
+                    Nothing -> Right `fmap` F.peek hptr
+                    Just s  -> return (Left s)
 
 
 -- |
 -- Retrieve the specified number of elements from device memory and return as a
 -- Haskell list
 --
-peekArray :: Storable a => Int -> DevicePtr a -> IO [a]
+peekArray :: Storable a => Int -> DevicePtr a -> IO (Either String [a])
 peekArray n d = doPeek undefined
   where
-    doPeek   :: Storable a' => a' -> IO [a']
+    doPeek   :: Storable a' => a' -> IO (Either String [a'])
     doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
                 F.allocaArray n $ \hptr ->
                 withDevicePtr d $ \dptr ->
                 memcpy hptr dptr bytes DeviceToHost >>= \rv ->
                 case rv of
-                   Nothing -> F.peekArray n hptr
-                   Just s  -> moduleErr "peekArray" s
+                   Nothing -> Right `fmap` F.peekArray n hptr
+                   Just s  -> return (Left s)
 
 
 -- |
 -- Store the given value to device memory
 --
-poke :: Storable a => DevicePtr a -> a -> IO ()
+poke :: Storable a => DevicePtr a -> a -> IO (Maybe String)
 poke d v =
     F.with v        $ \hptr ->
     withDevicePtr d $ \dptr ->
-    memcpy dptr hptr (fromIntegral (F.sizeOf v)) HostToDevice >>= \rv ->
-    case rv of
-        Nothing -> return ()
-        Just s  -> moduleErr "poke" s
+    memcpy dptr hptr (fromIntegral (F.sizeOf v)) HostToDevice
 
 
 -- |
 -- Store the list elements consecutively in device memory
 --
-pokeArray :: Storable a => DevicePtr a -> [a] -> IO ()
+pokeArray :: Storable a => DevicePtr a -> [a] -> IO (Maybe String)
 pokeArray d = doPoke undefined
   where
-    doPoke     :: Storable a' => a' -> [a'] -> IO ()
+    doPoke     :: Storable a' => a' -> [a'] -> IO (Maybe String)
     doPoke x v =  F.withArrayLen v $ \n hptr ->
                   withDevicePtr  d $ \dptr ->
                   let bytes = (fromIntegral n) * (fromIntegral (F.sizeOf x)) in
-                  memcpy dptr hptr bytes HostToDevice >>= \rv ->
-                  case rv of
-                      Nothing -> return ()
-                      Just s  -> moduleErr "pokeArray" s
+                  memcpy dptr hptr bytes HostToDevice
 
 
 --------------------------------------------------------------------------------
@@ -302,24 +316,31 @@ pokeArray d = doPoke undefined
 --------------------------------------------------------------------------------
 
 -- |
--- Allocate a block of memory on the device and transfer a value into it
+-- Allocate a block of memory on the device and transfer a value into it. The
+-- memory may be deallocated using 'free' when no longer required.
 --
 new :: Storable a => a -> IO (DevicePtr a)
 new v =
     let bytes = fromIntegral (F.sizeOf v) in
     forceEither `fmap` malloc bytes >>= \dptr ->
-    poke dptr v >> return dptr
+    poke dptr v >>= \rv ->
+    case rv of
+        Nothing -> return dptr
+        Just s  -> moduleErr "new" s
 
 
 -- |
 -- Write the list of storable elements into a newly allocated linear array on
--- the device
+-- the device. The memory may be deallocated when no longer required.
 --
 newArray   :: Storable a => [a] -> IO (DevicePtr a)
 newArray v =
     let bytes = fromIntegral (length v) * fromIntegral (F.sizeOf (head v)) in
-    forceEither `fmap` malloc bytes >>= \dptr ->
-    pokeArray dptr v >> return dptr
+    forceEither  `fmap` malloc bytes >>= \dptr ->
+    pokeArray dptr v >>= \rv ->
+    case rv of
+        Nothing -> return dptr
+        Just s  -> moduleErr "newArray" s
 
 
 -- |
@@ -328,27 +349,34 @@ newArray v =
 --
 with :: Storable a => a -> (DevicePtr a -> IO b) -> IO b
 with v f =
-    new v  >>= \dptr ->
-    f dptr >>= return
+    alloca $ \dptr ->
+    poke dptr v >>= \rv ->
+    case rv of
+        Nothing -> f dptr
+        Just s  -> moduleErr "with" s
 
 
 -- |
 -- Temporarily store a list of variable in device memory and operate on them
 --
 withArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
-withArray v f =
-    newArray v >>= \dptr ->
-    f dptr     >>= return
+withArray vs f = withArrayLen vs (\_ -> f)
 
 
+-- |
+-- Like 'withArray', but the action gets the number of values as an additional
+-- parameter
+--
 withArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
-withArrayLen vals fun =
-    let len   = length vals
-        bytes = fromIntegral len * fromIntegral (F.sizeOf (head vals))
-    in do
-        dptr <- forceEither `fmap` malloc bytes
-        pokeArray dptr vals
-        fun len dptr
+withArrayLen vs f =
+    let l = length vs
+        b = fromIntegral l * fromIntegral (F.sizeOf (head vs))
+    in
+        allocaBytes b $ \dptr ->
+        pokeArray dptr vs >>= \rv ->
+        case rv of
+            Nothing -> f l dptr
+            Just s  -> moduleErr "withArray" s
 
 
 --------------------------------------------------------------------------------
