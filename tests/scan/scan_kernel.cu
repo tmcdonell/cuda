@@ -1,40 +1,22 @@
 /*
- * Copyright 1993-2006 NVIDIA Corporation.  All rights reserved.
+ * Copyright 1993-2009 NVIDIA Corporation.  All rights reserved.
  *
- * NOTICE TO USER:   
- *
- * This source code is subject to NVIDIA ownership rights under U.S. and 
- * international Copyright laws.  
- *
- * NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE 
- * CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR 
- * IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH 
- * REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF 
- * MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.   
- * IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, 
- * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS 
- * OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
- * OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE 
- * OR PERFORMANCE OF THIS SOURCE CODE.  
- *
- * U.S. Government End Users.  This source code is a "commercial item" as 
- * that term is defined at 48 C.F.R. 2.101 (OCT 1995), consisting  of 
- * "commercial computer software" and "commercial computer software 
- * documentation" as such terms are used in 48 C.F.R. 12.212 (SEPT 1995) 
- * and is provided to the U.S. Government only as a commercial end item.  
- * Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through 
- * 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the 
- * source code with only those rights set forth herein.
+ * NVIDIA Corporation and its licensors retain all intellectual property and 
+ * proprietary rights in and to this software and related documentation and 
+ * any modifications thereto.  Any use, reproduction, disclosure, or distribution 
+ * of this software and related documentation without an express license 
+ * agreement from NVIDIA Corporation is strictly prohibited.
+ * 
  */
 
 #include "stubs.h"
 #include "kernels.h"
 
-// Define this to more rigorously avoid bank conflicts, even at the lower (root) levels of the tree
-//#define ZERO_BANK_CONFLICTS 
-
 #define NUM_BANKS       16
 #define LOG_NUM_BANKS   4
+
+// Define this to more rigorously avoid bank conflicts, even at the lower (root) levels of the tree
+//#define ZERO_BANK_CONFLICTS 
 
 #ifdef ZERO_BANK_CONFLICTS
 #define CONFLICT_FREE_OFFSET(index) ((index) >> LOG_NUM_BANKS + (index) >> (2 * LOG_NUM_BANKS))
@@ -62,11 +44,11 @@
 //
 // Uses a balanced tree type algorithm.  See Blelloch, 1990 "Prefix Sums 
 // and Their Applications", or Prins and Chatterjee PRAM course notes:
-// http://www.cs.unc.edu/~prins/Classes/203/Handouts/pram.pdf
+// https://www.cs.unc.edu/~prins/Classes/633/Handouts/pram.pdf
 // 
 // This work-efficient version is based on the algorithm presented in Guy Blelloch's
 // Excellent paper "Prefix sums and their applications".
-// http://www-2.cs.cmu.edu/afs/cs.cmu.edu/project/scandal/public/papers/CMU-CS-90-190.html
+// http://www.cs.cmu.edu/~blelloch/papers/Ble93.pdf
 //
 // Pro: Work Efficient, very few bank conflicts (or zero if ZERO_BANK_CONFLICTS is defined)
 // Con: More instructions to compute bank-conflict-free shared memory addressing,
@@ -75,7 +57,7 @@
 // @param g_odata  output data in global memory
 // @param g_idata  input data in global memory
 // @param n        input number of elements to scan from input data
-__global__ void plus_scan_kernel(float *g_odata, float *g_idata, int n)
+__global__ void scan_best(float *g_odata, float *g_idata, int n)
 {
     // Dynamically allocated shared memory for scan kernels
     extern  __shared__  float temp[];
@@ -139,8 +121,8 @@ __global__ void plus_scan_kernel(float *g_odata, float *g_idata, int n)
             ai += CONFLICT_FREE_OFFSET(ai);
             bi += CONFLICT_FREE_OFFSET(bi);
 
-            float t   = TEMP(ai);
-            TEMP(ai)  = TEMP(bi);
+            float t  = TEMP(ai);
+            TEMP(ai) = TEMP(bi);
             TEMP(bi) += t;
         }
     }
