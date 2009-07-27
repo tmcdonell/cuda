@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void plus_scan(float *out, float *in, int n);
+void cuda_plus_scan(float *out, float *in, int n);
 
 #ifdef __cplusplus
 }

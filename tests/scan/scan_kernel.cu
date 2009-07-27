@@ -136,11 +136,17 @@ __global__ void scan_best(float *g_odata, float *g_idata, int n)
 
 
 // Wrapper to be called from Haskell
-void plus_scan(float *out, float *in, int n)
+void cuda_plus_scan(float *out, float *in, int n)
 {
-    dim3   threads(n,1,1);
-    dim3   grid(256,1,1);
+    int  extra  = n/NUM_BANKS;
+#ifdef ZERO_BANK_CONFLICTS
+         extra += extra / NUM_BANKS;
+#endif
 
-    plus_scan_kernel<<<grid, threads>>>(out, in, n);
+    int  shared = sizeof(float) * (n + extra);
+    dim3 grid(256,1,1);
+    dim3 threads(n/2,1,1);
+
+    scan_best<<<grid, threads, shared>>>(out, in, n);
 }
 

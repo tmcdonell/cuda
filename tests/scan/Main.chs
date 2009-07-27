@@ -22,12 +22,12 @@ plusScan vals =
     let len   = length vals
         bytes = fromIntegral len * fromIntegral (sizeOf (undefined::CFloat))
     in
-        C.allocaBytes bytes $ \o_ptr -> do
-        C.withArray vals    $ \i_ptr -> do
-        plus_scan o_ptr i_ptr len    >> do
-        C.forceEither `fmap` C.peekArray len o_ptr
+        C.allocaBytes bytes $ \out_ptr -> do
+        C.withArray vals    $ \in_ptr  -> do
+        cuda_plus_scan out_ptr in_ptr len >> do
+        C.forceEither `fmap` C.peekArray len out_ptr
 
-{# fun plus_scan
+{# fun unsafe cuda_plus_scan
     { withDevicePtr* `DevicePtr CFloat' ,
       withDevicePtr* `DevicePtr CFloat' ,
       fromIntegral   `Int'              } -> `()' #}
