@@ -2,6 +2,9 @@
 --------------------------------------------------------------------------------
 -- Implementation of a prefix-sum. The kernel code is taken from the NVIDIA SDK
 -- sample project 'scan'.
+--
+-- This implementation is limited to arrays that can be processed by a single
+-- block of threads, and size equal to a power of two.
 --------------------------------------------------------------------------------
 
 module Main where
@@ -12,7 +15,7 @@ import Foreign.C
 import Foreign.CUDA (DevicePtr, withDevicePtr)
 import qualified Foreign.CUDA as C
 
-#include "stubs.h"
+#include "src/stubs.h"
 
 
 -- Kernel
@@ -42,6 +45,6 @@ main =
     gpu  <- plusScan nums
 
     if gpu == init (scanl (+) 0 nums)
-      then putStrLn  "Test PASSED"
-      else putStrLn ("Test FAILED: " ++ show gpu)
+      then putStrLn "Test PASSED"
+      else error ("Test FAILED: " ++ show gpu)
 

@@ -11,7 +11,7 @@
 
 CUDA_SDK_PATH	?= /Developer/GPU\ Computing/C
 
-SRCDIR		?= ./
+SRCDIR		?= src/
 DISTROOT	?= dist
 BINDIR		 = $(DISTROOT)/bin
 ROOTOBJDIR	 = $(DISTROOT)/build
