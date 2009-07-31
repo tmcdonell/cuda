@@ -9,7 +9,7 @@
 # Common CUDA build system
 # ------------------------------------------------------------------------------
 
-CUDA_SDK_PATH	?= /Developer/CUDA
+CUDA_SDK_PATH	?= /Developer/GPU\ Computing/C
 
 SRCDIR		?= ./
 DISTROOT	?= dist
