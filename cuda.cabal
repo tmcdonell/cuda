@@ -25,6 +25,7 @@ Extra-source-files:     configure
 
 Library
   Exposed-Modules:      Foreign.CUDA
+                        Foreign.CUDA.Array
                         Foreign.CUDA.Device
                         Foreign.CUDA.Error
                         Foreign.CUDA.Marshal
