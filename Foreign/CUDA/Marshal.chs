@@ -35,6 +35,7 @@ module Foreign.CUDA.Marshal
     --
     alloca,
     allocaBytes,
+    allocaBytesMemset,
 
     -- ** Marshalling
     --
@@ -250,6 +251,19 @@ alloca =  doAlloca undefined
 allocaBytes :: Int64 -> (DevicePtr a -> IO b) -> IO b
 allocaBytes bytes =
     bracket (forceEither `fmap` malloc bytes) free
+
+
+-- |
+-- Execute a computation, passing a pointer to a  block of memory initialised to
+-- a given value
+--
+allocaBytesMemset :: Int64 -> Int -> (DevicePtr a -> IO b) -> IO b
+allocaBytesMemset bytes symbol f =
+    allocaBytes bytes $ \dptr ->
+    memset dptr bytes symbol >>= \rv ->
+      case rv of
+        Nothing -> f dptr
+        Just e  -> error e
 
 
 --------------------------------------------------------------------------------
