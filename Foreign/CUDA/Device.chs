@@ -11,8 +11,8 @@
 
 module Foreign.CUDA.Device
   (
-    ComputeMode,
-    DeviceFlags,
+    ComputeMode(..),
+    DeviceFlags(..),
     DeviceProperties(..),
 
     -- ** Device management
