@@ -116,6 +116,7 @@ peekEnum :: (Enum a, Integral b, Storable b) => Ptr b -> IO a
 peekEnum  = liftM cToEnum . peek
 
 
+{-
 -- Storing of 'Maybe' values
 -- -------------------------
 
@@ -134,6 +135,7 @@ instance Storable a => Storable (Maybe a) where
 		        Nothing -> return nullPtr
 			Just v' -> new v'
                poke (castPtr p) ptr
+-}
 
 
 -- Conditional results using 'Maybe'
