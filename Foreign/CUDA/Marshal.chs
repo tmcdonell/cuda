@@ -69,7 +69,8 @@ import Control.Exception
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.ForeignPtr
+import Foreign.Concurrent
+import Foreign.ForeignPtr hiding (newForeignPtr, addForeignPtrFinalizer)
 import Foreign.Storable (Storable)
 
 import qualified Foreign.Storable as F
@@ -109,8 +110,13 @@ withDevicePtr =  withForeignPtr
 withDevicePtr' :: DevicePtr a -> (Ptr b -> IO c) -> IO c
 withDevicePtr' =  withForeignPtr . castForeignPtr
 
-newDevicePtr :: Ptr a -> IO (DevicePtr a)
-newDevicePtr =  newForeignPtr_
+--
+-- Wrap a device memory pointer. The memory will be freed once the last
+-- reference to the data is dropped, although there is no guarantee as to
+-- exactly when this will occur.
+--
+newDevicePtr   :: Ptr a -> IO (DevicePtr a)
+newDevicePtr p =  newForeignPtr p (free_ p)
 
 
 --
@@ -181,8 +187,12 @@ malloc3D = moduleErr "malloc3D" "not implemented yet"
 -- |
 -- Free previously allocated memory on the device
 --
-free   :: DevicePtr a -> IO (Maybe String)
-free p =  nothingIfOk `fmap` (withDevicePtr p cudaFree)
+
+--free   :: DevicePtr a -> IO (Maybe String)
+--free p =  nothingIfOk `fmap` (withDevicePtr p cudaFree)
+
+free :: DevicePtr a -> IO ()
+free =  finalizeForeignPtr
 
 free_   :: Ptr a -> IO ()
 free_ p =  cudaFree p >>= \rv ->
