@@ -93,8 +93,21 @@ import Foreign.CUDA.Internal.C2HS
 --
 type DevicePtr a = ForeignPtr a
 
-withDevicePtr :: DevicePtr a -> (Ptr b -> IO c) -> IO c
-withDevicePtr =  withForeignPtr . castForeignPtr
+-- |
+-- Unwrap the device pointer, yielding a device memory address that can be
+-- passed to a kernel function callable from the host code. This allows the type
+-- system to strictly separate host and device memory references, a non-obvious
+-- distinction in pure CUDA.
+--
+withDevicePtr :: DevicePtr a -> (Ptr a -> IO b) -> IO b
+withDevicePtr =  withForeignPtr
+
+--
+-- Internal, unwrap and cast. Required as some functions such as memset work
+-- with untyped `void' data.
+--
+withDevicePtr' :: DevicePtr a -> (Ptr b -> IO c) -> IO c
+withDevicePtr' =  withForeignPtr . castForeignPtr
 
 newDevicePtr :: Ptr a -> IO (DevicePtr a)
 newDevicePtr =  newForeignPtr_
@@ -195,9 +208,9 @@ memset ptr bytes symbol =
     nothingIfOk `fmap` cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
-    { withDevicePtr* `DevicePtr a' ,
-                     `Int'         ,
-      cIntConv       `Int64'       } -> `Status' cToEnum #}
+    { withDevicePtr'* `DevicePtr a' ,
+                      `Int'         ,
+      cIntConv        `Int64'       } -> `Status' cToEnum #}
 
 
 -- |
@@ -212,11 +225,11 @@ memset2D ptr (width,height) pitch symbol =
     nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
 
 {# fun unsafe cudaMemset2D
-    { withDevicePtr* `DevicePtr a' ,
-      cIntConv       `Int64'       ,
-                     `Int'         ,
-      cIntConv       `Int64'       ,
-      cIntConv       `Int64'       } -> `Status' cToEnum #}
+    { withDevicePtr'* `DevicePtr a' ,
+      cIntConv        `Int64'       ,
+                      `Int'         ,
+      cIntConv        `Int64'       ,
+      cIntConv        `Int64'       } -> `Status' cToEnum #}
 
 
 -- |
@@ -277,8 +290,8 @@ peek :: Storable a => DevicePtr a -> IO (Either String a)
 peek d = doPeek undefined
   where
     doPeek   :: Storable a' => a' -> IO (Either String a')
-    doPeek x =  F.alloca        $ \hptr ->
-                withDevicePtr d $ \dptr ->
+    doPeek x =  F.alloca         $ \hptr ->
+                withDevicePtr' d $ \dptr ->
                 memcpy hptr dptr (fromIntegral (F.sizeOf x)) DeviceToHost >>= \rv ->
                 case rv of
                     Nothing -> Right `fmap` F.peek hptr
@@ -294,8 +307,8 @@ peekArray n d = doPeek undefined
   where
     doPeek   :: Storable a' => a' -> IO (Either String [a'])
     doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
-                F.allocaArray n $ \hptr ->
-                withDevicePtr d $ \dptr ->
+                F.allocaArray  n $ \hptr ->
+                withDevicePtr' d $ \dptr ->
                 memcpy hptr dptr bytes DeviceToHost >>= \rv ->
                 case rv of
                    Nothing -> Right `fmap` F.peekArray n hptr
@@ -320,7 +333,7 @@ pokeArray d = doPoke undefined
   where
     doPoke     :: Storable a' => a' -> [a'] -> IO (Maybe String)
     doPoke x v =  F.withArrayLen v $ \n hptr ->
-                  withDevicePtr  d $ \dptr ->
+                  withDevicePtr' d $ \dptr ->
                   let bytes = (fromIntegral n) * (fromIntegral (F.sizeOf x)) in
                   memcpy dptr hptr bytes HostToDevice
 
