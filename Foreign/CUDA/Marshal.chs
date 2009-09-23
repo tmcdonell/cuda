@@ -44,7 +44,9 @@ module Foreign.CUDA.Marshal
     peek,
     poke,
     peekArray,
+    peekArrayAt,
     pokeArray,
+    pokeArrayAt,
 
     -- ** Combined allocation and marshalling
     --
@@ -313,13 +315,21 @@ peek d = doPeek undefined
 -- Haskell list
 --
 peekArray :: Storable a => Int -> DevicePtr a -> IO (Either String [a])
-peekArray n d = doPeek undefined
+peekArray =  peekArrayAt 0
+
+
+-- |
+-- Retrieve the specified number of elements from device memory, beginning at
+-- the specified index (from zero), and return as a Haskell list.
+--
+peekArrayAt :: Storable a => Int -> Int -> DevicePtr a -> IO (Either String [a])
+peekArrayAt o n d = doPeek undefined
   where
     doPeek   :: Storable a' => a' -> IO (Either String [a'])
     doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
                 F.allocaArray  n $ \hptr ->
                 withDevicePtr' d $ \dptr ->
-                memcpy hptr dptr bytes DeviceToHost >>= \rv ->
+                memcpy hptr (dptr `plusPtr` (o * F.sizeOf x)) bytes DeviceToHost >>= \rv ->
                 case rv of
                    Nothing -> Right `fmap` F.peekArray n hptr
                    Just s  -> return (Left s)
@@ -339,13 +349,21 @@ poke d v =
 -- Store the list elements consecutively in device memory
 --
 pokeArray :: Storable a => DevicePtr a -> [a] -> IO (Maybe String)
-pokeArray d = doPoke undefined
+pokeArray = pokeArrayAt 0
+
+
+-- |
+-- Store the list elements consecutively in device memory, beginning at the
+-- specified index (from zero)
+--
+pokeArrayAt :: Storable a => Int -> DevicePtr a -> [a] -> IO (Maybe String)
+pokeArrayAt o d = doPoke undefined
   where
     doPoke     :: Storable a' => a' -> [a'] -> IO (Maybe String)
     doPoke x v =  F.withArrayLen v $ \n hptr ->
                   withDevicePtr' d $ \dptr ->
                   let bytes = (fromIntegral n) * (fromIntegral (F.sizeOf x)) in
-                  memcpy dptr hptr bytes HostToDevice
+                  memcpy (dptr `plusPtr` (o * F.sizeOf x)) hptr bytes HostToDevice
 
 
 --------------------------------------------------------------------------------
