@@ -13,6 +13,7 @@ module Foreign.CUDA.Marshal
   (
     DevicePtr,
     withDevicePtr,
+    withDevicePtrByteOff,
 
     -- ** Dynamic allocation
     --
@@ -44,9 +45,9 @@ module Foreign.CUDA.Marshal
     peek,
     poke,
     peekArray,
-    peekArrayAt,
+    peekArrayElemOff,
     pokeArray,
-    pokeArrayAt,
+    pokeArrayElemOff,
 
     -- ** Combined allocation and marshalling
     --
@@ -104,6 +105,14 @@ type DevicePtr a = ForeignPtr a
 --
 withDevicePtr :: DevicePtr a -> (Ptr a -> IO b) -> IO b
 withDevicePtr =  withForeignPtr
+
+-- |
+-- Similar to `withDevicePtr', but with the address advanced by the given offset
+-- in bytes.
+--
+withDevicePtrByteOff :: DevicePtr a -> Int -> (Ptr a -> IO b) -> IO b
+withDevicePtrByteOff dptr offset action =
+    withForeignPtr dptr $ \p -> action (p `plusPtr` offset)
 
 --
 -- Internal, unwrap and cast. Required as some functions such as memset work
@@ -315,15 +324,15 @@ peek d = doPeek undefined
 -- Haskell list
 --
 peekArray :: Storable a => Int -> DevicePtr a -> IO (Either String [a])
-peekArray =  peekArrayAt 0
+peekArray =  peekArrayElemOff 0
 
 
 -- |
 -- Retrieve the specified number of elements from device memory, beginning at
 -- the specified index (from zero), and return as a Haskell list.
 --
-peekArrayAt :: Storable a => Int -> Int -> DevicePtr a -> IO (Either String [a])
-peekArrayAt o n d = doPeek undefined
+peekArrayElemOff :: Storable a => Int -> Int -> DevicePtr a -> IO (Either String [a])
+peekArrayElemOff o n d = doPeek undefined
   where
     doPeek   :: Storable a' => a' -> IO (Either String [a'])
     doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
@@ -349,15 +358,15 @@ poke d v =
 -- Store the list elements consecutively in device memory
 --
 pokeArray :: Storable a => DevicePtr a -> [a] -> IO (Maybe String)
-pokeArray = pokeArrayAt 0
+pokeArray = pokeArrayElemOff 0
 
 
 -- |
 -- Store the list elements consecutively in device memory, beginning at the
 -- specified index (from zero)
 --
-pokeArrayAt :: Storable a => Int -> DevicePtr a -> [a] -> IO (Maybe String)
-pokeArrayAt o d = doPoke undefined
+pokeArrayElemOff :: Storable a => Int -> DevicePtr a -> [a] -> IO (Maybe String)
+pokeArrayElemOff o d = doPoke undefined
   where
     doPoke     :: Storable a' => a' -> [a'] -> IO (Maybe String)
     doPoke x v =  F.withArrayLen v $ \n hptr ->
