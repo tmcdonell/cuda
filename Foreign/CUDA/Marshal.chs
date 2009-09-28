@@ -284,7 +284,7 @@ alloca =  doAlloca undefined
 --
 allocaBytes :: Int64 -> (DevicePtr a -> IO b) -> IO b
 allocaBytes bytes =
-    bracket (forceEither `fmap` malloc bytes) free
+    bracket (moduleForceEither `fmap` malloc bytes) free
 
 
 -- |
@@ -386,7 +386,7 @@ pokeArrayElemOff o d = doPoke undefined
 new :: Storable a => a -> IO (DevicePtr a)
 new v =
     let bytes = fromIntegral (F.sizeOf v) in
-    forceEither `fmap` malloc bytes >>= \dptr ->
+    moduleForceEither `fmap` malloc bytes >>= \dptr ->
     poke dptr v >>= \rv ->
     case rv of
         Nothing -> return dptr
@@ -400,7 +400,7 @@ new v =
 newArray   :: Storable a => [a] -> IO (DevicePtr a)
 newArray v =
     let bytes = fromIntegral (length v) * fromIntegral (F.sizeOf (head v)) in
-    forceEither  `fmap` malloc bytes >>= \dptr ->
+    moduleForceEither `fmap` malloc bytes >>= \dptr ->
     pokeArray dptr v >>= \rv ->
     case rv of
         Nothing -> return dptr
@@ -491,4 +491,8 @@ memcpyAsync stream dst src bytes dir =
 
 moduleErr :: String -> String -> a
 moduleErr fun msg =  error ("Foreign.CUDA." ++ fun ++ ':':' ':msg)
+
+moduleForceEither :: Either String a -> a
+moduleForceEither (Left  s) = moduleErr "Marshal" s
+moduleForceEither (Right r) = r
 
