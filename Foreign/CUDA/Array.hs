@@ -39,11 +39,11 @@ class Ix ix where
     size :: ix -> Int           -- ^ Total number of elements
 
 instance Ix () where
-    dim ()  = 0
+    dim  () = 0
     size () = 1
 
 instance Ix ix => Ix (ix, Int) where
-    dim (sh,_)  = dim sh + 1
+    dim  (sh,_) = dim  sh + 1
     size (sh,s) = size sh * s
 
 -- |
