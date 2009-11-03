@@ -25,10 +25,12 @@ Extra-source-files:     configure
 
 Library
   Exposed-Modules:      Foreign.CUDA
-                        Foreign.CUDA.Array
                         Foreign.CUDA.Device
+                        Foreign.CUDA.DevicePtr
                         Foreign.CUDA.Error
                         Foreign.CUDA.Marshal
+                        Foreign.CUDA.Marshal.Alloc
+                        Foreign.CUDA.Marshal.Array
                         Foreign.CUDA.Stream
                         Foreign.CUDA.Thread
                         Foreign.CUDA.Utils

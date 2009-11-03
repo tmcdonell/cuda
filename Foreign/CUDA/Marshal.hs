@@ -1,22 +1,20 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA
+-- Module    : Foreign.CUDA.Marshal
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
--- Top level bindings
+-- Marshalling support
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA
+module Foreign.CUDA.Marshal
   (
-    module Foreign.CUDA.Device,
-    module Foreign.CUDA.Marshal,
-    module Foreign.CUDA.Utils
+    module Foreign.CUDA.Marshal.Alloc,
+    module Foreign.CUDA.Marshal.Array
   )
   where
 
-import Foreign.CUDA.Device
-import Foreign.CUDA.Marshal
-import Foreign.CUDA.Utils
+import Foreign.CUDA.Marshal.Alloc
+import Foreign.CUDA.Marshal.Array
 
