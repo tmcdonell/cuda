@@ -41,6 +41,7 @@ import Foreign.CUDA.Internal.C2HS
 -- A reference to data stored on the device
 --
 newtype DevicePtr a = DevicePtr (ForeignPtr a)
+  deriving (Eq,Show,Ord)
 
 -- |
 -- Unwrap the device pointer, yielding a device memory address that can be
