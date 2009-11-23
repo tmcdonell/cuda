@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Utils
+-- Module    : Foreign.CUDA.Runtime.Utils
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Utils
+module Foreign.CUDA.Runtime.Utils
   (
     forceEither,
     runtimeVersion,
@@ -20,7 +20,7 @@ module Foreign.CUDA.Utils
 import Foreign
 import Foreign.C
 
-import Foreign.CUDA.Error
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

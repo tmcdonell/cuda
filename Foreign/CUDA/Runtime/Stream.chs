@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Stream
+-- Module    : Foreign.CUDA.Runtime.Stream
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -10,7 +10,7 @@
 --------------------------------------------------------------------------------
 
 
-module Foreign.CUDA.Stream
+module Foreign.CUDA.Runtime.Stream
   (
     Stream,
 
@@ -25,7 +25,7 @@ module Foreign.CUDA.Stream
 import Foreign
 import Foreign.C
 
-import Foreign.CUDA.Error
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

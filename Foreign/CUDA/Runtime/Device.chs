@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Marshal
+-- Module    : Foreign.CUDA.Runtime.Device
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Device
+module Foreign.CUDA.Runtime.Device
   (
     ComputeMode(..),
     DeviceFlags(..),
@@ -29,7 +29,7 @@ module Foreign.CUDA.Device
 import Foreign
 import Foreign.C
 
-import Foreign.CUDA.Error
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets
 

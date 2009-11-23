@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Marshal.Array
+-- Module    : Foreign.CUDA.Runtime.Marshal.Array
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -8,7 +8,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Marshal.Array
+module Foreign.CUDA.Runtime.Marshal.Array
   (
     -- ** Marshalling
     --
@@ -40,8 +40,8 @@ import qualified Foreign.Storable as F
 import qualified Foreign.Marshal  as F
 
 -- Friends
-import Foreign.CUDA.DevicePtr
-import Foreign.CUDA.Marshal.Alloc
+import Foreign.CUDA.Runtime.DevicePtr
+import Foreign.CUDA.Runtime.Marshal.Alloc
 
 
 --------------------------------------------------------------------------------

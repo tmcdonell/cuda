@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Thread
+-- Module    : Foreign.CUDA.Runtime.Thread
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -10,7 +10,7 @@
 --------------------------------------------------------------------------------
 
 
-module Foreign.CUDA.Thread
+module Foreign.CUDA.Runtime.Thread
   (
     exit,
     sync
@@ -19,7 +19,7 @@ module Foreign.CUDA.Thread
 
 import Foreign.C
 
-import Foreign.CUDA.Error
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

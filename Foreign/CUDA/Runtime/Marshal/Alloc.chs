@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Marshal.Alloc
+-- Module    : Foreign.CUDA.Runtime.Marshal.Alloc
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Marshal.Alloc
+module Foreign.CUDA.Runtime.Marshal.Alloc
   (
     -- ** Dynamic allocation
     --
@@ -52,9 +52,9 @@ import Foreign.Storable (Storable)
 import qualified Foreign.Storable as F
 import qualified Foreign.Marshal  as F
 
-import Foreign.CUDA.DevicePtr
-import Foreign.CUDA.Error
-import Foreign.CUDA.Stream
+import Foreign.CUDA.Runtime.DevicePtr
+import Foreign.CUDA.Runtime.Error
+import Foreign.CUDA.Runtime.Stream
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

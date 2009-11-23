@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Error
+-- Module    : Foreign.CUDA.Runtime.Error
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Error
+module Foreign.CUDA.Runtime.Error
   (
     Status(..),
     describe,

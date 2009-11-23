@@ -1,7 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.DevicePtr
+-- Module    : Foreign.CUDA.Runtime.DevicePtr
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.DevicePtr
+module Foreign.CUDA.Runtime.DevicePtr
   (
     DevicePtr,
     withDevicePtr,
@@ -26,7 +26,7 @@ import Foreign.Ptr
 import Foreign.Concurrent
 import Foreign.ForeignPtr hiding (newForeignPtr, addForeignPtrFinalizer)
 
-import Foreign.CUDA.Error
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>

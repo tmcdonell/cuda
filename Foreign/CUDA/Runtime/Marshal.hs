@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Marshal
+-- Module    : Foreign.CUDA.Runtime.Marshal
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -8,13 +8,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Marshal
+module Foreign.CUDA.Runtime.Marshal
   (
-    module Foreign.CUDA.Marshal.Alloc,
-    module Foreign.CUDA.Marshal.Array
+    module Foreign.CUDA.Runtime.Marshal.Alloc,
+    module Foreign.CUDA.Runtime.Marshal.Array
   )
   where
 
-import Foreign.CUDA.Marshal.Alloc
-import Foreign.CUDA.Marshal.Array
+import Foreign.CUDA.Runtime.Marshal.Alloc
+import Foreign.CUDA.Runtime.Marshal.Array
 

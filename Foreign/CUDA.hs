@@ -4,21 +4,16 @@
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
--- Top level bindings
+-- Top level bindings. By default, expose the C-for-CUDA runtime API bindings,
+-- as they are slightly more user friendly.
 --
 --------------------------------------------------------------------------------
 
 module Foreign.CUDA
   (
-    module Foreign.CUDA.Device,
-    module Foreign.CUDA.DevicePtr,
-    module Foreign.CUDA.Marshal,
-    module Foreign.CUDA.Utils
+    module Foreign.CUDA.Runtime
   )
   where
 
-import Foreign.CUDA.Device
-import Foreign.CUDA.DevicePtr
-import Foreign.CUDA.Marshal
-import Foreign.CUDA.Utils
+import Foreign.CUDA.Runtime
 
