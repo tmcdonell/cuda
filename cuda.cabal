@@ -36,6 +36,11 @@ Library
                         Foreign.CUDA.Runtime.Thread
                         Foreign.CUDA.Runtime.Utils
 
+                        Foreign.CUDA.Driver
+                        Foreign.CUDA.Driver.Device
+                        Foreign.CUDA.Driver.Error
+                        Foreign.CUDA.Driver.Utils
+
   Other-modules:        Foreign.CUDA.Internal.C2HS
                         Foreign.CUDA.Internal.Offsets
 
@@ -46,5 +51,5 @@ Library
   Build-depends:        base, haskell98
   Extensions:           ForeignFunctionInterface
   ghc-options:          -Wall
-  extra-libraries:      cudart
+  extra-libraries:      cuda cudart
 
