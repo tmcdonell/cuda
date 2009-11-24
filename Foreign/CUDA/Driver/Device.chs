@@ -13,14 +13,7 @@ module Foreign.CUDA.Driver.Device
   (
     Device, DeviceProperties(..), Attribute(..),
 
-    initialise,
-    capability,
-    get,
-    attribute,
-    count,
-    name,
-    props,
-    totalMem
+    initialise, capability, get, attribute, count, name, props, totalMem
   )
   where
 
@@ -42,7 +35,7 @@ import Control.Monad            (liftM)
 -- Data Types
 --------------------------------------------------------------------------------
 
-newtype Device = Device { use :: {# type CUdevice #}}
+newtype Device = Device { useDevice :: {# type CUdevice #}}
   deriving (Show)
 
 
@@ -136,9 +129,9 @@ capability dev =
               a' + b' / max 10 (10^ ((ceiling . logBase 10) b' :: Int))
 
 {# fun unsafe cuDeviceComputeCapability
-  { alloca-  `Int'    peekIntConv*
-  , alloca-  `Int'    peekIntConv*
-  , use      `Device'              } -> `Status' cToEnum #}
+  { alloca-   `Int'    peekIntConv*
+  , alloca-   `Int'    peekIntConv*
+  , useDevice `Device'              } -> `Status' cToEnum #}
 
 
 -- |
@@ -162,7 +155,7 @@ attribute d a = resultIfOk `fmap` cuDeviceGetAttribute a d
 {# fun unsafe cuDeviceGetAttribute
   { alloca-   `Int'       peekIntConv*
   , cFromEnum `Attribute'
-  , use       `Device'                 } -> `Status' cToEnum #}
+  , useDevice `Device'                 } -> `Status' cToEnum #}
 
 
 -- |
@@ -182,8 +175,8 @@ name :: Device -> IO (Either String String)
 name d = resultIfOk `fmap` cuDeviceGetName d
 
 {# fun unsafe cuDeviceGetName
-  { allocaS- `String'& peekS*
-  , use      `Device'         } -> `Status' cToEnum #}
+  { allocaS-  `String'& peekS*
+  , useDevice `Device'         } -> `Status' cToEnum #}
   where
     len            = 512
     allocaS a      = allocaBytes len $ \p -> a (p, cIntConv len)
@@ -197,8 +190,8 @@ props :: Device -> IO (Either String DeviceProperties)
 props d = resultIfOk `fmap` cuDeviceGetProperties d
 
 {# fun unsafe cuDeviceGetProperties
-  { alloca-  `DeviceProperties' peek*
-  , use      `Device'                 } -> `Status' cToEnum #}
+  { alloca-   `DeviceProperties' peek*
+  , useDevice `Device'                 } -> `Status' cToEnum #}
 
 
 -- |
@@ -208,6 +201,6 @@ totalMem :: Device -> IO (Either String Int)
 totalMem d = resultIfOk `fmap` cuDeviceTotalMem d
 
 {# fun unsafe cuDeviceTotalMem
-  { alloca-  `Int' peekIntConv*
-  , use      `Device'                 } -> `Status' cToEnum #}
+  { alloca-   `Int' peekIntConv*
+  , useDevice `Device'           } -> `Status' cToEnum #}
 

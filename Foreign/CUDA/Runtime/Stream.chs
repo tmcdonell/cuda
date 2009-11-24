@@ -37,7 +37,7 @@ import Foreign.CUDA.Internal.C2HS
 -- Data Types
 --------------------------------------------------------------------------------
 
-newtype Stream = Stream { use :: {# type cudaStream_t #}}
+newtype Stream = Stream { useStream :: {# type cudaStream_t #}}
   deriving (Show)
 
 
@@ -63,7 +63,7 @@ destroy   :: Stream -> IO (Maybe String)
 destroy s =  nothingIfOk `fmap` cudaStreamDestroy s
 
 {# fun unsafe cudaStreamDestroy
-    { use `Stream' } -> `Status' cToEnum #}
+    { useStream `Stream' } -> `Status' cToEnum #}
 
 
 -- |
@@ -77,7 +77,7 @@ finished s = cudaStreamQuery s >>= \rv -> do
         _        -> Left (describe rv)
 
 {# fun unsafe cudaStreamQuery
-    { use `Stream' } -> `Status' cToEnum #}
+    { useStream `Stream' } -> `Status' cToEnum #}
 
 
 -- |
@@ -87,5 +87,5 @@ sync   :: Stream -> IO (Maybe String)
 sync s =  nothingIfOk `fmap` cudaStreamSynchronize s
 
 {# fun unsafe cudaStreamSynchronize
-    { use `Stream' } -> `Status' cToEnum #}
+    { useStream `Stream' } -> `Status' cToEnum #}
 
