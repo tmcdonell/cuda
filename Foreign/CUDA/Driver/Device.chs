@@ -5,7 +5,7 @@
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
--- Error handling
+-- Device management for low-level driver interface
 --
 --------------------------------------------------------------------------------
 
@@ -42,11 +42,8 @@ import Control.Monad            (liftM)
 -- Data Types
 --------------------------------------------------------------------------------
 
-newtype Device = Device {# type CUdevice #}
+newtype Device = Device { use :: {# type CUdevice #}}
   deriving (Show)
-
-use :: Device -> {#type CUdevice#}
-use (Device d) = d
 
 
 -- |

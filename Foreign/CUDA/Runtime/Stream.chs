@@ -37,11 +37,8 @@ import Foreign.CUDA.Internal.C2HS
 -- Data Types
 --------------------------------------------------------------------------------
 
-newtype Stream = Stream {# type cudaStream_t #}
+newtype Stream = Stream { use :: {# type cudaStream_t #}}
   deriving (Show)
-
-use :: Stream -> {#type cudaStream_t#}
-use (Stream s) = s
 
 
 --------------------------------------------------------------------------------
