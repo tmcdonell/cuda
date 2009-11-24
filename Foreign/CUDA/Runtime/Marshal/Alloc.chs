@@ -54,7 +54,7 @@ import qualified Foreign.Marshal  as F
 
 import Foreign.CUDA.Runtime.DevicePtr
 import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Runtime.Stream
+-- import Foreign.CUDA.Runtime.Stream
 import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>
@@ -243,6 +243,7 @@ memcpy dst src bytes dir =
       cFromEnum `CopyDirection' } -> `Status' cToEnum #}
 
 
+{-
 -- |
 -- Copy data between host and device asynchronously
 --
@@ -261,7 +262,7 @@ memcpyAsync stream dst src bytes dir =
       cIntConv   `Int64'         ,
       cFromEnum  `CopyDirection' ,
       cIntConv   `Stream'        } -> `Status' cToEnum #}
-
+-}
 
 --------------------------------------------------------------------------------
 -- Auxiliary utilities

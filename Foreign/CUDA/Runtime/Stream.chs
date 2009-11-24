@@ -24,6 +24,7 @@ module Foreign.CUDA.Runtime.Stream
 
 import Foreign
 import Foreign.C
+import Control.Monad			(liftM)
 
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
@@ -36,7 +37,11 @@ import Foreign.CUDA.Internal.C2HS
 -- Data Types
 --------------------------------------------------------------------------------
 
-type Stream = {# type cudaStream_t #}
+newtype Stream = Stream {# type cudaStream_t #}
+  deriving (Show)
+
+use :: Stream -> {#type cudaStream_t#}
+use (Stream s) = s
 
 
 --------------------------------------------------------------------------------
@@ -50,7 +55,8 @@ create :: IO (Either String Stream)
 create =  resultIfOk `fmap` cudaStreamCreate
 
 {# fun unsafe cudaStreamCreate
-    { alloca- `Stream' peek* } -> `Status' cToEnum #}
+    { alloca- `Stream' stream* } -> `Status' cToEnum #}
+    where stream = liftM Stream . peekIntConv
 
 
 -- |
@@ -60,7 +66,7 @@ destroy   :: Stream -> IO (Maybe String)
 destroy s =  nothingIfOk `fmap` cudaStreamDestroy s
 
 {# fun unsafe cudaStreamDestroy
-    { cIntConv `Stream' } -> `Status' cToEnum #}
+    { use `Stream' } -> `Status' cToEnum #}
 
 
 -- |
@@ -74,7 +80,7 @@ finished s = cudaStreamQuery s >>= \rv -> do
         _        -> Left (describe rv)
 
 {# fun unsafe cudaStreamQuery
-    { cIntConv `Stream' } -> `Status' cToEnum #}
+    { use `Stream' } -> `Status' cToEnum #}
 
 
 -- |
@@ -84,5 +90,5 @@ sync   :: Stream -> IO (Maybe String)
 sync s =  nothingIfOk `fmap` cudaStreamSynchronize s
 
 {# fun unsafe cudaStreamSynchronize
-    { cIntConv `Stream' } -> `Status' cToEnum #}
+    { use `Stream' } -> `Status' cToEnum #}
 
