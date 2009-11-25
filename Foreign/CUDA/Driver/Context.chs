@@ -38,6 +38,11 @@ import Control.Monad                    (liftM)
 {# pointer *CUcontext as Context foreign newtype #}
 withContext :: Context -> (Ptr Context -> IO a) -> IO a
 
+--
+-- XXX: Probably want to add a finaliser to `destroy' the context before
+-- releasing its reference. Not done as this may flag an error, which could be
+-- picked up by later driver calls.
+--
 newContext :: IO Context
 newContext = Context `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
