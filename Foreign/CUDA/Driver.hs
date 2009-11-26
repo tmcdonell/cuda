@@ -13,6 +13,7 @@ module Foreign.CUDA.Driver
     module Foreign.CUDA.Driver.Context,
     module Foreign.CUDA.Driver.Device,
     module Foreign.CUDA.Driver.Error,
+    module Foreign.CUDA.Driver.Module,
     module Foreign.CUDA.Driver.Utils
   )
   where
@@ -20,5 +21,6 @@ module Foreign.CUDA.Driver
 import Foreign.CUDA.Driver.Context
 import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Driver.Utils
 
