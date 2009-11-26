@@ -77,14 +77,15 @@ create dev flags =
 
 
 -- |
--- Increments the usage count of the context
+-- Increments the usage count of the context. API: no context flags are
+-- currently supported, so this parameter must be empty.
 --
-attach :: Context -> IO (Maybe String)
-attach ctx = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxAttach p 0)
+attach :: Context -> [ContextFlags] -> IO (Maybe String)
+attach ctx flags = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxAttach p flags)
 
 {# fun unsafe cuCtxAttach
-  { id     `Ptr Context'
-  ,        `Int'         } -> `Status' cToEnum #}
+  { id              `Ptr Context'
+  , combineBitMasks `[ContextFlags]' } -> `Status' cToEnum #}
 
 
 -- |

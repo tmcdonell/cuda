@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Device
@@ -12,7 +12,7 @@
 module Foreign.CUDA.Driver.Device
   (
     Device(..), -- should be exported abstractly
-    DeviceProperties(..), Attribute(..),
+    DeviceProperties(..), Attribute(..), InitFlags(..),
 
     initialise, capability, get, attribute, count, name, props, totalMem
   )
@@ -99,19 +99,28 @@ instance Storable DeviceProperties where
         textureAlign        = ta
       }
 
+-- |
+-- Possible option flags for CUDA initialisation. Dummy instance until the API
+-- exports actual option values.
+--
+data InitFlags
+
+instance Enum InitFlags where
+
+
 --------------------------------------------------------------------------------
 -- Initialisation
 --------------------------------------------------------------------------------
 
 -- |
--- Initialise the CUDA driver API. Fills in the `flags' parameter with the
--- required zero value. Must be called before any other driver function.
+-- Initialise the CUDA driver API. Must be called before any other driver
+-- function.
 --
-initialise :: IO (Maybe String)
-initialise =  nothingIfOk `fmap` cuInit 0
+initialise :: [InitFlags] -> IO (Maybe String)
+initialise flags = nothingIfOk `fmap` cuInit flags
 
 {# fun unsafe cuInit
-  { cIntConv `Int' } -> `Status' cToEnum #}
+  { combineBitMasks `[InitFlags]' } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
