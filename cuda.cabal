@@ -40,6 +40,7 @@ Library
                         Foreign.CUDA.Driver.Context
                         Foreign.CUDA.Driver.Device
                         Foreign.CUDA.Driver.Error
+                        Foreign.CUDA.Driver.Module
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
@@ -49,7 +50,7 @@ Library
   C-sources:            
 
   Build-tools:          c2hs, hsc2hs
-  Build-depends:        base, haskell98
+  Build-depends:        base, haskell98, bytestring
   Extensions:           ForeignFunctionInterface
   ghc-options:          -Wall
   extra-libraries:      cuda cudart
