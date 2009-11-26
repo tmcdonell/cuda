@@ -41,6 +41,7 @@ Library
                         Foreign.CUDA.Driver.Device
                         Foreign.CUDA.Driver.Error
                         Foreign.CUDA.Driver.Module
+                        Foreign.CUDA.Driver.Stream
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
