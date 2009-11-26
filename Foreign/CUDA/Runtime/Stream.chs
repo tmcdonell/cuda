@@ -18,7 +18,7 @@ module Foreign.CUDA.Runtime.Stream
     create,
     destroy,
     finished,
-    sync
+    block
   )
   where
 
@@ -83,8 +83,8 @@ finished s = cudaStreamQuery s >>= \rv -> do
 -- |
 -- Block until all operations in a stream have been completed
 --
-sync   :: Stream -> IO (Maybe String)
-sync s =  nothingIfOk `fmap` cudaStreamSynchronize s
+block   :: Stream -> IO (Maybe String)
+block s =  nothingIfOk `fmap` cudaStreamSynchronize s
 
 {# fun unsafe cudaStreamSynchronize
     { useStream `Stream' } -> `Status' cToEnum #}
