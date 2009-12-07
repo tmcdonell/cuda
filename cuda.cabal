@@ -40,6 +40,7 @@ Library
                         Foreign.CUDA.Driver.Context
                         Foreign.CUDA.Driver.Device
                         Foreign.CUDA.Driver.Error
+                        Foreign.CUDA.Driver.Event
                         Foreign.CUDA.Driver.Module
                         Foreign.CUDA.Driver.Stream
                         Foreign.CUDA.Driver.Utils
