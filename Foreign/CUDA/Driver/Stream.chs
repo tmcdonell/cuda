@@ -11,6 +11,8 @@
 
 module Foreign.CUDA.Driver.Stream
   (
+    Stream, StreamFlags,
+    withStream,
     create, destroy, finished, block
   )
   where
