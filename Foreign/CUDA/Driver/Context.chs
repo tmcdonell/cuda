@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Context
   (
-    Context, ContextFlags(..),
+    Context, ContextFlag(..),
     create, attach, detach, destroy, current, pop, push, sync
   )
   where
@@ -50,7 +50,7 @@ newContext = Context `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- |
 -- Context creation flags
 --
-{# enum CUctx_flags as ContextFlags
+{# enum CUctx_flags as ContextFlag
     { underscoreToCase }
     with prefix="CU_CTX" deriving (Eq, Show) #}
 
@@ -62,7 +62,7 @@ newContext = Context `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- |
 -- Create a new CUDA context and associate it with the calling thread
 --
-create :: Device -> [ContextFlags] -> IO (Either String Context)
+create :: Device -> [ContextFlag] -> IO (Either String Context)
 create dev flags =
   newContext              >>= \ctx -> withContext ctx $ \p ->
   cuCtxCreate p flags dev >>= \rv  ->
@@ -72,7 +72,7 @@ create dev flags =
 
 {# fun unsafe cuCtxCreate
   { id              `Ptr Context'
-  , combineBitMasks `[ContextFlags]'
+  , combineBitMasks `[ContextFlag]'
   , useDevice       `Device'         } -> `Status' cToEnum #}
 
 
@@ -80,12 +80,12 @@ create dev flags =
 -- Increments the usage count of the context. API: no context flags are
 -- currently supported, so this parameter must be empty.
 --
-attach :: Context -> [ContextFlags] -> IO (Maybe String)
+attach :: Context -> [ContextFlag] -> IO (Maybe String)
 attach ctx flags = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxAttach p flags)
 
 {# fun unsafe cuCtxAttach
   { id              `Ptr Context'
-  , combineBitMasks `[ContextFlags]' } -> `Status' cToEnum #}
+  , combineBitMasks `[ContextFlag]' } -> `Status' cToEnum #}
 
 
 -- |

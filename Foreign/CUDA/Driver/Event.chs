@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Event
   (
-    Event, EventFlags(..),
+    Event, EventFlag(..),
     create, destroy, elapsedTime, query, record, block
   )
   where
@@ -43,7 +43,7 @@ newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 --
 -- Event creation flags
 --
-{# enum CUevent_flags as EventFlags
+{# enum CUevent_flags as EventFlag
     { underscoreToCase }
     with prefix="CU_EVENT" deriving (Eq, Show) #}
 
@@ -55,7 +55,7 @@ newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 --
 -- Create a new event
 --
-create :: [EventFlags] -> IO (Either String Event)
+create :: [EventFlag] -> IO (Either String Event)
 create flags =
   newEvent              >>= \ev -> withEvent ev $ \e ->
   cuEventCreate e flags >>= \rv ->
@@ -65,7 +65,7 @@ create flags =
 
 {# fun unsafe cuEventCreate
   { id              `Ptr Event'
-  , combineBitMasks `[EventFlags]' } -> `Status' cToEnum #}
+  , combineBitMasks `[EventFlag]' } -> `Status' cToEnum #}
 
 
 --

@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Stream
   (
-    Stream, StreamFlags,
+    Stream, StreamFlag,
     withStream,
     create, destroy, finished, block
   )
@@ -44,9 +44,9 @@ newStream = Stream `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Possible option flags for stream initialisation. Dummy instance until the API
 -- exports actual option values.
 --
-data StreamFlags
+data StreamFlag
 
-instance Enum StreamFlags where
+instance Enum StreamFlag where
 
 --------------------------------------------------------------------------------
 -- Stream management
@@ -55,7 +55,7 @@ instance Enum StreamFlags where
 --
 -- Create a new stream
 --
-create :: [StreamFlags] -> IO (Either String Stream)
+create :: [StreamFlag] -> IO (Either String Stream)
 create flags =
   newStream              >>= \st -> withStream st $ \s ->
   cuStreamCreate s flags >>= \rv ->
@@ -65,7 +65,7 @@ create flags =
 
 {# fun unsafe cuStreamCreate
   { id              `Ptr Stream'
-  , combineBitMasks `[StreamFlags]' } -> `Status' cToEnum #}
+  , combineBitMasks `[StreamFlag]' } -> `Status' cToEnum #}
 
 --
 -- Destroy a stream
