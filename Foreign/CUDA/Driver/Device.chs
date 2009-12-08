@@ -12,7 +12,7 @@
 module Foreign.CUDA.Driver.Device
   (
     Device(..), -- should be exported abstractly
-    DeviceProperties(..), Attribute(..), InitFlag(..),
+    DeviceProperties(..), DeviceAttribute(..), InitFlag,
 
     initialise, capability, get, attribute, count, name, props, totalMem
   )
@@ -43,7 +43,7 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
 -- |
 -- Device attributes
 --
-{# enum CUdevice_attribute as Attribute
+{# enum CUdevice_attribute as DeviceAttribute
     { underscoreToCase }
     with prefix="CU_DEVICE_ATTRIBUTE" deriving (Eq, Show) #}
 
@@ -159,13 +159,13 @@ get d = resultIfOk `fmap` cuDeviceGet d
 -- |
 -- Return the selected attribute for the given device
 --
-attribute :: Device -> Attribute -> IO (Either String Int)
+attribute :: Device -> DeviceAttribute -> IO (Either String Int)
 attribute d a = resultIfOk `fmap` cuDeviceGetAttribute a d
 
 {# fun unsafe cuDeviceGetAttribute
-  { alloca-   `Int'       peekIntConv*
-  , cFromEnum `Attribute'
-  , useDevice `Device'                 } -> `Status' cToEnum #}
+  { alloca-   `Int'             peekIntConv*
+  , cFromEnum `DeviceAttribute'
+  , useDevice `Device'                       } -> `Status' cToEnum #}
 
 
 -- |

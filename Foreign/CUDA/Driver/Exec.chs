@@ -11,10 +11,8 @@
 
 module Foreign.CUDA.Driver.Exec
   (
-    Fun, FunParam(..), FunAttrib(..), newFun, withFun,
-    getAttrib,
-    setBlockShape, setSharedSize, setParams,
-    launch
+    Fun, FunParam(..), FunAttribute(..), newFun, withFun,
+    requires, setBlockShape, setSharedSize, setParams, launch
   )
   where
 
@@ -49,7 +47,7 @@ newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 --
 -- Function attributes
 --
-{# enum CUfunction_attribute as FunAttrib
+{# enum CUfunction_attribute as FunAttribute
     { underscoreToCase
     , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock }
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
@@ -69,15 +67,15 @@ data Storable a => FunParam a
 --------------------------------------------------------------------------------
 
 --
--- Returns the value of the selected attribute for the given kernel function
+-- Returns the value of the selected attribute requirement for the given kernel
 --
-getAttrib :: FunAttrib -> Fun -> IO (Either String Int)
-getAttrib att fn = withFun fn $ \f -> (resultIfOk `fmap` cuFuncGetAttribute att f)
+requires :: Fun -> FunAttribute -> IO (Either String Int)
+requires fn att = withFun fn $ \f -> (resultIfOk `fmap` cuFuncGetAttribute att f)
 
 {# fun unsafe cuFuncGetAttribute
-  { alloca-   `Int'       peekIntConv*
-  , cFromEnum `FunAttrib'
-  , castPtr   `Ptr Fun'                } -> `Status' cToEnum #}
+  { alloca-   `Int'          peekIntConv*
+  , cFromEnum `FunAttribute'
+  , castPtr   `Ptr Fun'                   } -> `Status' cToEnum #}
 
 
 --
