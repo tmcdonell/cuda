@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Module
   (
-    Fun, Module,
+    Module,
     getFun, loadFile, loadData, loadDataEx, unload
   )
   where
@@ -20,8 +20,9 @@ module Foreign.CUDA.Driver.Module
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Exec                 (Fun, newFun, withFun)
 
 -- System
 import Foreign
@@ -34,16 +35,6 @@ import Data.ByteString (ByteString, useAsCString)
 --------------------------------------------------------------------------------
 -- Data Types
 --------------------------------------------------------------------------------
-
---
--- Function
---
-{# pointer *CUfunction as Fun foreign newtype #}
-withFun :: Fun -> (Ptr Fun -> IO a) -> IO a
-
-newFun :: IO Fun
-newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
-
 
 --
 -- Module
@@ -89,7 +80,7 @@ getFun modu fname =
       Just e  -> Left e
 
 {# fun unsafe cuModuleGetFunction
-  { id           `Ptr Fun'
+  { castPtr      `Ptr Fun'
   , castPtr      `Ptr Module'
   , withCString* `String'     } -> `Status' cToEnum #}
 
