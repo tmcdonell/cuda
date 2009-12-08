@@ -41,7 +41,34 @@ import Foreign.CUDA.Internal.C2HS
 -- XXX: yes, not very descriptive...
 --
 describe :: Status -> String
-describe = show
+describe Success                     = "no error"
+describe InvalidValue                = "invalid argument"
+describe OutOfMemory                 = "out of memory"
+describe NotInitialized              = "driver not initialised"
+describe Deinitialized               = "driver deinitialised"
+describe NoDevice                    = "no CUDA-capable device is available"
+describe InvalidDevice               = "invalid device ordinal"
+describe InvalidImage                = "invalid kernel image"
+describe InvalidContext              = "invalid context handle"
+describe ContextAlreadyCurrent       = "context already current"
+describe MapFailed                   = "map failed"
+describe UnmapFailed                 = "unmap failed"
+describe ArrayIsMapped               = "array is mapped"
+describe AlreadyMapped               = "already mapped"
+describe NoBinaryForGpu              = "no binary available for this GPU"
+describe AlreadyAcquired             = "resource already acquired"
+describe NotMapped                   = "not mapped"
+describe InvalidSource               = "invalid source"
+describe FileNotFound                = "file not found"
+describe InvalidHandle               = "invalid handle"
+describe NotFound                    = "not found"
+describe NotReady                    = "device not ready"
+describe LaunchFailed                = "unspecified launch failure"
+describe LaunchOutOfResources        = "too many resources requested for launch"
+describe LaunchTimeout               = "the launch timed out and was terminated"
+describe LaunchIncompatibleTexturing = "launch with incompatible texturing"
+describe Unknown                     = "unknown error"
+
 
 -- |
 -- Return the results of a function on successful execution, otherwise return
