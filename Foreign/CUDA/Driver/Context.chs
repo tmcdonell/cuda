@@ -35,6 +35,9 @@ import Control.Monad                    (liftM)
 -- Data Types
 --------------------------------------------------------------------------------
 
+-- |
+-- A device context
+--
 {# pointer *CUcontext as Context foreign newtype #}
 withContext :: Context -> (Ptr Context -> IO a) -> IO a
 

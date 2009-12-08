@@ -67,7 +67,7 @@ newModule = Module `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Module management
 --------------------------------------------------------------------------------
 
---
+-- |
 -- Returns a function handle
 --
 getFun :: Module -> String -> IO (Either String Fun)
@@ -85,7 +85,7 @@ getFun modu fname =
   , withCString* `String'     } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context
 --
@@ -102,7 +102,7 @@ loadFile ptx =
   , withCString* `String'     } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Load the contents of the given image into a new module, and load that module
 -- into the current context. The image (typically) is the contents of a cubin or
 -- ptx file as a NULL-terminated string.
@@ -121,7 +121,7 @@ loadData img =
   where useBS bs act = useAsCString bs $ \p -> act (castPtr p)
 
 
---
+-- |
 -- Load a module with online compiler options. Would also need to unpack those
 -- options which also return values.
 --
@@ -129,7 +129,7 @@ loadDataEx :: ByteString -> [JITOption] -> IO (Either String (Module, [JITOption
 loadDataEx = error "Foreign.CUDA.Driver.Module.loadDataEx: not implemented yet"
 
 
---
+-- |
 -- Unload a module from the current context
 --
 unload :: Module -> IO (Maybe String)

@@ -35,8 +35,8 @@ import Control.Monad                            (zipWithM)
 -- Data Types
 --------------------------------------------------------------------------------
 
---
--- Function
+-- |
+-- A __global__ device function
 --
 {# pointer *CUfunction as Fun foreign newtype #}
 withFun :: Fun -> (Ptr Fun -> IO a) -> IO a
@@ -44,7 +44,7 @@ withFun :: Fun -> (Ptr Fun -> IO a) -> IO a
 newFun :: IO Fun
 newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
---
+-- |
 -- Function attributes
 --
 {# enum CUfunction_attribute as FunAttribute
@@ -53,7 +53,7 @@ newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
 
 
---
+-- |
 -- Kernel function parameters
 --
 data Storable a => FunParam a
@@ -66,7 +66,7 @@ data Storable a => FunParam a
 -- Execution Control
 --------------------------------------------------------------------------------
 
---
+-- |
 -- Returns the value of the selected attribute requirement for the given kernel
 --
 requires :: Fun -> FunAttribute -> IO (Either String Int)
@@ -78,7 +78,7 @@ requires fn att = withFun fn $ \f -> (resultIfOk `fmap` cuFuncGetAttribute att f
   , castPtr   `Ptr Fun'                   } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Specify the (x,y,z) dimensions of the thread blocks that are created when the
 -- given kernel function is lanched
 --
@@ -92,7 +92,7 @@ setBlockShape fn (x,y,z) = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetBlock
   ,         `Int'     } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Set the number of bytes of dynamic shared memory to be available to each
 -- thread block when the function is launched
 --
@@ -104,7 +104,7 @@ setSharedSize fn bytes = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetSharedS
   , cIntConv `Integer' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Invoke the kernel on a size (w,h) grid of blocks. Each block contains the
 -- number of threads specified by a previous call to `setBlockShape'. The launch
 -- may also be associated with a specific `Stream'.
@@ -127,7 +127,7 @@ launch fn (w,h) mst =
 -- Kernel function parameters
 --------------------------------------------------------------------------------
 
---
+-- |
 -- Set the parameters that will specified next time the kernel is invoked
 --
 setParams :: Storable a => Fun -> [FunParam a] -> IO (Maybe [String])

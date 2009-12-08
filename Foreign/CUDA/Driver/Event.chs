@@ -40,7 +40,7 @@ newEvent :: IO Event
 newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
 
---
+-- |
 -- Event creation flags
 --
 {# enum CUevent_flags as EventFlag
@@ -52,7 +52,7 @@ newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Event management
 --------------------------------------------------------------------------------
 
---
+-- |
 -- Create a new event
 --
 create :: [EventFlag] -> IO (Either String Event)
@@ -68,7 +68,7 @@ create flags =
   , combineBitMasks `[EventFlag]' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Destroy an event
 --
 destroy :: Event -> IO (Maybe String)
@@ -78,7 +78,7 @@ destroy ev = withEvent ev $ \e -> (nothingIfOk `fmap` cuEventDestroy e)
   { castPtr `Ptr Event' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Determine the elapsed time (in milliseconds) between two events
 --
 elapsedTime :: Event -> Event -> IO (Either String Float)
@@ -96,7 +96,7 @@ elapsedTime ev1 ev2 =
   , castPtr `Ptr Event'                } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Determines if a event has actually been recorded
 --
 query :: Event -> IO (Either String Bool)
@@ -111,7 +111,7 @@ query ev =
   { castPtr `Ptr Event' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Record an event once all operations in the current context (or optionally
 -- specified stream) have completed. This operation is asynchronous.
 --
@@ -127,7 +127,7 @@ record ev mst =
   , castPtr `Ptr Stream' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Wait until the event has been recorded
 --
 block :: Event -> IO (Maybe String)

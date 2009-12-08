@@ -33,6 +33,9 @@ import Foreign.C
 -- Data Types
 --------------------------------------------------------------------------------
 
+-- |
+-- A processing stream
+--
 {# pointer *CUstream as Stream foreign newtype #}
 withStream :: Stream -> (Ptr Stream -> IO a) -> IO a
 
@@ -40,7 +43,7 @@ newStream :: IO Stream
 newStream = Stream `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
 
---
+-- |
 -- Possible option flags for stream initialisation. Dummy instance until the API
 -- exports actual option values.
 --
@@ -52,7 +55,7 @@ instance Enum StreamFlag where
 -- Stream management
 --------------------------------------------------------------------------------
 
---
+-- |
 -- Create a new stream
 --
 create :: [StreamFlag] -> IO (Either String Stream)
@@ -67,7 +70,7 @@ create flags =
   { id              `Ptr Stream'
   , combineBitMasks `[StreamFlag]' } -> `Status' cToEnum #}
 
---
+-- |
 -- Destroy a stream
 --
 destroy :: Stream -> IO (Maybe String)
@@ -77,7 +80,7 @@ destroy st = withStream st $ \s -> (nothingIfOk `fmap` cuStreamDestroy s)
   { castPtr `Ptr Stream' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Check if all operations in the stream have completed
 --
 finished :: Stream -> IO (Either String Bool)
@@ -92,7 +95,7 @@ finished st =
   { castPtr `Ptr Stream' } -> `Status' cToEnum #}
 
 
---
+-- |
 -- Wait until the device has completed all operations in the Stream
 --
 block :: Stream -> IO (Maybe String)
