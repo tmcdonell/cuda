@@ -11,9 +11,10 @@
 
 module Foreign.CUDA.Driver.Marshal
   (
-    DevicePtr, HostPtr,
+    DevicePtr, HostPtr, AllocFlag(..), withHostPtr,
     malloc, free, mallocHost, freeHost,
-    peekArray, peekArrayAsync, pokeArray, pokeArrayAsync, memset
+    peekArray, peekArrayAsync, pokeArray, pokeArrayAsync, memset,
+    getDevicePtr
   )
   where
 
@@ -30,6 +31,14 @@ import Foreign                           hiding (peekArray, pokeArray, malloc, f
 import Foreign.C
 import Control.Monad                            (liftM)
 import Unsafe.Coerce
+
+#c
+typedef enum CUmemhostalloc_option_enum {
+    CU_MEMHOSTALLOC_OPTION_PORTABLE       = CU_MEMHOSTALLOC_PORTABLE,
+    CU_MEMHOSTALLOC_OPTION_DEVICE_MAPPED  = CU_MEMHOSTALLOC_DEVICEMAP,
+    CU_MEMHOSTALLOC_OPTION_WRITE_COMBINED = CU_MEMHOSTALLOC_WRITECOMBINED
+} CUmemhostalloc_option;
+#endc
 
 --------------------------------------------------------------------------------
 -- Data Types
@@ -58,6 +67,13 @@ withHostPtr (HostPtr hptr) = withForeignPtr hptr
 newHostPtr :: IO (HostPtr a)
 newHostPtr = HostPtr `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
+-- |
+-- Options for host allocation
+--
+{# enum CUmemhostalloc_option as AllocFlag
+    { underscoreToCase }
+    with prefix="CU_MEMHOSTALLOC_OPTION" deriving (Eq, Show) #}
+
 --------------------------------------------------------------------------------
 -- Host Allocation
 --------------------------------------------------------------------------------
@@ -68,17 +84,18 @@ newHostPtr = HostPtr `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- memory is thusly reduced, overall system performance may suffer. This is best
 -- used sparingly to allocate staging areas for data exchange.
 --
-mallocHost :: Int -> IO (Either String (HostPtr a))
-mallocHost bytes =
+mallocHost :: [AllocFlag] -> Int -> IO (Either String (HostPtr a))
+mallocHost flags bytes =
   newHostPtr >>= \hp -> withHostPtr hp $ \p ->
-  cuMemAllocHost p bytes >>= \rv ->
+  cuMemHostAlloc p bytes flags >>= \rv ->
   return $ case nothingIfOk rv of
     Nothing  -> Right hp
     Just err -> Left err
 
-{# fun unsafe cuMemAllocHost
+{# fun unsafe cuMemHostAlloc
   { with'* `Ptr a'
-  ,        `Int'         } -> `Status' cToEnum #}
+  ,        `Int'
+  , combineBitMasks `[AllocFlag]' } -> `Status' cToEnum #}
   where with' = with . castPtr
 
 
@@ -210,8 +227,8 @@ memset dptr n val = case sizeOf val of
     _ -> return $ Just "can only memset 8-, 16-, and 32-bit values"
 
 --
--- We use unsafe coerce below to reinterpret the bits of the value to memset
--- into the required integer type.
+-- We use unsafe coerce below to reinterpret the bits of the value to memset as,
+-- into the integer type required by the setting functions.
 --
 {# fun unsafe cuMemsetD8
   { useDevicePtr `DevicePtr a'
@@ -227,4 +244,20 @@ memset dptr n val = case sizeOf val of
   { useDevicePtr `DevicePtr a'
   , unsafeCoerce `a'
   ,              `Int'         } -> `Status' cToEnum #}
+
+
+-- |
+-- Return the device pointer associated with a mapped, pinned host buffer, which
+-- was allocated with the DEVICE_MAPPED option.
+--
+-- Currently, no options are supported and this must be empty.
+--
+getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (Either String (DevicePtr a))
+getDevicePtr flags hptr = withHostPtr hptr $ \hp -> (resultIfOk `fmap` cuMemHostGetDevicePointer hp flags)
+
+{# fun unsafe cuMemHostGetDevicePointer
+  { alloca-         `DevicePtr a' dptr*
+  , castPtr         `Ptr a'
+  , combineBitMasks `[AllocFlag]'       } -> `Status' cToEnum #}
+  where dptr = liftM DevicePtr . peekIntConv
 
