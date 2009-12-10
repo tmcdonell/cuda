@@ -12,7 +12,7 @@
 module Main where
 
 import Foreign
-import Foreign.CUDA (forceEither)
+import Foreign.CUDA.Driver (forceEither)
 import qualified Foreign.CUDA.Driver as CUDA
 
 import Data.Array.Storable
@@ -72,8 +72,8 @@ initCUDA = do
   case res of
     Just e  -> error e
     Nothing -> do
-      mdl <- forceEither `fmap` CUDA.loadFile   "data/zipWithPlus.ptx"
-      fun <- forceEither `fmap` CUDA.getFun mdl "zipWithPlus"
+      mdl <- forceEither `fmap` CUDA.loadFile   "data/VectorAdd.ptx"
+      fun <- forceEither `fmap` CUDA.getFun mdl "VecAdd"
       return fun
 
 initData :: (Num e, Storable e)
