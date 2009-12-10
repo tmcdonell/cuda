@@ -57,8 +57,8 @@ newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Kernel function parameters
 --
 data Storable a => FunParam a
-    = IVal Int
-    | FVal Float
+    = IArg Int
+    | FArg Float
     | VArg a
 --  | TRef Texture
 
@@ -143,12 +143,12 @@ setParams fn prs =
 
     offsets = scanl (\a b -> a + size b) 0 prs
 
-    size (IVal v)    = sizeOf v
-    size (FVal v)    = sizeOf v
+    size (IArg v)    = sizeOf v
+    size (FArg v)    = sizeOf v
     size (VArg v)    = sizeOf v
 
-    set f o (IVal v) = nothingIfOk `fmap` cuParamSeti f o v
-    set f o (FVal v) = nothingIfOk `fmap` cuParamSetf f o v
+    set f o (IArg v) = nothingIfOk `fmap` cuParamSeti f o v
+    set f o (FArg v) = nothingIfOk `fmap` cuParamSetf f o v
     set f o (VArg v) = with v $ \p -> (nothingIfOk `fmap` cuParamSetv f o p (sizeOf v))
 
 
