@@ -50,6 +50,13 @@ typedef enum CUmemhostalloc_option_enum {
 newtype DevicePtr a = DevicePtr { useDevicePtr :: {# type CUdeviceptr #}}
   deriving (Show)
 
+instance Storable (DevicePtr a) where
+  sizeOf _      = sizeOf    (undefined :: {# type CUdeviceptr #})
+  alignment _   = alignment (undefined :: {# type CUdeviceptr #})
+  peek p        = DevicePtr `fmap` peek (castPtr p)
+  poke p v      = poke (castPtr p) (useDevicePtr v)
+
+
 -- |
 -- A reference to memory on the host that is page-locked and directly-accessible
 -- from the device. Since the memory can be accessed directly, it can be read or
