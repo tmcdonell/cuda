@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts, ParallelListComp #-}
 --------------------------------------------------------------------------------
 --
--- Module    : vectorAdd
+-- Module    : VectorAdd
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
@@ -9,7 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module VectorAdd where
+module Main where
 
 import Foreign
 import Foreign.CUDA (forceEither)
