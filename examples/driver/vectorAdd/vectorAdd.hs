@@ -120,16 +120,24 @@ testCUDA xs ys = do
 -- Test & Verify
 --------------------------------------------------------------------------------
 
-verify :: (Ord e, Fractional e, Storable e) => Vector e -> Vector e -> IO Bool
-verify arr ref = do
+verify :: (Ord e, Fractional e, Storable e) => Vector e -> Vector e -> IO ()
+verify ref arr = do
   as <- getElems arr
   bs <- getElems ref
-  return $ all (< epsilon) [abs ((x-y)/x) | x <- as
-                                          | y <- bs]
+  if similar as bs
+    then putStrLn "Valid"
+    else putStrLn "INVALID!"
   where
-    epsilon = 0.0001
+    similar xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
+    epsilon       = 0.0001
 
 
 main :: IO ()
-main = error "not implemented yet"
+main = do
+  xs  <- randomVec 10000 :: IO (Vector Float)
+  ys  <- randomVec 10000 :: IO (Vector Float)
+
+  ref <- testRef  xs ys
+  arr <- testCUDA xs ys
+  verify ref arr
 
