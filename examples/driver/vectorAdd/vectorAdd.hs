@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts, ParallelListComp #-}
 --------------------------------------------------------------------------------
 --
 -- Module    : vectorAdd
@@ -11,6 +12,7 @@
 module VectorAdd where
 
 import Foreign
+import Foreign.CUDA (forceEither)
 import qualified Foreign.CUDA.Driver as CUDA
 
 import Data.Array.Storable
@@ -20,6 +22,10 @@ import Control.Exception
 
 
 type Vector e = StorableArray Int e
+
+withVector :: Vector e -> (Ptr e -> IO a) -> IO a
+withVector = withStorableArray
+
 
 -- To ensure the array is fully evaluated, force one element
 --
@@ -60,13 +66,69 @@ testRef xs ys = do
 -- CUDA
 --------------------------------------------------------------------------------
 
+initCUDA :: IO (CUDA.Fun)
+initCUDA = do
+  res <- CUDA.initialise []
+  case res of
+    Just e  -> error e
+    Nothing -> do
+      mdl <- forceEither `fmap` CUDA.loadFile   "data/zipWithPlus.ptx"
+      fun <- forceEither `fmap` CUDA.getFun mdl "zipWithPlus"
+      return fun
+
+initData :: (Num e, Storable e)
+         => Vector e -> Vector e -> IO (CUDA.DevicePtr e, CUDA.DevicePtr e, CUDA.DevicePtr e)
+initData xs ys = do
+  (m,n) <- getBounds xs
+  let len = (n-m+1)
+  dxs   <- forceEither `fmap` CUDA.malloc len
+  dys   <- forceEither `fmap` CUDA.malloc len
+  res   <- forceEither `fmap` CUDA.malloc len
+  withVector xs $ \p -> CUDA.pokeArray len p dxs
+  withVector ys $ \p -> CUDA.pokeArray len p dys
+  return (dxs, dys, res)
+
+
 testCUDA :: (Num e, Storable e) => Vector e -> Vector e -> IO (Vector e)
-testCUDA xs ys = error "not implemented yet"
+testCUDA xs ys = do
+  -- Initialise environment and copy over test data
+  --
+  addVec  <- initCUDA
+  (x,y,z) <- initData xs ys
+  (m,n)   <- getBounds xs
+  let len = (n-m+1)
+
+  -- Repeat test many times...
+  --
+  CUDA.setParams     addVec [CUDA.VArg x, CUDA.VArg y, CUDA.VArg z, CUDA.IArg len]
+  CUDA.setBlockShape addVec (128,1,1)
+  CUDA.launch        addVec (len+128-1 `div` 128, 1) Nothing
+--  CUDA.sync
+
+  -- Copy back result
+  --
+  zs <- newArray_ (m,n)
+  withVector zs $ \p -> CUDA.peekArray len z p
+
+  -- Cleanup and exit
+  --
+  mapM_ CUDA.free [x,y,z]
+  return zs
 
 
 --------------------------------------------------------------------------------
 -- Test & Verify
 --------------------------------------------------------------------------------
+
+verify :: (Ord e, Fractional e, Storable e) => Vector e -> Vector e -> IO Bool
+verify arr ref = do
+  as <- getElems arr
+  bs <- getElems ref
+  return $ all (< epsilon) [abs ((x-y)/x) | x <- as
+                                          | y <- bs]
+  where
+    epsilon = 0.0001
+
 
 main :: IO ()
 main = error "not implemented yet"
