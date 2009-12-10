@@ -11,6 +11,7 @@
 module VectorAdd where
 
 import Data.Array.Storable
+import Control.Monad
 import System.Random
 import Foreign
 import qualified Foreign.CUDA.Driver as CUDA
@@ -40,8 +41,16 @@ randomVec n = do
 --------------------------------------------------------------------------------
 
 testRef :: Vector Float -> Vector Float -> IO (Vector Float)
-testRef xs ys = error "not implemented yet"
-
+testRef xs ys = do
+  (i,j) <- getBounds xs
+  res   <- newArray_ (i,j)
+  mapM_ (add res) [i..j]
+  return res
+  where
+    add res idx = do
+      a <- readArray xs idx
+      b <- readArray ys idx
+      writeArray res idx (a+b)
 
 --------------------------------------------------------------------------------
 -- CUDA
