@@ -72,6 +72,8 @@ initCUDA = do
   case res of
     Just e  -> error e
     Nothing -> do
+      dev <- forceEither `fmap` CUDA.get 0
+      ctx <- forceEither `fmap` CUDA.create dev []
       mdl <- forceEither `fmap` CUDA.loadFile   "data/VectorAdd.ptx"
       fun <- forceEither `fmap` CUDA.getFun mdl "VecAdd"
       return fun
