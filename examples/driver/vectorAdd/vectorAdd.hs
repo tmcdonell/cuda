@@ -10,14 +10,21 @@
 
 module VectorAdd where
 
-import Data.Array.Storable
-import Control.Monad
-import System.Random
 import Foreign
 import qualified Foreign.CUDA.Driver as CUDA
 
+import Data.Array.Storable
+import System.Random
+import Control.Monad
+import Control.Exception
+
 
 type Vector e = StorableArray Int e
+
+-- To ensure the array is fully evaluated, force one element
+--
+evaluateVec :: Storable e => Vector e -> IO (Vector e)
+evaluateVec vec = (join $ evaluate (vec `readArray` 0)) >> return vec
 
 -- Generate a new random vector
 --
@@ -30,22 +37,19 @@ randomVec n = do
       k     = 1000
       rands = take k (randomRs (-100,100) rg)
 
-  -- To ensure the array is fully evaluated, force one element
-  -- (might not be necessary for StorableArray)
-  vec <- newListArray (0,n-1) [rands !! (i`mod`k) | i <- [0..n-1]]
-  vec `readArray` 0 >> return vec
+  newListArray (0,n-1) [rands !! (i`mod`k) | i <- [0..n-1]] >>= evaluateVec
 
 
 --------------------------------------------------------------------------------
 -- Reference implementation
 --------------------------------------------------------------------------------
 
-testRef :: Vector Float -> Vector Float -> IO (Vector Float)
+testRef :: (Num e, Storable e) => Vector e -> Vector e -> IO (Vector e)
 testRef xs ys = do
   (i,j) <- getBounds xs
   res   <- newArray_ (i,j)
-  mapM_ (add res) [i..j]
-  return res
+  forM_ [i..j] (add res)
+  evaluateVec res
   where
     add res idx = do
       a <- readArray xs idx
@@ -56,7 +60,7 @@ testRef xs ys = do
 -- CUDA
 --------------------------------------------------------------------------------
 
-testCUDA :: Vector Float -> Vector Float -> IO (Vector Float)
+testCUDA :: (Num e, Storable e) => Vector e -> Vector e -> IO (Vector e)
 testCUDA xs ys = error "not implemented yet"
 
 
