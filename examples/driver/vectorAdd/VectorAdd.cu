@@ -7,7 +7,8 @@
  */
 
 
-extern "C" __global__ void VecAdd(float *xs, float *ys, float *out, int N)
+extern "C"
+__global__ void VecAdd(const float *xs, const float *ys, float *out, const unsigned int N)
 {
     unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
 

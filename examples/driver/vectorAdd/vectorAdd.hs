@@ -72,7 +72,7 @@ initCUDA = do
   case res of
     Just e  -> error e
     Nothing -> do
-      dev <- forceEither `fmap` CUDA.get 0
+      dev <- forceEither `fmap` CUDA.device 0
       ctx <- forceEither `fmap` CUDA.create dev []
       mdl <- forceEither `fmap` CUDA.loadFile   "data/VectorAdd.ptx"
       fun <- forceEither `fmap` CUDA.getFun mdl "VecAdd"
@@ -104,8 +104,8 @@ testCUDA xs ys = do
   --
   CUDA.setParams     addVec [CUDA.VArg x, CUDA.VArg y, CUDA.VArg z, CUDA.IArg len]
   CUDA.setBlockShape addVec (128,1,1)
-  CUDA.launch        addVec (len+128-1 `div` 128, 1) Nothing
---  CUDA.sync
+  CUDA.launch        addVec ((len+128-1) `div` 128, 1) Nothing
+  CUDA.sync
 
   -- Copy back result
   --
@@ -136,10 +136,14 @@ verify ref arr = do
 
 main :: IO ()
 main = do
+  putStrLn "== Generating random vectors"
   xs  <- randomVec 10000 :: IO (Vector Float)
   ys  <- randomVec 10000 :: IO (Vector Float)
 
+  putStrLn "== Generating reference solution"
   ref <- testRef  xs ys
+  putStrLn "== Testing CUDA"
   arr <- testCUDA xs ys
+  putStr   "== Validating: "
   verify ref arr
 
