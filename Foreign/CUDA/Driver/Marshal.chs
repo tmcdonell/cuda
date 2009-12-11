@@ -129,7 +129,7 @@ malloc bytes = resultIfOk `fmap` cuMemAlloc bytes
 {# fun unsafe cuMemAlloc
   { alloca-  `DevicePtr a' dptr*
   ,          `Int'               } -> `Status' cToEnum #}
-  where dptr = liftM DevicePtr . peekIntConv
+  where dptr = liftM DevicePtr . peek
 
 -- |
 -- Release a section of device memory
@@ -266,5 +266,5 @@ getDevicePtr flags hptr = withHostPtr hptr $ \hp -> (resultIfOk `fmap` cuMemHost
   { alloca-         `DevicePtr a' dptr*
   , castPtr         `Ptr a'
   , combineBitMasks `[AllocFlag]'       } -> `Status' cToEnum #}
-  where dptr = liftM DevicePtr . peekIntConv
+  where dptr = liftM DevicePtr . peek
 

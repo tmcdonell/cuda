@@ -27,23 +27,27 @@ import Foreign.CUDA.Driver.Exec                 (Fun, newFun, withFun)
 -- System
 import Foreign
 import Foreign.C
-import Foreign.ForeignPtr
 
-import Data.ByteString (ByteString, useAsCString)
+import Control.Monad                            (liftM)
+import Data.ByteString                          (ByteString, useAsCString)
 
 
 --------------------------------------------------------------------------------
 -- Data Types
 --------------------------------------------------------------------------------
 
+-- |
+-- A reference to a Module object, containing collections of device functions
 --
--- Module
---
-{# pointer *CUmodule as Module foreign newtype #}
-withModule :: Module -> (Ptr Module -> IO a) -> IO a
+newtype Module = Module { useModule :: {# type CUmodule #}}
+  deriving (Show)
 
-newModule :: IO Module
-newModule = Module `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
+instance Storable Module where
+  sizeOf _    = sizeOf (undefined :: {# type CUmodule #})
+  alignment _ = alignment (undefined :: {# type CUmodule #})
+  peek p      = Module `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useModule v)
+
 
 --
 -- Just-in-time compilation
@@ -73,15 +77,14 @@ newModule = Module `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 getFun :: Module -> String -> IO (Either String Fun)
 getFun modu fname =
   newFun          >>= \fun -> withFun fun $ \fp  ->
-  withModule modu $   \mp  ->
-  cuModuleGetFunction fp mp fname >>= \rv ->
+  cuModuleGetFunction fp modu fname >>= \rv ->
     return $ case nothingIfOk rv of
       Nothing -> Right fun
       Just e  -> Left e
 
 {# fun unsafe cuModuleGetFunction
   { castPtr      `Ptr Fun'
-  , castPtr      `Ptr Module'
+  , useModule    `Module'
   , withCString* `String'     } -> `Status' cToEnum #}
 
 
@@ -90,16 +93,12 @@ getFun modu fname =
 -- create a new module, and load that module into the current context
 --
 loadFile :: String -> IO (Either String Module)
-loadFile ptx =
-  newModule           >>= \m  -> withModule m $ \mp ->
-  cuModuleLoad mp ptx >>= \rv ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right m
-      Just e  -> Left e
+loadFile ptx = resultIfOk `fmap` cuModuleLoad ptx
 
 {# fun unsafe cuModuleLoad
-  { id           `Ptr Module'
-  , withCString* `String'     } -> `Status' cToEnum #}
+  { alloca-      `Module' peekMod*
+  , withCString* `String'          } -> `Status' cToEnum #}
+  where peekMod = liftM Module . peek
 
 
 -- |
@@ -108,17 +107,14 @@ loadFile ptx =
 -- ptx file as a NULL-terminated string.
 --
 loadData :: ByteString -> IO (Either String Module)
-loadData img =
-  newModule               >>= \m  -> withModule m $ \mp ->
-  cuModuleLoadData mp img >>= \rv ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right m
-      Just e  -> Left e
+loadData img = resultIfOk `fmap` cuModuleLoadData img
 
 {# fun unsafe cuModuleLoadData
-  { id     `Ptr Module'
-  , useBS* `ByteString' } -> ` Status' cToEnum #}
-  where useBS bs act = useAsCString bs $ \p -> act (castPtr p)
+  { alloca- `Module'     peekMod*
+  , useBS*  `ByteString'          } -> ` Status' cToEnum #}
+  where
+    peekMod      = liftM Module . peek
+    useBS bs act = useAsCString bs $ \p -> act (castPtr p)
 
 
 -- |
@@ -133,8 +129,8 @@ loadDataEx = error "Foreign.CUDA.Driver.Module.loadDataEx: not implemented yet"
 -- Unload a module from the current context
 --
 unload :: Module -> IO (Maybe String)
-unload m = withModule m $ \mp -> (nothingIfOk `fmap` cuModuleUnload mp)
+unload m = nothingIfOk `fmap` cuModuleUnload m
 
 {# fun unsafe cuModuleUnload
-  { castPtr `Ptr Module' } -> `Status' cToEnum #}
+  { useModule `Module' } -> `Status' cToEnum #}
 
