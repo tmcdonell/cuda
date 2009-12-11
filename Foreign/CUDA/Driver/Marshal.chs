@@ -48,7 +48,6 @@ typedef enum CUmemhostalloc_option_enum {
 -- A reference to memory allocated on the device
 --
 newtype DevicePtr a = DevicePtr { useDevicePtr :: {# type CUdeviceptr #}}
-  deriving (Show)
 
 instance Storable (DevicePtr a) where
   sizeOf _      = sizeOf    (undefined :: {# type CUdeviceptr #})

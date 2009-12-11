@@ -40,13 +40,6 @@ import Data.ByteString                          (ByteString, useAsCString)
 -- A reference to a Module object, containing collections of device functions
 --
 newtype Module = Module { useModule :: {# type CUmodule #}}
-  deriving (Show)
-
-instance Storable Module where
-  sizeOf _    = sizeOf (undefined :: {# type CUmodule #})
-  alignment _ = alignment (undefined :: {# type CUmodule #})
-  peek p      = Module `fmap` peek (castPtr p)
-  poke p v    = poke (castPtr p) (useModule v)
 
 
 --

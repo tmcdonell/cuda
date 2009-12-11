@@ -37,7 +37,6 @@ import Control.Monad            (liftM)
 --------------------------------------------------------------------------------
 
 newtype Device = Device { useDevice :: {# type CUdevice #}}
-  deriving (Show)
 
 
 -- |
@@ -153,7 +152,7 @@ device d = resultIfOk `fmap` cuDeviceGet d
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
   , cIntConv `Int'           } -> `Status' cToEnum #}
-  where dev = liftM Device . peekIntConv
+  where dev = liftM Device . peek
 
 
 -- |
