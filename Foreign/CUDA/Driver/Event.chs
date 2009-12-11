@@ -22,12 +22,12 @@ module Foreign.CUDA.Driver.Event
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream               (Stream, withStream)
+import Foreign.CUDA.Driver.Stream               (Stream(..))
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad				(liftM)
+import Control.Monad                            (liftM)
 
 
 --------------------------------------------------------------------------------
@@ -108,12 +108,12 @@ query ev =
 record :: Event -> Maybe Stream -> IO (Maybe String)
 record ev mst =
   nothingIfOk `fmap` case mst of
-    Just st -> (withStream st $ \s -> cuEventRecord ev s)
-    Nothing -> cuEventRecord ev nullPtr
+    Just st -> cuEventRecord ev st
+    Nothing -> cuEventRecord ev (Stream nullPtr)
 
 {# fun unsafe cuEventRecord
-  { useEvent `Event'
-  , castPtr  `Ptr Stream' } -> `Status' cToEnum #}
+  { useEvent  `Event'
+  , useStream `Stream' } -> `Status' cToEnum #}
 
 
 -- |

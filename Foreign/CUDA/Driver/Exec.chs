@@ -23,7 +23,7 @@ module Foreign.CUDA.Driver.Exec
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream               (Stream, withStream)
+import Foreign.CUDA.Driver.Stream               (Stream(..))
 
 -- System
 import Foreign
@@ -110,14 +110,14 @@ setSharedSize fn bytes = nothingIfOk `fmap` cuFuncSetSharedSize fn bytes
 launch :: Fun -> (Int,Int) -> Maybe Stream -> IO (Maybe String)
 launch fn (w,h) mst =
   nothingIfOk `fmap` case mst of
-    Nothing -> cuLaunchGridAsync fn w h nullPtr
-    Just st -> (withStream st $ \s -> cuLaunchGridAsync fn w h s)
+    Nothing -> cuLaunchGridAsync fn w h (Stream nullPtr)
+    Just st -> cuLaunchGridAsync fn w h st
 
 {# fun unsafe cuLaunchGridAsync
-  { useFun  `Fun'
-  ,         `Int'
-  ,         `Int'
-  , castPtr `Ptr Stream' } -> `Status' cToEnum #}
+  { useFun    `Fun'
+  ,           `Int'
+  ,           `Int'
+  , useStream `Stream' } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------

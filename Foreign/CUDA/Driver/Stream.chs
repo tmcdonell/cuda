@@ -11,8 +11,7 @@
 
 module Foreign.CUDA.Driver.Stream
   (
-    Stream, StreamFlag,
-    withStream,
+    Stream(..), StreamFlag,
     create, destroy, finished, block
   )
   where
@@ -27,6 +26,7 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Foreign
 import Foreign.C
+import Control.Monad                            (liftM)
 
 
 --------------------------------------------------------------------------------
@@ -36,11 +36,7 @@ import Foreign.C
 -- |
 -- A processing stream
 --
-{# pointer *CUstream as Stream foreign newtype #}
-withStream :: Stream -> (Ptr Stream -> IO a) -> IO a
-
-newStream :: IO Stream
-newStream = Stream `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
+newtype Stream = Stream { useStream :: {# type CUstream #}}
 
 
 -- |
@@ -59,25 +55,21 @@ instance Enum StreamFlag where
 -- Create a new stream
 --
 create :: [StreamFlag] -> IO (Either String Stream)
-create flags =
-  newStream              >>= \st -> withStream st $ \s ->
-  cuStreamCreate s flags >>= \rv ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right st
-      Just e  -> Left e
+create flags = resultIfOk `fmap` cuStreamCreate flags
 
 {# fun unsafe cuStreamCreate
-  { id              `Ptr Stream'
-  , combineBitMasks `[StreamFlag]' } -> `Status' cToEnum #}
+  { alloca-         `Stream'       peekStream*
+  , combineBitMasks `[StreamFlag]'             } -> `Status' cToEnum #}
+  where peekStream = liftM Stream . peek
 
 -- |
 -- Destroy a stream
 --
 destroy :: Stream -> IO (Maybe String)
-destroy st = withStream st $ \s -> (nothingIfOk `fmap` cuStreamDestroy s)
+destroy st = nothingIfOk `fmap` cuStreamDestroy st
 
 {# fun unsafe cuStreamDestroy
-  { castPtr `Ptr Stream' } -> `Status' cToEnum #}
+  { useStream `Stream' } -> `Status' cToEnum #}
 
 
 -- |
@@ -85,22 +77,22 @@ destroy st = withStream st $ \s -> (nothingIfOk `fmap` cuStreamDestroy s)
 --
 finished :: Stream -> IO (Either String Bool)
 finished st =
-  withStream st $ \s -> cuStreamQuery s >>= \rv ->
+  cuStreamQuery st >>= \rv ->
   return $ case rv of
     Success  -> Right True
     NotReady -> Right False
     _        -> Left (describe rv)
 
 {# fun unsafe cuStreamQuery
-  { castPtr `Ptr Stream' } -> `Status' cToEnum #}
+  { useStream `Stream' } -> `Status' cToEnum #}
 
 
 -- |
 -- Wait until the device has completed all operations in the Stream
 --
 block :: Stream -> IO (Maybe String)
-block st = withStream st $ \s -> (nothingIfOk `fmap` cuStreamSynchronize s)
+block st = nothingIfOk `fmap` cuStreamSynchronize st
 
 {# fun unsafe cuStreamSynchronize
-  { castPtr `Ptr Stream' } -> `Status' cToEnum #}
+  { useStream `Stream' } -> `Status' cToEnum #}
 

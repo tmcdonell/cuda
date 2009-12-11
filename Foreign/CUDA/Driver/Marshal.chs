@@ -24,7 +24,7 @@ module Foreign.CUDA.Driver.Marshal
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream               (Stream, withStream)
+import Foreign.CUDA.Driver.Stream               (Stream(..))
 
 -- System
 import Foreign                           hiding (peekArray, pokeArray, malloc, free)
@@ -171,14 +171,14 @@ peekArrayAsync n dptr hptr mst = doPeek undefined dptr
     doPeek :: Storable a' => a' -> DevicePtr a' -> IO (Maybe String)
     doPeek x _ =
       nothingIfOk `fmap` case mst of
-        Nothing -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) nullPtr
-        Just st -> (withStream st $ \s -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) s)
+        Nothing -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (Stream nullPtr)
+        Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyDtoHAsync
   { castPtr      `Ptr a'
   , useDevicePtr `DevicePtr a'
   ,              `Int'
-  , castPtr      `Ptr Stream'  } -> `Status' cToEnum #}
+  , useStream    `Stream'  } -> `Status' cToEnum #}
 
 
 -- |
@@ -207,14 +207,14 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
     dopoke :: Storable a' => a' -> DevicePtr a' -> IO (Maybe String)
     dopoke x _ =
       nothingIfOk `fmap` case mst of
-        Nothing -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) nullPtr
-        Just st -> (withStream st $ \s -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) s)
+        Nothing -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (Stream nullPtr)
+        Just st -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyHtoDAsync
   { useDevicePtr `DevicePtr a'
   , castPtr      `Ptr a'
   ,              `Int'
-  , castPtr      `Ptr Stream'  } -> `Status' cToEnum #}
+  , useStream    `Stream'  } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
