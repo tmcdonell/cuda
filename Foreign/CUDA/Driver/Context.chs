@@ -27,7 +27,6 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Foreign
 import Foreign.C
-import Foreign.ForeignPtr
 import Control.Monad                    (liftM)
 
 
@@ -38,16 +37,7 @@ import Control.Monad                    (liftM)
 -- |
 -- A device context
 --
-{# pointer *CUcontext as Context foreign newtype #}
-withContext :: Context -> (Ptr Context -> IO a) -> IO a
-
---
--- XXX: Probably want to add a finaliser to `destroy' the context before
--- releasing its reference. Not done as this may flag an error, which could be
--- picked up by later driver calls.
---
-newContext :: IO Context
-newContext = Context `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
+newtype Context = Context { useContext :: {# type CUcontext #}}
 
 
 -- |
@@ -66,17 +56,13 @@ newContext = Context `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Create a new CUDA context and associate it with the calling thread
 --
 create :: Device -> [ContextFlag] -> IO (Either String Context)
-create dev flags =
-  newContext              >>= \ctx -> withContext ctx $ \p ->
-  cuCtxCreate p flags dev >>= \rv  ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right ctx
-      Just e  -> Left  e
+create dev flags = resultIfOk `fmap` cuCtxCreate flags dev
 
 {# fun unsafe cuCtxCreate
-  { id              `Ptr Context'
+  { alloca-         `Context'       peekCtx*
   , combineBitMasks `[ContextFlag]'
-  , useDevice       `Device'         } -> `Status' cToEnum #}
+  , useDevice       `Device'                 } -> `Status' cToEnum #}
+  where peekCtx = liftM Context . peek
 
 
 -- |
@@ -84,21 +70,22 @@ create dev flags =
 -- currently supported, so this parameter must be empty.
 --
 attach :: Context -> [ContextFlag] -> IO (Maybe String)
-attach ctx flags = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxAttach p flags)
+attach ctx flags = nothingIfOk `fmap` cuCtxAttach ctx flags
 
 {# fun unsafe cuCtxAttach
-  { id              `Ptr Context'
+  { withCtx*        `Context'
   , combineBitMasks `[ContextFlag]' } -> `Status' cToEnum #}
+  where withCtx = with . useContext
 
 
 -- |
 -- Detach the context, and destroy if no longer used
 --
 detach :: Context -> IO (Maybe String)
-detach ctx = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxDetach p)
+detach ctx = nothingIfOk `fmap` cuCtxDetach ctx
 
 {# fun unsafe cuCtxDetach
-  { castPtr `Ptr Context' } -> `Status' cToEnum #}
+  { useContext `Context' } -> `Status' cToEnum #}
 
 
 -- |
@@ -106,10 +93,10 @@ detach ctx = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxDetach p)
 -- single attachment (including that from initial creation).
 --
 destroy :: Context -> IO (Maybe String)
-destroy ctx = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxDestroy p)
+destroy ctx = nothingIfOk `fmap` cuCtxDestroy ctx
 
 {# fun unsafe cuCtxDestroy
-  { castPtr `Ptr Context' } -> `Status' cToEnum #}
+  { useContext `Context' } -> `Status' cToEnum #}
 
 
 -- |
@@ -129,15 +116,11 @@ current = resultIfOk `fmap` cuCtxGetDevice
 -- context is returned, and the old may be attached to a different CPU.
 --
 pop :: IO (Either String Context)
-pop =
-  newContext        >>= \ctx -> withContext ctx $ \p ->
-  cuCtxPopCurrent p >>= \rv  ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right ctx
-      Just e  -> Left  e
+pop = resultIfOk `fmap` cuCtxPopCurrent
 
 {# fun unsafe cuCtxPopCurrent
-  { id `Ptr Context' } -> `Status' cToEnum #}
+  { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
+  where peekCtx = liftM Context . peek
 
 
 -- |
@@ -145,10 +128,10 @@ pop =
 -- context must be floating (via `pop'), i.e. not attached to any thread.
 --
 push :: Context -> IO (Maybe String)
-push ctx = withContext ctx $ \p -> (nothingIfOk `fmap` cuCtxPushCurrent p)
+push ctx = nothingIfOk `fmap` cuCtxPushCurrent ctx
 
 {# fun unsafe cuCtxPushCurrent
-  { castPtr `Ptr Context' } -> `Status' cToEnum #}
+  { useContext `Context' } -> `Status' cToEnum #}
 
 
 -- |
