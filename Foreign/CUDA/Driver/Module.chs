@@ -22,7 +22,7 @@ module Foreign.CUDA.Driver.Module
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Exec                 (Fun, newFun, withFun)
+import Foreign.CUDA.Driver.Exec
 
 -- System
 import Foreign
@@ -75,17 +75,13 @@ instance Storable Module where
 -- Returns a function handle
 --
 getFun :: Module -> String -> IO (Either String Fun)
-getFun modu fname =
-  newFun          >>= \fun -> withFun fun $ \fp  ->
-  cuModuleGetFunction fp modu fname >>= \rv ->
-    return $ case nothingIfOk rv of
-      Nothing -> Right fun
-      Just e  -> Left e
+getFun mdl fn = resultIfOk `fmap` cuModuleGetFunction mdl fn
 
 {# fun unsafe cuModuleGetFunction
-  { castPtr      `Ptr Fun'
+  { alloca-      `Fun'    peekFun*
   , useModule    `Module'
-  , withCString* `String'     } -> `Status' cToEnum #}
+  , withCString* `String'          } -> `Status' cToEnum #}
+  where peekFun = liftM Fun . peek
 
 
 -- |

@@ -11,7 +11,8 @@
 
 module Foreign.CUDA.Driver.Exec
   (
-    Fun, FunParam(..), FunAttribute(..), newFun, withFun,
+    Fun(Fun),  -- need to export the data constructor for use by Module )=
+    FunParam(..), FunAttribute(..),
     requires, setBlockShape, setSharedSize, setParams, launch
   )
   where
@@ -38,11 +39,8 @@ import Control.Monad                            (zipWithM)
 -- |
 -- A __global__ device function
 --
-{# pointer *CUfunction as Fun foreign newtype #}
-withFun :: Fun -> (Ptr Fun -> IO a) -> IO a
+newtype Fun = Fun { useFun :: {# type CUfunction #}}
 
-newFun :: IO Fun
-newFun = Fun `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
 -- |
 -- Function attributes
@@ -60,7 +58,7 @@ data Storable a => FunParam a
     = IArg Int
     | FArg Float
     | VArg a
---  | TRef Texture
+--  | TArg Texture
 
 --------------------------------------------------------------------------------
 -- Execution Control
@@ -70,12 +68,12 @@ data Storable a => FunParam a
 -- Returns the value of the selected attribute requirement for the given kernel
 --
 requires :: Fun -> FunAttribute -> IO (Either String Int)
-requires fn att = withFun fn $ \f -> (resultIfOk `fmap` cuFuncGetAttribute att f)
+requires fn att = resultIfOk `fmap` cuFuncGetAttribute att fn
 
 {# fun unsafe cuFuncGetAttribute
   { alloca-   `Int'          peekIntConv*
   , cFromEnum `FunAttribute'
-  , castPtr   `Ptr Fun'                   } -> `Status' cToEnum #}
+  , useFun    `Fun'                       } -> `Status' cToEnum #}
 
 
 -- |
@@ -83,13 +81,13 @@ requires fn att = withFun fn $ \f -> (resultIfOk `fmap` cuFuncGetAttribute att f
 -- given kernel function is lanched
 --
 setBlockShape :: Fun -> (Int,Int,Int) -> IO (Maybe String)
-setBlockShape fn (x,y,z) = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetBlockShape f x y z)
+setBlockShape fn (x,y,z) = nothingIfOk `fmap` cuFuncSetBlockShape fn x y z
 
 {# fun unsafe cuFuncSetBlockShape
-  { castPtr `Ptr Fun'
-  ,         `Int'
-  ,         `Int'
-  ,         `Int'     } -> `Status' cToEnum #}
+  { useFun `Fun'
+  ,        `Int'
+  ,        `Int'
+  ,        `Int' } -> `Status' cToEnum #}
 
 
 -- |
@@ -97,10 +95,10 @@ setBlockShape fn (x,y,z) = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetBlock
 -- thread block when the function is launched
 --
 setSharedSize :: Fun -> Integer -> IO (Maybe String)
-setSharedSize fn bytes = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetSharedSize f bytes)
+setSharedSize fn bytes = nothingIfOk `fmap` cuFuncSetSharedSize fn bytes
 
 {# fun unsafe cuFuncSetSharedSize
-  { castPtr  `Ptr Fun'
+  { useFun   `Fun'
   , cIntConv `Integer' } -> `Status' cToEnum #}
 
 
@@ -111,13 +109,12 @@ setSharedSize fn bytes = withFun fn $ \f -> (nothingIfOk `fmap` cuFuncSetSharedS
 --
 launch :: Fun -> (Int,Int) -> Maybe Stream -> IO (Maybe String)
 launch fn (w,h) mst =
-  withFun fn $ \f ->
   nothingIfOk `fmap` case mst of
-    Nothing -> cuLaunchGridAsync f w h nullPtr
-    Just st -> (withStream st $ \s -> cuLaunchGridAsync f w h s)
+    Nothing -> cuLaunchGridAsync fn w h nullPtr
+    Just st -> (withStream st $ \s -> cuLaunchGridAsync fn w h s)
 
 {# fun unsafe cuLaunchGridAsync
-  { castPtr `Ptr Fun'
+  { useFun  `Fun'
   ,         `Int'
   ,         `Int'
   , castPtr `Ptr Stream' } -> `Status' cToEnum #}
@@ -132,11 +129,10 @@ launch fn (w,h) mst =
 --
 setParams :: Storable a => Fun -> [FunParam a] -> IO (Maybe [String])
 setParams fn prs =
-  withFun fn $ \f ->
-  cuParamSetSize f (last offsets) >>= \rv ->
+  cuParamSetSize fn (last offsets) >>= \rv ->
   case nothingIfOk rv of
     Just err -> return (Just [err])
-    Nothing  -> (maybeNull . catMaybes) `fmap` zipWithM (set f) offsets prs
+    Nothing  -> (maybeNull . catMaybes) `fmap` zipWithM (set fn) offsets prs
   where
     maybeNull [] = Nothing
     maybeNull x  = Just x
@@ -153,23 +149,23 @@ setParams fn prs =
 
 
 {# fun unsafe cuParamSetSize
-  { castPtr `Ptr Fun'
-  ,         `Int'     } -> `Status' cToEnum #}
+  { useFun `Fun'
+  ,        `Int' } -> `Status' cToEnum #}
 
 {# fun unsafe cuParamSeti
-  { castPtr `Ptr Fun'
-  ,         `Int'
-  ,         `Int'     } -> `Status' cToEnum #}
+  { useFun `Fun'
+  ,        `Int'
+  ,        `Int' } -> `Status' cToEnum #}
 
 {# fun unsafe cuParamSetf
-  { castPtr `Ptr Fun'
-  ,         `Int'
-  ,         `Float'   } -> `Status' cToEnum #}
+  { useFun `Fun'
+  ,        `Int'
+  ,        `Float' } -> `Status' cToEnum #}
 
 {# fun unsafe cuParamSetv
   `Storable a' =>
-  { castPtr `Ptr Fun'
+  { useFun  `Fun'
   ,         `Int'
   , castPtr `Ptr a'
-  ,         `Int'     } -> `Status' cToEnum #}
+  ,         `Int'   } -> `Status' cToEnum #}
 
