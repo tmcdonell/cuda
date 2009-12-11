@@ -27,17 +27,17 @@ import Foreign.CUDA.Driver.Stream               (Stream, withStream)
 -- System
 import Foreign
 import Foreign.C
+import Control.Monad				(liftM)
 
 
 --------------------------------------------------------------------------------
 -- Data Types
 --------------------------------------------------------------------------------
 
-{# pointer *CUevent as Event foreign newtype #}
-withEvent :: Event -> (Ptr Event -> IO a) -> IO a
-
-newEvent :: IO Event
-newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
+-- |
+-- Events
+--
+newtype Event = Event { useEvent :: {# type CUevent #}}
 
 
 -- |
@@ -56,44 +56,34 @@ newEvent = Event `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- Create a new event
 --
 create :: [EventFlag] -> IO (Either String Event)
-create flags =
-  newEvent              >>= \ev -> withEvent ev $ \e ->
-  cuEventCreate e flags >>= \rv ->
-    return $ case nothingIfOk rv of
-      Nothing  -> Right ev
-      Just err -> Left err
+create flags = resultIfOk `fmap` cuEventCreate flags
 
 {# fun unsafe cuEventCreate
-  { id              `Ptr Event'
-  , combineBitMasks `[EventFlag]' } -> `Status' cToEnum #}
+  { alloca-         `Event'       peekEvt*
+  , combineBitMasks `[EventFlag]'          } -> `Status' cToEnum #}
+  where peekEvt = liftM Event . peek
 
 
 -- |
 -- Destroy an event
 --
 destroy :: Event -> IO (Maybe String)
-destroy ev = withEvent ev $ \e -> (nothingIfOk `fmap` cuEventDestroy e)
+destroy ev = nothingIfOk `fmap` cuEventDestroy ev
 
 {# fun unsafe cuEventDestroy
-  { castPtr `Ptr Event' } -> `Status' cToEnum #}
+  { useEvent `Event' } -> `Status' cToEnum #}
 
 
 -- |
 -- Determine the elapsed time (in milliseconds) between two events
 --
 elapsedTime :: Event -> Event -> IO (Either String Float)
-elapsedTime ev1 ev2 =
-  withEvent ev1 $ \e1 ->
-  withEvent ev2 $ \e2 ->
-  cuEventElapsedTime e1 e2 >>= \(rv,tm) ->
-    return $ case nothingIfOk rv of
-      Nothing  -> Right tm
-      Just err -> Left err
+elapsedTime ev1 ev2 = resultIfOk `fmap` cuEventElapsedTime ev1 ev2
 
 {# fun unsafe cuEventElapsedTime
-  { alloca- `Float'     peekFloatConv*
-  , castPtr `Ptr Event'
-  , castPtr `Ptr Event'                } -> `Status' cToEnum #}
+  { alloca-  `Float' peekFloatConv*
+  , useEvent `Event'
+  , useEvent `Event'                } -> `Status' cToEnum #}
 
 
 -- |
@@ -101,14 +91,14 @@ elapsedTime ev1 ev2 =
 --
 query :: Event -> IO (Either String Bool)
 query ev =
-  withEvent ev $ \e -> cuEventQuery e >>= \rv ->
+  cuEventQuery ev >>= \rv ->
   return $ case rv of
     Success  -> Right True
     NotReady -> Right False
     _        -> Left (describe rv)
 
 {# fun unsafe cuEventQuery
-  { castPtr `Ptr Event' } -> `Status' cToEnum #}
+  { useEvent `Event' } -> `Status' cToEnum #}
 
 
 -- |
@@ -117,22 +107,21 @@ query ev =
 --
 record :: Event -> Maybe Stream -> IO (Maybe String)
 record ev mst =
-  withEvent ev $ \e ->
   nothingIfOk `fmap` case mst of
-    Just st -> (withStream st $ \s -> cuEventRecord e s)
-    Nothing -> cuEventRecord e nullPtr
+    Just st -> (withStream st $ \s -> cuEventRecord ev s)
+    Nothing -> cuEventRecord ev nullPtr
 
 {# fun unsafe cuEventRecord
-  { castPtr `Ptr Event'
-  , castPtr `Ptr Stream' } -> `Status' cToEnum #}
+  { useEvent `Event'
+  , castPtr  `Ptr Stream' } -> `Status' cToEnum #}
 
 
 -- |
 -- Wait until the event has been recorded
 --
 block :: Event -> IO (Maybe String)
-block ev = withEvent ev $ \e -> (nothingIfOk `fmap` cuEventSynchronize e)
+block ev = nothingIfOk `fmap` cuEventSynchronize ev
 
 {# fun unsafe cuEventSynchronize
-  { castPtr `Ptr Event' } -> `Status' cToEnum #}
+  { useEvent `Event' } -> `Status' cToEnum #}
 
