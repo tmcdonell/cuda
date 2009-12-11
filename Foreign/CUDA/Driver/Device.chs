@@ -14,7 +14,7 @@ module Foreign.CUDA.Driver.Device
     Device(..), -- should be exported abstractly
     DeviceProperties(..), DeviceAttribute(..), InitFlag,
 
-    initialise, capability, get, attribute, count, name, props, totalMem
+    initialise, capability, device, attribute, count, name, props, totalMem
   )
   where
 
@@ -147,8 +147,8 @@ capability dev =
 -- |
 -- Return a device handle
 --
-get :: Int -> IO (Either String Device)
-get d = resultIfOk `fmap` cuDeviceGet d
+device :: Int -> IO (Either String Device)
+device d = resultIfOk `fmap` cuDeviceGet d
 
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
