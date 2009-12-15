@@ -12,7 +12,6 @@
 module Main where
 
 import Foreign
-import Foreign.CUDA.Driver (forceEither)
 import qualified Foreign.CUDA.Driver as CUDA
 
 import Data.Array.Storable
@@ -68,24 +67,21 @@ testRef xs ys = do
 
 initCUDA :: IO (CUDA.Fun)
 initCUDA = do
-  res <- CUDA.initialise []
-  case res of
-    Just e  -> error e
-    Nothing -> do
-      dev <- forceEither `fmap` CUDA.device 0
-      ctx <- forceEither `fmap` CUDA.create dev []
-      mdl <- forceEither `fmap` CUDA.loadFile   "data/VectorAdd.ptx"
-      fun <- forceEither `fmap` CUDA.getFun mdl "VecAdd"
-      return fun
+  CUDA.initialise []
+  dev <- CUDA.device 0
+  ctx <- CUDA.create dev []
+  mdl <- CUDA.loadFile   "data/VectorAdd.ptx"
+  fun <- CUDA.getFun mdl "VecAdd"
+  return fun
 
 initData :: (Num e, Storable e)
          => Vector e -> Vector e -> IO (CUDA.DevicePtr e, CUDA.DevicePtr e, CUDA.DevicePtr e)
 initData xs ys = do
   (m,n) <- getBounds xs
   let len = (n-m+1)
-  dxs   <- forceEither `fmap` CUDA.malloc len
-  dys   <- forceEither `fmap` CUDA.malloc len
-  res   <- forceEither `fmap` CUDA.malloc len
+  dxs   <- CUDA.malloc len
+  dys   <- CUDA.malloc len
+  res   <- CUDA.malloc len
   withVector xs $ \p -> CUDA.pokeArray len p dxs
   withVector ys $ \p -> CUDA.pokeArray len p dys
   return (dxs, dys, res)

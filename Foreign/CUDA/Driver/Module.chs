@@ -23,13 +23,15 @@ module Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
+import Foreign.CUDA.Driver.Device
 
 -- System
 import Foreign
 import Foreign.C
 
 import Control.Monad                            (liftM)
-import Data.ByteString                          (ByteString, useAsCString)
+import Data.ByteString.Char8                    (ByteString)
+import qualified Data.ByteString.Char8 as B
 
 
 --------------------------------------------------------------------------------
@@ -67,8 +69,8 @@ newtype Module = Module { useModule :: {# type CUmodule #}}
 -- |
 -- Returns a function handle
 --
-getFun :: Module -> String -> IO (Either String Fun)
-getFun mdl fn = resultIfOk `fmap` cuModuleGetFunction mdl fn
+getFun :: Module -> String -> IO Fun
+getFun mdl fn = resultIfOk =<< cuModuleGetFunction mdl fn
 
 {# fun unsafe cuModuleGetFunction
   { alloca-      `Fun'    peekFun*
@@ -81,8 +83,8 @@ getFun mdl fn = resultIfOk `fmap` cuModuleGetFunction mdl fn
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context
 --
-loadFile :: String -> IO (Either String Module)
-loadFile ptx = resultIfOk `fmap` cuModuleLoad ptx
+loadFile :: String -> IO Module
+loadFile ptx = resultIfOk =<< cuModuleLoad ptx
 
 {# fun unsafe cuModuleLoad
   { alloca-      `Module' peekMod*
@@ -95,15 +97,15 @@ loadFile ptx = resultIfOk `fmap` cuModuleLoad ptx
 -- into the current context. The image (typically) is the contents of a cubin or
 -- ptx file as a NULL-terminated string.
 --
-loadData :: ByteString -> IO (Either String Module)
-loadData img = resultIfOk `fmap` cuModuleLoadData img
+loadData :: ByteString -> IO Module
+loadData img = resultIfOk =<< cuModuleLoadData img
 
 {# fun unsafe cuModuleLoadData
   { alloca- `Module'     peekMod*
   , useBS*  `ByteString'          } -> ` Status' cToEnum #}
   where
     peekMod      = liftM Module . peek
-    useBS bs act = useAsCString bs $ \p -> act (castPtr p)
+    useBS bs act = B.useAsCString bs $ \p -> act (castPtr p)
 
 
 -- |
@@ -117,8 +119,8 @@ loadDataEx = error "Foreign.CUDA.Driver.Module.loadDataEx: not implemented yet"
 -- |
 -- Unload a module from the current context
 --
-unload :: Module -> IO (Maybe String)
-unload m = nothingIfOk `fmap` cuModuleUnload m
+unload :: Module -> IO ()
+unload m = nothingIfOk =<< cuModuleUnload m
 
 {# fun unsafe cuModuleUnload
   { useModule `Module' } -> `Status' cToEnum #}

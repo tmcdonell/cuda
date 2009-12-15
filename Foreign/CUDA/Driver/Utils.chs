@@ -38,8 +38,8 @@ forceEither (Right r) = r
 -- |
 -- Return the version number of the installed CUDA driver
 --
-driverVersion :: IO (Either String Int)
-driverVersion =  resultIfOk `fmap` cuDriverGetVersion
+driverVersion :: IO Int
+driverVersion =  resultIfOk =<< cuDriverGetVersion
 
 {# fun unsafe cuDriverGetVersion
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}

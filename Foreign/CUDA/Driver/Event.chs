@@ -55,8 +55,8 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 -- |
 -- Create a new event
 --
-create :: [EventFlag] -> IO (Either String Event)
-create flags = resultIfOk `fmap` cuEventCreate flags
+create :: [EventFlag] -> IO Event
+create flags = resultIfOk =<< cuEventCreate flags
 
 {# fun unsafe cuEventCreate
   { alloca-         `Event'       peekEvt*
@@ -67,8 +67,8 @@ create flags = resultIfOk `fmap` cuEventCreate flags
 -- |
 -- Destroy an event
 --
-destroy :: Event -> IO (Maybe String)
-destroy ev = nothingIfOk `fmap` cuEventDestroy ev
+destroy :: Event -> IO ()
+destroy ev = nothingIfOk =<< cuEventDestroy ev
 
 {# fun unsafe cuEventDestroy
   { useEvent `Event' } -> `Status' cToEnum #}
@@ -77,8 +77,8 @@ destroy ev = nothingIfOk `fmap` cuEventDestroy ev
 -- |
 -- Determine the elapsed time (in milliseconds) between two events
 --
-elapsedTime :: Event -> Event -> IO (Either String Float)
-elapsedTime ev1 ev2 = resultIfOk `fmap` cuEventElapsedTime ev1 ev2
+elapsedTime :: Event -> Event -> IO Float
+elapsedTime ev1 ev2 = resultIfOk =<< cuEventElapsedTime ev1 ev2
 
 {# fun unsafe cuEventElapsedTime
   { alloca-  `Float' peekFloatConv*
@@ -89,13 +89,13 @@ elapsedTime ev1 ev2 = resultIfOk `fmap` cuEventElapsedTime ev1 ev2
 -- |
 -- Determines if a event has actually been recorded
 --
-query :: Event -> IO (Either String Bool)
+query :: Event -> IO Bool
 query ev =
   cuEventQuery ev >>= \rv ->
-  return $ case rv of
-    Success  -> Right True
-    NotReady -> Right False
-    _        -> Left (describe rv)
+  case rv of
+    Success  -> return True
+    NotReady -> return False
+    _        -> resultIfOk (rv,undefined)
 
 {# fun unsafe cuEventQuery
   { useEvent `Event' } -> `Status' cToEnum #}
@@ -105,9 +105,9 @@ query ev =
 -- Record an event once all operations in the current context (or optionally
 -- specified stream) have completed. This operation is asynchronous.
 --
-record :: Event -> Maybe Stream -> IO (Maybe String)
+record :: Event -> Maybe Stream -> IO ()
 record ev mst =
-  nothingIfOk `fmap` case mst of
+  nothingIfOk =<< case mst of
     Just st -> cuEventRecord ev st
     Nothing -> cuEventRecord ev (Stream nullPtr)
 
@@ -119,8 +119,8 @@ record ev mst =
 -- |
 -- Wait until the event has been recorded
 --
-block :: Event -> IO (Maybe String)
-block ev = nothingIfOk `fmap` cuEventSynchronize ev
+block :: Event -> IO ()
+block ev = nothingIfOk =<< cuEventSynchronize ev
 
 {# fun unsafe cuEventSynchronize
   { useEvent `Event' } -> `Status' cToEnum #}

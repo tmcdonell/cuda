@@ -54,8 +54,8 @@ Library
   C-sources:            
 
   Build-tools:          c2hs, hsc2hs
-  Build-depends:        base, haskell98, bytestring
-  Extensions:           ForeignFunctionInterface
+  Build-depends:        base >= 4.0, haskell98, bytestring, extensible-exceptions
+  Extensions:
   ghc-options:          -Wall
   extra-libraries:      cuda cudart
 

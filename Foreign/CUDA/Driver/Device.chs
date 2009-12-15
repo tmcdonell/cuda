@@ -115,8 +115,8 @@ instance Enum InitFlag where
 -- Initialise the CUDA driver API. Must be called before any other driver
 -- function.
 --
-initialise :: [InitFlag] -> IO (Maybe String)
-initialise flags = nothingIfOk `fmap` cuInit flags
+initialise :: [InitFlag] -> IO ()
+initialise flags = nothingIfOk =<< cuInit flags
 
 {# fun unsafe cuInit
   { combineBitMasks `[InitFlag]' } -> `Status' cToEnum #}
@@ -129,9 +129,9 @@ initialise flags = nothingIfOk `fmap` cuInit flags
 -- |
 -- Return the compute compatibility revision supported by the device
 --
-capability :: Device -> IO (Either String Double)
+capability :: Device -> IO Double
 capability dev =
-  (\(s,a,b) -> resultIfOk (s,cap a b)) `fmap` cuDeviceComputeCapability dev
+  (\(s,a,b) -> resultIfOk (s,cap a b)) =<< cuDeviceComputeCapability dev
   where
     cap a b = let a' = fromIntegral a in
               let b' = fromIntegral b in
@@ -146,8 +146,8 @@ capability dev =
 -- |
 -- Return a device handle
 --
-device :: Int -> IO (Either String Device)
-device d = resultIfOk `fmap` cuDeviceGet d
+device :: Int -> IO Device
+device d = resultIfOk =<< cuDeviceGet d
 
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
@@ -158,8 +158,8 @@ device d = resultIfOk `fmap` cuDeviceGet d
 -- |
 -- Return the selected attribute for the given device
 --
-attribute :: Device -> DeviceAttribute -> IO (Either String Int)
-attribute d a = resultIfOk `fmap` cuDeviceGetAttribute a d
+attribute :: Device -> DeviceAttribute -> IO Int
+attribute d a = resultIfOk =<< cuDeviceGetAttribute a d
 
 {# fun unsafe cuDeviceGetAttribute
   { alloca-   `Int'             peekIntConv*
@@ -170,8 +170,8 @@ attribute d a = resultIfOk `fmap` cuDeviceGetAttribute a d
 -- |
 -- Return the number of device with compute capability > 1.0
 --
-count :: IO (Either String Int)
-count = resultIfOk `fmap` cuDeviceGetCount
+count :: IO Int
+count = resultIfOk =<< cuDeviceGetCount
 
 {# fun unsafe cuDeviceGetCount
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
@@ -180,8 +180,8 @@ count = resultIfOk `fmap` cuDeviceGetCount
 -- |
 -- Name of the device
 --
-name :: Device -> IO (Either String String)
-name d = resultIfOk `fmap` cuDeviceGetName d
+name :: Device -> IO String
+name d = resultIfOk =<< cuDeviceGetName d
 
 {# fun unsafe cuDeviceGetName
   { allocaS-  `String'& peekS*
@@ -195,8 +195,8 @@ name d = resultIfOk `fmap` cuDeviceGetName d
 -- |
 -- Return the properties of the selected device
 --
-props :: Device -> IO (Either String DeviceProperties)
-props d = resultIfOk `fmap` cuDeviceGetProperties d
+props :: Device -> IO DeviceProperties
+props d = resultIfOk =<< cuDeviceGetProperties d
 
 {# fun unsafe cuDeviceGetProperties
   { alloca-   `DeviceProperties' peek*
@@ -206,8 +206,8 @@ props d = resultIfOk `fmap` cuDeviceGetProperties d
 -- |
 -- Total memory available on the device (bytes)
 --
-totalMem :: Device -> IO (Either String Int)
-totalMem d = resultIfOk `fmap` cuDeviceTotalMem d
+totalMem :: Device -> IO Int
+totalMem d = resultIfOk =<< cuDeviceTotalMem d
 
 {# fun unsafe cuDeviceTotalMem
   { alloca-   `Int' peekIntConv*

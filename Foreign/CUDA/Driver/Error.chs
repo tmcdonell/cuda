@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Error
@@ -13,14 +13,16 @@ module Foreign.CUDA.Driver.Error
   where
 
 
-import Foreign.CUDA.Internal.C2HS
+-- System
+import Data.Typeable
+import Control.Exception.Extensible
 
 #include <cuda.h>
 {# context lib="cuda" #}
 
 
 --------------------------------------------------------------------------------
--- Data Types
+-- Return Status
 --------------------------------------------------------------------------------
 
 --
@@ -28,17 +30,13 @@ import Foreign.CUDA.Internal.C2HS
 --
 {# enum CUresult as Status
     { underscoreToCase
-    , CUDA_SUCCESS as Success }
+    , CUDA_SUCCESS as Success
+    , CUDA_ERROR_NO_BINARY_FOR_GPU as NoBinaryForGPU }
     with prefix="CUDA_ERROR" deriving (Eq, Show) #}
 
 
---------------------------------------------------------------------------------
--- Functions
---------------------------------------------------------------------------------
-
 -- |
 -- Return a descriptive error string associated with a particular error code
--- XXX: yes, not very descriptive...
 --
 describe :: Status -> String
 describe Success                     = "no error"
@@ -55,7 +53,7 @@ describe MapFailed                   = "map failed"
 describe UnmapFailed                 = "unmap failed"
 describe ArrayIsMapped               = "array is mapped"
 describe AlreadyMapped               = "already mapped"
-describe NoBinaryForGpu              = "no binary available for this GPU"
+describe NoBinaryForGPU              = "no binary available for this GPU"
 describe AlreadyAcquired             = "resource already acquired"
 describe NotMapped                   = "not mapped"
 describe InvalidSource               = "invalid source"
@@ -70,21 +68,62 @@ describe LaunchIncompatibleTexturing = "launch with incompatible texturing"
 describe Unknown                     = "unknown error"
 
 
+--------------------------------------------------------------------------------
+-- Exceptions
+--------------------------------------------------------------------------------
+
+data CUDAException
+  = ExitCode Status
+  | UserError String
+  deriving Typeable
+
+instance Exception CUDAException
+
+instance Show CUDAException where
+  showsPrec _ (ExitCode  s) = showString ("CUDA Exception: " ++ describe s)
+  showsPrec _ (UserError s) = showString ("CUDA Exception: " ++ s)
+
+
 -- |
--- Return the results of a function on successful execution, otherwise return
--- the error string associated with the return code
+-- Raise a CUDAException in the IO Monad
 --
-resultIfOk :: (Status, a) -> Either String a
+cudaError :: String -> IO a
+cudaError s = throwIO (UserError s)
+
+
+-- |
+-- Run a CUDA computation
+--
+{-
+runCUDA f = runEMT $ do
+  f `catchWithSrcLoc` \l e -> lift (handle l e)
+  where
+    handle :: CallTrace -> CUDAException -> IO ()
+    handle l e = putStrLn $ showExceptionWithTrace l e
+-}
+
+--------------------------------------------------------------------------------
+-- Helper Functions
+--------------------------------------------------------------------------------
+
+-- |
+-- Return the results of a function on successful execution, otherwise throw an
+-- exception with an error string associated with the return code
+--
+resultIfOk :: (Status, a) -> IO a
 resultIfOk (status,result) =
     case status of
-        Success -> Right result
-        _       -> Left (describe status)
+        Success -> return  result
+        _       -> throwIO (ExitCode status)
 
 
 -- |
--- Return the error string associated with an unsuccessful return code,
--- otherwise Nothing
+-- Throw an exception with an error string associated with an unsuccessful
+-- return code, otherwise return unit.
 --
-nothingIfOk :: Status -> Maybe String
-nothingIfOk = nothingIf (== Success) describe
+nothingIfOk :: Status -> IO ()
+nothingIfOk status =
+    case status of
+        Success -> return  ()
+        _       -> throwIO (ExitCode status)
 

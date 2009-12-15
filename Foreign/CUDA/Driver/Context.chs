@@ -55,8 +55,8 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
 -- |
 -- Create a new CUDA context and associate it with the calling thread
 --
-create :: Device -> [ContextFlag] -> IO (Either String Context)
-create dev flags = resultIfOk `fmap` cuCtxCreate flags dev
+create :: Device -> [ContextFlag] -> IO Context
+create dev flags = resultIfOk =<< cuCtxCreate flags dev
 
 {# fun unsafe cuCtxCreate
   { alloca-         `Context'       peekCtx*
@@ -69,8 +69,8 @@ create dev flags = resultIfOk `fmap` cuCtxCreate flags dev
 -- Increments the usage count of the context. API: no context flags are
 -- currently supported, so this parameter must be empty.
 --
-attach :: Context -> [ContextFlag] -> IO (Maybe String)
-attach ctx flags = nothingIfOk `fmap` cuCtxAttach ctx flags
+attach :: Context -> [ContextFlag] -> IO ()
+attach ctx flags = nothingIfOk =<< cuCtxAttach ctx flags
 
 {# fun unsafe cuCtxAttach
   { withCtx*        `Context'
@@ -81,8 +81,8 @@ attach ctx flags = nothingIfOk `fmap` cuCtxAttach ctx flags
 -- |
 -- Detach the context, and destroy if no longer used
 --
-detach :: Context -> IO (Maybe String)
-detach ctx = nothingIfOk `fmap` cuCtxDetach ctx
+detach :: Context -> IO ()
+detach ctx = nothingIfOk =<< cuCtxDetach ctx
 
 {# fun unsafe cuCtxDetach
   { useContext `Context' } -> `Status' cToEnum #}
@@ -92,8 +92,8 @@ detach ctx = nothingIfOk `fmap` cuCtxDetach ctx
 -- Destroy the specified context. This fails if the context is more than a
 -- single attachment (including that from initial creation).
 --
-destroy :: Context -> IO (Maybe String)
-destroy ctx = nothingIfOk `fmap` cuCtxDestroy ctx
+destroy :: Context -> IO ()
+destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
 
 {# fun unsafe cuCtxDestroy
   { useContext `Context' } -> `Status' cToEnum #}
@@ -102,8 +102,8 @@ destroy ctx = nothingIfOk `fmap` cuCtxDestroy ctx
 -- |
 -- Return the device of the currently active context
 --
-current :: IO (Either String Device)
-current = resultIfOk `fmap` cuCtxGetDevice
+current :: IO Device
+current = resultIfOk =<< cuCtxGetDevice
 
 {# fun unsafe cuCtxGetDevice
   { alloca- `Device' dev* } -> `Status' cToEnum #}
@@ -115,8 +115,8 @@ current = resultIfOk `fmap` cuCtxGetDevice
 -- single usage count (matching calls to attach/detach). If successful, the new
 -- context is returned, and the old may be attached to a different CPU.
 --
-pop :: IO (Either String Context)
-pop = resultIfOk `fmap` cuCtxPopCurrent
+pop :: IO Context
+pop = resultIfOk =<< cuCtxPopCurrent
 
 {# fun unsafe cuCtxPopCurrent
   { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
@@ -127,8 +127,8 @@ pop = resultIfOk `fmap` cuCtxPopCurrent
 -- Push the given context onto the CPU's thread stack of current contexts. The
 -- context must be floating (via `pop'), i.e. not attached to any thread.
 --
-push :: Context -> IO (Maybe String)
-push ctx = nothingIfOk `fmap` cuCtxPushCurrent ctx
+push :: Context -> IO ()
+push ctx = nothingIfOk =<< cuCtxPushCurrent ctx
 
 {# fun unsafe cuCtxPushCurrent
   { useContext `Context' } -> `Status' cToEnum #}
@@ -137,8 +137,8 @@ push ctx = nothingIfOk `fmap` cuCtxPushCurrent ctx
 -- |
 -- Block until the device has completed all preceding requests
 --
-sync :: IO (Maybe String)
-sync = nothingIfOk `fmap` cuCtxSynchronize
+sync :: IO ()
+sync = nothingIfOk =<< cuCtxSynchronize
 
 {# fun unsafe cuCtxSynchronize
   { } -> `Status' cToEnum #}

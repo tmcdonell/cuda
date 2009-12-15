@@ -54,8 +54,8 @@ instance Enum StreamFlag where
 -- |
 -- Create a new stream
 --
-create :: [StreamFlag] -> IO (Either String Stream)
-create flags = resultIfOk `fmap` cuStreamCreate flags
+create :: [StreamFlag] -> IO Stream
+create flags = resultIfOk =<< cuStreamCreate flags
 
 {# fun unsafe cuStreamCreate
   { alloca-         `Stream'       peekStream*
@@ -65,8 +65,8 @@ create flags = resultIfOk `fmap` cuStreamCreate flags
 -- |
 -- Destroy a stream
 --
-destroy :: Stream -> IO (Maybe String)
-destroy st = nothingIfOk `fmap` cuStreamDestroy st
+destroy :: Stream -> IO ()
+destroy st = nothingIfOk =<< cuStreamDestroy st
 
 {# fun unsafe cuStreamDestroy
   { useStream `Stream' } -> `Status' cToEnum #}
@@ -75,13 +75,13 @@ destroy st = nothingIfOk `fmap` cuStreamDestroy st
 -- |
 -- Check if all operations in the stream have completed
 --
-finished :: Stream -> IO (Either String Bool)
+finished :: Stream -> IO Bool
 finished st =
   cuStreamQuery st >>= \rv ->
-  return $ case rv of
-    Success  -> Right True
-    NotReady -> Right False
-    _        -> Left (describe rv)
+  case rv of
+    Success  -> return True
+    NotReady -> return False
+    _        -> resultIfOk (rv,undefined)
 
 {# fun unsafe cuStreamQuery
   { useStream `Stream' } -> `Status' cToEnum #}
@@ -90,8 +90,8 @@ finished st =
 -- |
 -- Wait until the device has completed all operations in the Stream
 --
-block :: Stream -> IO (Maybe String)
-block st = nothingIfOk `fmap` cuStreamSynchronize st
+block :: Stream -> IO ()
+block st = nothingIfOk =<< cuStreamSynchronize st
 
 {# fun unsafe cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
