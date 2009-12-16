@@ -14,6 +14,7 @@ module Main where
 import Foreign
 import qualified Foreign.CUDA.Driver as CUDA
 
+import Numeric
 import Data.Array.Storable
 import System.Random
 import Control.Monad
@@ -79,7 +80,7 @@ initCUDA = do
   (mdl,r) <- CUDA.loadDataEx ptx [CUDA.MaxRegisters 32]
   fun     <- CUDA.getFun mdl "VecAdd"
 
-  putStrLn "> PTX just-in-time compilation log:"
+  putStrLn $ ">> PTX JIT compilation (" ++ showFFloat (Just 2) (CUDA.jitTime r) " ms)"
   B.putStrLn (CUDA.jitInfoLog r)
   return (ctx,fun)
 
@@ -95,6 +96,8 @@ initData xs ys = do
   dxs   <- CUDA.malloc len
   dys   <- CUDA.malloc len
   res   <- CUDA.malloc len
+
+  flip onException (mapM_ CUDA.free [dxs,dys,res]) $ do
   withVector xs $ \p -> CUDA.pokeArray len p dxs
   withVector ys $ \p -> CUDA.pokeArray len p dys
   return (dxs, dys, res)
@@ -107,10 +110,12 @@ testCUDA xs ys = do
 
   -- Initialise environment and copy over test data
   --
+  putStrLn ">> Initialising"
   bracket initCUDA (\(ctx,_) -> CUDA.destroy ctx) $ \(_,addVec) -> do
 
   -- Ensure we release the memory, even if there was an error
   --
+  putStrLn ">> Executing"
   bracket
     (initData xs ys)
     (\(dx,dy,dz) -> mapM_ CUDA.free [dx,dy,dz]) $
