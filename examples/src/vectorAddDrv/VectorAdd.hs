@@ -65,6 +65,10 @@ testRef xs ys = do
 -- CUDA
 --------------------------------------------------------------------------------
 
+--
+-- Initialise the device and context. Load the PTX source code, and return a
+-- reference to the kernel function.
+--
 initCUDA :: IO (CUDA.Fun)
 initCUDA = do
   CUDA.initialise []
@@ -74,6 +78,10 @@ initCUDA = do
   fun <- CUDA.getFun mdl "VecAdd"
   return fun
 
+--
+-- Allocate some memory, and copy over the input data to the device. Should
+-- probably catch allocation exceptions individually...
+--
 initData :: (Num e, Storable e)
          => Vector e -> Vector e -> IO (CUDA.DevicePtr e, CUDA.DevicePtr e, CUDA.DevicePtr e)
 initData xs ys = do
@@ -92,26 +100,27 @@ testCUDA xs ys = do
   -- Initialise environment and copy over test data
   --
   addVec  <- initCUDA
-  (x,y,z) <- initData xs ys
   (m,n)   <- getBounds xs
   let len = (n-m+1)
 
-  -- Repeat test many times...
+  -- Ensure we release the memory, even if there was an error
   --
-  CUDA.setParams     addVec [CUDA.VArg x, CUDA.VArg y, CUDA.VArg z, CUDA.IArg len]
-  CUDA.setBlockShape addVec (128,1,1)
-  CUDA.launch        addVec ((len+128-1) `div` 128, 1) Nothing
-  CUDA.sync
+  bracket
+    (initData xs ys)
+    (\(dx,dy,dz) -> mapM_ CUDA.free [dx,dy,dz]) $
+     \(dx,dy,dz) -> do
+      -- Repeat test many times...
+      --
+      CUDA.setParams     addVec [CUDA.VArg dx, CUDA.VArg dy, CUDA.VArg dz, CUDA.IArg len]
+      CUDA.setBlockShape addVec (128,1,1)
+      CUDA.launch        addVec ((len+128-1) `div` 128, 1) Nothing
+      CUDA.sync
 
-  -- Copy back result
-  --
-  zs <- newArray_ (m,n)
-  withVector zs $ \p -> CUDA.peekArray len z p
-
-  -- Cleanup and exit
-  --
-  mapM_ CUDA.free [x,y,z]
-  return zs
+      -- Copy back result
+      --
+      zs <- newArray_ (m,n)
+      withVector zs $ \p -> CUDA.peekArray len dz p
+      return zs
 
 
 --------------------------------------------------------------------------------
