@@ -69,14 +69,14 @@ testRef xs ys = do
 -- Initialise the device and context. Load the PTX source code, and return a
 -- reference to the kernel function.
 --
-initCUDA :: IO (CUDA.Fun)
+initCUDA :: IO (CUDA.Context, CUDA.Fun)
 initCUDA = do
   CUDA.initialise []
   dev <- CUDA.device 0
   ctx <- CUDA.create dev []
   mdl <- CUDA.loadFile   "data/VectorAdd.ptx"
   fun <- CUDA.getFun mdl "VecAdd"
-  return fun
+  return (ctx,fun)
 
 --
 -- Allocate some memory, and copy over the input data to the device. Should
@@ -97,11 +97,12 @@ initData xs ys = do
 
 testCUDA :: (Num e, Storable e) => Vector e -> Vector e -> IO (Vector e)
 testCUDA xs ys = do
-  -- Initialise environment and copy over test data
-  --
-  addVec  <- initCUDA
   (m,n)   <- getBounds xs
   let len = (n-m+1)
+
+  -- Initialise environment and copy over test data
+  --
+  bracket initCUDA (\(ctx,_) -> CUDA.destroy ctx) $ \(_,addVec) -> do
 
   -- Ensure we release the memory, even if there was an error
   --
