@@ -103,6 +103,9 @@ initData xs ys = do
   return (dxs, dys, res)
 
 
+--
+-- Run the test
+--
 testCUDA :: (Num e, Storable e) => Vector e -> Vector e -> IO (Vector e)
 testCUDA xs ys = do
   (m,n)   <- getBounds xs
