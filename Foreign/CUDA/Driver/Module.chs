@@ -12,7 +12,7 @@
 module Foreign.CUDA.Driver.Module
   (
     Module,
-    JITOption(..), JITResult(..),
+    JITOption(..), JITTarget(..), JITResult(..),
     getFun, loadFile, loadData, loadDataEx, unload
   )
   where
