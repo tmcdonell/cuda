@@ -145,11 +145,11 @@ loadDataEx img options =
   withArray (map cFromEnum opt)    $ \p_opts ->
   withArray (map unsafeCoerce val) $ \p_vals -> do
 
-  mdl     <- resultIfOk =<< cuModuleLoadDataEx img (length opt) p_opts p_vals
+  (s,mdl) <- cuModuleLoadDataEx img (length opt) p_opts p_vals
   infoLog <- B.packCString p_ilog
   errLog  <- B.packCString p_elog
   time    <- peek (castPtr p_vals)
-  return (mdl, JITResult time infoLog errLog)
+  resultIfOk (s, (mdl, JITResult time infoLog errLog))
 
   where
     logSize = 2048
