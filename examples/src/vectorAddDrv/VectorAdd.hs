@@ -18,6 +18,7 @@ import Data.Array.Storable
 import System.Random
 import Control.Monad
 import Control.Exception
+import qualified Data.ByteString.Char8 as B
 
 
 type Vector e = StorableArray Int e
@@ -72,10 +73,14 @@ testRef xs ys = do
 initCUDA :: IO (CUDA.Context, CUDA.Fun)
 initCUDA = do
   CUDA.initialise []
-  dev <- CUDA.device 0
-  ctx <- CUDA.create dev []
-  mdl <- CUDA.loadFile   "data/VectorAdd.ptx"
-  fun <- CUDA.getFun mdl "VecAdd"
+  dev     <- CUDA.device 0
+  ctx     <- CUDA.create dev []
+  ptx     <- B.readFile "data/VectorAdd.ptx"
+  (mdl,r) <- CUDA.loadDataEx ptx [CUDA.MaxRegisters 32]
+  fun     <- CUDA.getFun mdl "VecAdd"
+
+  putStrLn "> PTX just-in-time compilation log:"
+  B.putStrLn (CUDA.jitInfoLog r)
   return (ctx,fun)
 
 --

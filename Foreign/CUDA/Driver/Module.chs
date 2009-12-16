@@ -12,6 +12,7 @@
 module Foreign.CUDA.Driver.Module
   (
     Module,
+    JITOption(..), JITResult(..),
     getFun, loadFile, loadData, loadDataEx, unload
   )
   where
@@ -23,11 +24,11 @@ module Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Device
 
 -- System
 import Foreign
 import Foreign.C
+import Unsafe.Coerce
 
 import Control.Monad                            (liftM)
 import Data.ByteString.Char8                    (ByteString)
@@ -44,14 +45,32 @@ import qualified Data.ByteString.Char8 as B
 newtype Module = Module { useModule :: {# type CUmodule #}}
 
 
+-- |
+-- Just-in-time compilation options
 --
--- Just-in-time compilation
--- XXX: Actually, probably want to build an algebraic data type manually, so
--- that we can associate the acceptable value type to each option.
+data JITOption
+  = MaxRegisters       Int       -- ^ maximum number of registers per thread
+  | ThreadsPerBlock    Int       -- ^ number of threads per block to target for
+  | OptimisationLevel  Int       -- ^ level of optimisation to apply (1-4, default 4)
+  | Target             JITTarget -- ^ compilation target, otherwise determined from context
+--  | FallbackStrategy   JITFallback
+  deriving (Show)
+
+-- |
+-- Results of online compilation
 --
-{# enum CUjit_option as JITOption
-    { underscoreToCase }
-    with prefix="CU_JIT" deriving (Eq, Show) #}
+data JITResult = JITResult
+  {
+    jitTime     :: Float,       -- ^ milliseconds spent compiling PTX
+    jitInfoLog  :: ByteString,  -- ^ information about PTX asembly
+    jitErrorLog :: ByteString   -- ^ compilation errors
+  }
+  deriving (Show)
+
+
+{# enum CUjit_option as JITOptionInternal
+    { }
+    with prefix="CU" deriving (Eq, Show) #}
 
 {# enum CUjit_target as JITTarget
     { underscoreToCase }
@@ -109,11 +128,47 @@ loadData img = resultIfOk =<< cuModuleLoadData img
 
 
 -- |
--- Load a module with online compiler options. Would also need to unpack those
--- options which also return values.
+-- Load a module with online compiler options. The actual attributes of the
+-- compiled kernel can be probed using `requirements'.
 --
-loadDataEx :: ByteString -> [JITOption] -> IO (Either String (Module, [JITOption]))
-loadDataEx = error "Foreign.CUDA.Driver.Module.loadDataEx: not implemented yet"
+loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
+loadDataEx img options =
+  allocaArray logSize $ \p_ilog ->
+  allocaArray logSize $ \p_elog ->
+  let (opt,val) = unzip $
+        [ (JIT_WALL_TIME, 0) -- must be first
+        , (JIT_INFO_LOG_BUFFER_SIZE_BYTES,  logSize)
+        , (JIT_ERROR_LOG_BUFFER_SIZE_BYTES, logSize)
+        , (JIT_INFO_LOG_BUFFER,  unsafeCoerce (p_ilog :: CString))
+        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ map unpack options in
+
+  withArray (map cFromEnum opt)    $ \p_opts ->
+  withArray (map unsafeCoerce val) $ \p_vals -> do
+
+  mdl     <- resultIfOk =<< cuModuleLoadDataEx img (length opt) p_opts p_vals
+  infoLog <- B.packCString p_ilog
+  errLog  <- B.packCString p_elog
+  time    <- peek (castPtr p_vals)
+  return (mdl, JITResult time infoLog errLog)
+
+  where
+    logSize = 2048
+
+    unpack (MaxRegisters x)      = (JIT_MAX_REGISTERS, x)
+    unpack (ThreadsPerBlock x)   = (JIT_THREADS_PER_BLOCK, x)
+    unpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL, x)
+    unpack (Target x)            = (JIT_TARGET, fromEnum x)
+
+
+{# fun unsafe cuModuleLoadDataEx
+  { alloca- `Module'       peekMod*
+  , useBS*  `ByteString'
+  ,         `Int'
+  , id      `Ptr CInt'
+  , id      `Ptr (Ptr ())'          } -> `Status' cToEnum #}
+  where
+    peekMod      = liftM Module . peek
+    useBS bs act = B.useAsCString bs $ \p -> act (castPtr p)
 
 
 -- |
