@@ -86,15 +86,21 @@ newHostPtr = HostPtr `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 
 -- |
 -- Allocate a section of linear memory on the host which is page-locked and
--- directly accessible from the device. Note that since the amount of pageable
--- memory is thusly reduced, overall system performance may suffer. This is best
--- used sparingly to allocate staging areas for data exchange.
+-- directly accessible from the device. The storage is sufficient to hold the
+-- given number of elements of a storable type.
 --
-mallocHost :: [AllocFlag] -> Int -> IO (HostPtr a)
-mallocHost flags bytes =
-  newHostPtr >>= \hp -> withHostPtr hp $ \p ->
-  cuMemHostAlloc p bytes flags >>= nothingIfOk >>
-  return hp
+-- Note that since the amount of pageable memory is thusly reduced, overall
+-- system performance may suffer. This is best used sparingly to allocate
+-- staging areas for data exchange.
+--
+mallocHost :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
+mallocHost flags = doMalloc undefined
+  where
+    doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
+    doMalloc x n =
+      newHostPtr >>= \hp -> withHostPtr hp $ \p ->
+      cuMemHostAlloc p (n * sizeOf x) flags >>= nothingIfOk >>
+      return hp
 
 {# fun unsafe cuMemHostAlloc
   { with'* `Ptr a'
@@ -118,10 +124,14 @@ freeHost hp = withHostPtr hp $ \p -> (nothingIfOk =<< cuMemFreeHost p)
 
 -- |
 -- Allocate a section of linear memory on the device, and return a reference to
--- it. The memory is suitably aligned for any type, and is not cleared.
+-- it. The memory is sufficient to hold the given number of elements of storable
+-- type. It is suitably aligned for any type, and is not cleared.
 --
-malloc :: Int -> IO (DevicePtr a)
-malloc bytes = resultIfOk =<< cuMemAlloc bytes
+malloc :: Storable a => Int -> IO (DevicePtr a)
+malloc = doMalloc undefined
+  where
+    doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
+    doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
   { alloca-  `DevicePtr a' dptr*
