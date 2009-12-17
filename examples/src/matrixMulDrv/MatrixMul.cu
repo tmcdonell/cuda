@@ -36,8 +36,8 @@
 //! Matrix multiplication on the device: C = A * B
 //! wA is A's width and wB is B's width
 ////////////////////////////////////////////////////////////////////////////////
-__global__ void
-matrixMul( float* C, float* A, float* B, int wA, int wB)
+extern "C" __global__ void
+matrixMul(float* A, float* B, float* C, int wA, int wB)
 {
     // Block index
     int bx = blockIdx.x;

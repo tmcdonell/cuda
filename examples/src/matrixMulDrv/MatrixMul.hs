@@ -30,13 +30,7 @@ type Matrix e = StorableArray (Int,Int) e
 withMatrix :: Matrix e -> (Ptr e -> IO a) -> IO a
 withMatrix = withStorableArray
 
-
--- To ensure the array is fully evaluated, force one element
---
-evaluateMat :: (Ix i, Storable e) => i -> StorableArray i e -> IO (StorableArray i e)
-evaluateMat l mat = (join $! evaluate (mat `readArray` l)) >> return mat
-
--- Generate a new random Array
+-- Generate a new random Matrix. This is stored in row-major order.
 --
 randomMat :: (Ix i, Num e, Storable e, Random e, MArray StorableArray e IO)
            => i -> i -> IO (StorableArray i e)
@@ -45,10 +39,17 @@ randomMat l u = do
   let -- The standard random number generator is too slow to generate really
       -- large vectors. Instead, we generate a short vector and repeat that.
       k     = 1000
-      rands = take k (randomRs (-100,100) rg)
+      rands = take k (randomRs (-1,1) rg)
 
-  newListArray (l,u) [rands !! (index (l,u) i`mod`k) | i <- range (l,u)] >>= evaluateMat l
+  newListArray (l,u) [rands !! (index (l,u) i`mod`k) | i <- range (l,u)]
 
+
+-- Return the (width,height) of a matrix
+--
+getSize :: Storable e => Matrix e -> IO (Int,Int)
+getSize mat = do
+  ((li,lj),(ui,uj)) <- getBounds mat
+  return (rangeSize (lj,uj), rangeSize (li,ui))
 
 --------------------------------------------------------------------------------
 -- Reference implementation
@@ -58,16 +59,14 @@ matMult :: (Num e, Storable e) => Matrix e -> Matrix e -> IO (Matrix e)
 matMult mx my = do
   x <- unsafeFreeze mx
   y <- unsafeFreeze my
-  let ((li, lj), (ui, uj))   = bounds x
-      ((li',lj'),(ui',uj'))  = bounds y
-      resultBounds | (lj,uj) == (li',ui') = ((li,lj'),(ui,uj'))
-                   | otherwise            = error "matMult: incompatible bounds"
+  let ((li, lj), (ui, uj))  = bounds x
+      ((li',lj'),(ui',uj')) = bounds y
+      resBnds | (lj,uj) == (li',ui') = ((li,lj'),(ui,uj'))
+              | otherwise            = error "matrix dimensions must agree"
 
-      mat = accumArray (+) 0 resultBounds
-              [((i,j), x!(i,k) * y!(k,j)) | i <- range (li, ui),
-                                            j <- range (lj',uj'),
-                                            k <- range (lj, uj) ]
-  unsafeThaw mat
+  newListArray resBnds [sum [x!(i,k) * y!(k,j) | k <- range (lj,uj)]
+                         | i <- range (li,ui)
+                         , j <- range (lj',uj') ]
 
 
 --------------------------------------------------------------------------------
@@ -84,7 +83,7 @@ initCUDA = do
   dev     <- CUDA.device 0
   ctx     <- CUDA.create dev []
   ptx     <- B.readFile "data/MatrixMul.ptx"
-  (mdl,r) <- CUDA.loadDataEx ptx [CUDA.MaxRegisters 32]
+  (mdl,r) <- CUDA.loadDataEx ptx [CUDA.ThreadsPerBlock (BLOCK_SIZE*BLOCK_SIZE)]
   fun     <- CUDA.getFun mdl "matrixMul"
 
   putStrLn $ ">> PTX JIT compilation (" ++ showFFloat (Just 2) (CUDA.jitTime r) " ms)"
@@ -99,18 +98,15 @@ initCUDA = do
 initData :: (Num e, Storable e)
          => Matrix e -> Matrix e -> IO (CUDA.DevicePtr e, CUDA.DevicePtr e, CUDA.DevicePtr e)
 initData xs ys = do
-  (ix,jx) <- getBounds xs
-  (iy,jy) <- getBounds ys
-  let sx = rangeSize (ix,jx)
-      sy = rangeSize (iy,jy)
-
-  dxs  <- CUDA.malloc sx
-  dys  <- CUDA.malloc sy
-  res  <- CUDA.malloc (rangeSize (ix,jy))
+  (wx,hx) <- getSize xs
+  (wy,hy) <- getSize ys
+  dxs     <- CUDA.malloc (wx*hx)
+  dys     <- CUDA.malloc (wy*hy)
+  res     <- CUDA.malloc (wy*hx)
 
   flip onException (mapM_ CUDA.free [dxs,dys,res]) $ do
-  withMatrix xs $ \p -> CUDA.pokeArray sx p dxs
-  withMatrix ys $ \p -> CUDA.pokeArray sy p dys
+  withMatrix xs $ \p -> CUDA.pokeArray (wx*hx) p dxs
+  withMatrix ys $ \p -> CUDA.pokeArray (wy*hy) p dys
   return (dxs, dys, res)
 
 
@@ -122,8 +118,12 @@ testCUDA xs' ys' = doTest undefined xs' ys'
   where
     doTest :: (Num e', Storable e') => e' -> Matrix e' -> Matrix e' -> IO (Matrix e')
     doTest dummy xs ys = do
-      (wz,_) <- getBounds xs
-      (_,hz) <- getBounds ys
+      (widthX,heightX)      <- getSize xs
+      (widthY,_)            <- getSize ys
+      ((li, lj), (ui, uj))  <- getBounds xs
+      ((li',lj'),(ui',uj')) <- getBounds ys
+      let resBnds | (lj,uj) == (li',ui') = ((li,lj'),(ui,uj'))
+                  | otherwise            = error "matrix dimensions must agree"
 
       -- Initialise environment and copy over test data
       --
@@ -139,16 +139,16 @@ testCUDA xs' ys' = doTest undefined xs' ys'
          \(dx,dy,dz) -> do
           -- Repeat test many times...
           --
-          CUDA.setParams     matMul [CUDA.VArg dx, CUDA.VArg dy, CUDA.VArg dz, CUDA.IArg (rangeSize wz), CUDA.IArg (rangeSize hz)]
+          CUDA.setParams     matMul [CUDA.VArg dx, CUDA.VArg dy, CUDA.VArg dz, CUDA.IArg widthX, CUDA.IArg widthY]
           CUDA.setBlockShape matMul (BLOCK_SIZE,BLOCK_SIZE,1)
           CUDA.setSharedSize matMul (fromIntegral (2 * BLOCK_SIZE * BLOCK_SIZE * sizeOf dummy))
-          CUDA.launch        matMul ((rangeSize wz) `div` BLOCK_SIZE, (rangeSize hz) `div` BLOCK_SIZE) Nothing
+          CUDA.launch        matMul (widthY `div` BLOCK_SIZE, heightX `div` BLOCK_SIZE) Nothing
           CUDA.sync
 
           -- Copy back result
           --
-          zs <- newArray_ (wz,hz)
-          withMatrix zs $ \p -> CUDA.peekArray (rangeSize (wz,hz)) dz p
+          zs <- newArray_ resBnds
+          withMatrix zs $ \p -> CUDA.peekArray (widthY*heightX) dz p
           return zs
 
 
@@ -165,14 +165,13 @@ verify ref arr = do
     else putStrLn "INVALID!"
   where
     similar xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
-    epsilon       = 0.0001
-
+    epsilon       = 0.001
 
 main :: IO ()
 main = do
   putStrLn "== Generating random matrices"
-  xs <- randomMat (0,0) (28*BLOCK_SIZE, 42*BLOCK_SIZE)  :: IO (Matrix Float)
-  ys <- randomMat (0,0) (42*BLOCK_SIZE, 128*BLOCK_SIZE) :: IO (Matrix Float)
+  xs <- randomMat (1,1) (8*BLOCK_SIZE, 4*BLOCK_SIZE) :: IO (Matrix Float)
+  ys <- randomMat (1,1) (4*BLOCK_SIZE,12*BLOCK_SIZE) :: IO (Matrix Float)
 
   putStrLn "== Generating reference solution"
   ref <- matMult xs ys
@@ -180,6 +179,6 @@ main = do
   putStrLn "== Testing CUDA"
   mat <- testCUDA xs ys
 
-  putStrLn "== Validating: "
+  putStr "== Validating: "
   verify ref mat
 
