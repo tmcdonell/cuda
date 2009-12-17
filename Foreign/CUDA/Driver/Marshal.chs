@@ -93,14 +93,14 @@ newHostPtr = HostPtr `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
 -- system performance may suffer. This is best used sparingly to allocate
 -- staging areas for data exchange.
 --
---mallocHost :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
-mallocHost flags n = resultIfOk =<< lift (doMalloc undefined)
+mallocHost :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
+mallocHost flags = doMalloc undefined
   where
-    doMalloc :: Storable a' => a' -> IO (Status, HostPtr a')
-    doMalloc x =
+    doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
+    doMalloc x n =
       newHostPtr >>= \hp -> withHostPtr hp $ \p ->
-      cuMemHostAlloc p (n * sizeOf x) flags >>= \s ->
-      return (s,hp)
+      cuMemHostAlloc p (n * sizeOf x) flags >>= nothingIfOk >>
+      return hp
 
 {# fun unsafe cuMemHostAlloc
   { with'* `Ptr a'
@@ -112,8 +112,8 @@ mallocHost flags n = resultIfOk =<< lift (doMalloc undefined)
 -- |
 -- Free a section of page-locked host memory
 --
---freeHost :: HostPtr a -> IO ()
-freeHost hp = nothingIfOk =<< lift (withHostPtr hp $ \p -> cuMemFreeHost p)
+freeHost :: HostPtr a -> IO ()
+freeHost hp = withHostPtr hp $ \p -> (nothingIfOk =<< cuMemFreeHost p)
 
 {# fun unsafe cuMemFreeHost
   { castPtr `Ptr a' } -> `Status' cToEnum #}
@@ -127,11 +127,11 @@ freeHost hp = nothingIfOk =<< lift (withHostPtr hp $ \p -> cuMemFreeHost p)
 -- it. The memory is sufficient to hold the given number of elements of storable
 -- type. It is suitably aligned for any type, and is not cleared.
 --
---malloc :: Storable a => Int -> IO (DevicePtr a)
-malloc n = resultIfOk =<< lift (doMalloc undefined)
+malloc :: Storable a => Int -> IO (DevicePtr a)
+malloc = doMalloc undefined
   where
-    doMalloc :: Storable a' => a' -> IO (Status,DevicePtr a')
-    doMalloc x = cuMemAlloc (n * sizeOf x)
+    doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
+    doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
   { alloca-  `DevicePtr a' dptr*
@@ -141,8 +141,8 @@ malloc n = resultIfOk =<< lift (doMalloc undefined)
 -- |
 -- Release a section of device memory
 --
---free :: DevicePtr a -> IO ()
-free dp = nothingIfOk =<< lift (cuMemFree dp)
+free :: DevicePtr a -> IO ()
+free dp = nothingIfOk =<< cuMemFree dp
 
 {# fun unsafe cuMemFree
   { useDevicePtr `DevicePtr a' } -> `Status' cToEnum #}
@@ -156,11 +156,11 @@ free dp = nothingIfOk =<< lift (cuMemFree dp)
 -- Copy a number of elements from the device to host memory. This is a
 -- synchronous operation
 --
---peekArray :: Storable a => Int -> DevicePtr a -> Ptr a -> IO ()
-peekArray n dptr hptr = nothingIfOk =<< lift (doPeek undefined dptr)
+peekArray :: Storable a => Int -> DevicePtr a -> Ptr a -> IO ()
+peekArray n dptr hptr = doPeek undefined dptr
   where
-    doPeek :: Storable a' => a' -> DevicePtr a' -> IO (Status)
-    doPeek x _ = cuMemcpyDtoH hptr dptr (n * sizeOf x)
+    doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPeek x _ = nothingIfOk =<< cuMemcpyDtoH hptr dptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyDtoH
   { castPtr      `Ptr a'
@@ -173,12 +173,12 @@ peekArray n dptr hptr = nothingIfOk =<< lift (doPeek undefined dptr)
 -- particular stream. The destination host memory must be page-locked (allocated
 -- by mallocHost)
 --
---peekArrayAsync :: Storable a => Int -> DevicePtr a -> Ptr a -> Maybe Stream -> IO ()
-peekArrayAsync n dptr hptr mst = nothingIfOk =<< lift (doPeek undefined dptr)
+peekArrayAsync :: Storable a => Int -> DevicePtr a -> Ptr a -> Maybe Stream -> IO ()
+peekArrayAsync n dptr hptr mst = doPeek undefined dptr
   where
-    doPeek :: Storable a' => a' -> DevicePtr a' -> IO (Status)
+    doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
     doPeek x _ =
-      case mst of
+      nothingIfOk =<< case mst of
         Nothing -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (Stream nullPtr)
         Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
 
@@ -192,11 +192,11 @@ peekArrayAsync n dptr hptr mst = nothingIfOk =<< lift (doPeek undefined dptr)
 -- |
 -- Copy a number of elements onto the device. This is a synchronous operation
 --
---pokeArray :: Storable a => Int -> Ptr a -> DevicePtr a -> IO ()
-pokeArray n hptr dptr = nothingIfOk =<< lift (doPoke undefined dptr)
+pokeArray :: Storable a => Int -> Ptr a -> DevicePtr a -> IO ()
+pokeArray n hptr dptr = doPoke undefined dptr
   where
-    doPoke :: Storable a' => a' -> DevicePtr a' -> IO (Status)
-    doPoke x _ = cuMemcpyHtoD dptr hptr (n * sizeOf x)
+    doPoke :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPoke x _ = nothingIfOk =<< cuMemcpyHtoD dptr hptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyHtoD
   { useDevicePtr `DevicePtr a'
@@ -209,12 +209,12 @@ pokeArray n hptr dptr = nothingIfOk =<< lift (doPoke undefined dptr)
 -- particular stream. The source host memory must be page-locked (allocated by
 -- mallocHost)
 --
---pokeArrayAsync :: Storable a => Int -> Ptr a -> DevicePtr a -> Maybe Stream -> IO ()
-pokeArrayAsync n hptr dptr mst = nothingIfOk =<< lift (dopoke undefined dptr)
+pokeArrayAsync :: Storable a => Int -> Ptr a -> DevicePtr a -> Maybe Stream -> IO ()
+pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
   where
-    dopoke :: Storable a' => a' -> DevicePtr a' -> IO (Status)
+    dopoke :: Storable a' => a' -> DevicePtr a' -> IO ()
     dopoke x _ =
-      case mst of
+      nothingIfOk =<< case mst of
         Nothing -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (Stream nullPtr)
         Just st -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) st
 
@@ -233,11 +233,11 @@ pokeArrayAsync n hptr dptr mst = nothingIfOk =<< lift (dopoke undefined dptr)
 -- Set a number of data elements to the specified value, which may be either 8-,
 -- 16-, or 32-bits wide.
 --
---memset :: Storable a => DevicePtr a -> Int -> a -> IO ()
+memset :: Storable a => DevicePtr a -> Int -> a -> IO ()
 memset dptr n val = case sizeOf val of
-    1 -> nothingIfOk =<< lift (cuMemsetD8  dptr val n)
-    2 -> nothingIfOk =<< lift (cuMemsetD16 dptr val n)
-    4 -> nothingIfOk =<< lift (cuMemsetD32 dptr val n)
+    1 -> nothingIfOk =<< cuMemsetD8  dptr val n
+    2 -> nothingIfOk =<< cuMemsetD16 dptr val n
+    4 -> nothingIfOk =<< cuMemsetD32 dptr val n
     _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
 
 --
@@ -266,8 +266,8 @@ memset dptr n val = case sizeOf val of
 --
 -- Currently, no options are supported and this must be empty.
 --
---getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
-getDevicePtr flags hptr = resultIfOk =<< lift (withHostPtr hptr $ \hp -> cuMemHostGetDevicePointer hp flags)
+getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
+getDevicePtr flags hptr = withHostPtr hptr $ \hp -> (resultIfOk =<< cuMemHostGetDevicePointer hp flags)
 
 {# fun unsafe cuMemHostGetDevicePointer
   { alloca-         `DevicePtr a' dptr*

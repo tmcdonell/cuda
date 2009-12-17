@@ -88,8 +88,8 @@ data JITResult = JITResult
 -- |
 -- Returns a function handle
 --
---getFun :: Module -> String -> IO Fun
-getFun mdl fn = resultIfOk =<< lift (cuModuleGetFunction mdl fn)
+getFun :: Module -> String -> IO Fun
+getFun mdl fn = resultIfOk =<< cuModuleGetFunction mdl fn
 
 {# fun unsafe cuModuleGetFunction
   { alloca-      `Fun'    peekFun*
@@ -102,8 +102,8 @@ getFun mdl fn = resultIfOk =<< lift (cuModuleGetFunction mdl fn)
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context
 --
---loadFile :: String -> IO Module
-loadFile ptx = resultIfOk =<< lift (cuModuleLoad ptx)
+loadFile :: String -> IO Module
+loadFile ptx = resultIfOk =<< cuModuleLoad ptx
 
 {# fun unsafe cuModuleLoad
   { alloca-      `Module' peekMod*
@@ -116,8 +116,8 @@ loadFile ptx = resultIfOk =<< lift (cuModuleLoad ptx)
 -- into the current context. The image (typically) is the contents of a cubin or
 -- ptx file as a NULL-terminated string.
 --
---loadData :: ByteString -> IO Module
-loadData img = resultIfOk =<< lift (cuModuleLoadData img)
+loadData :: ByteString -> IO Module
+loadData img = resultIfOk =<< cuModuleLoadData img
 
 {# fun unsafe cuModuleLoadData
   { alloca- `Module'     peekMod*
@@ -131,8 +131,8 @@ loadData img = resultIfOk =<< lift (cuModuleLoadData img)
 -- Load a module with online compiler options. The actual attributes of the
 -- compiled kernel can be probed using `requirements'.
 --
---loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
-loadDataEx img options = resultIfOk =<< lift (
+loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
+loadDataEx img options =
   allocaArray logSize $ \p_ilog ->
   allocaArray logSize $ \p_elog ->
   let (opt,val) = unzip $
@@ -149,7 +149,7 @@ loadDataEx img options = resultIfOk =<< lift (
   infoLog <- B.packCString p_ilog
   errLog  <- B.packCString p_elog
   time    <- peek (castPtr p_vals)
-  return (s, (mdl, JITResult time infoLog errLog)))
+  resultIfOk (s, (mdl, JITResult time infoLog errLog))
 
   where
     logSize = 2048
@@ -174,8 +174,8 @@ loadDataEx img options = resultIfOk =<< lift (
 -- |
 -- Unload a module from the current context
 --
---unload :: Module -> IO ()
-unload m = nothingIfOk =<< lift (cuModuleUnload m)
+unload :: Module -> IO ()
+unload m = nothingIfOk =<< cuModuleUnload m
 
 {# fun unsafe cuModuleUnload
   { useModule `Module' } -> `Status' cToEnum #}

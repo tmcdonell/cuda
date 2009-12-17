@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, FlexibleContexts #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context
@@ -27,8 +27,7 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                                   (liftM)
-import Control.Monad.Exception.MTL
+import Control.Monad                    (liftM)
 
 
 --------------------------------------------------------------------------------
@@ -56,8 +55,8 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
 -- |
 -- Create a new CUDA context and associate it with the calling thread
 --
---create :: Device -> [ContextFlag] -> IO Context
-create dev flags = resultIfOk =<< lift (cuCtxCreate flags dev)
+create :: Device -> [ContextFlag] -> IO Context
+create dev flags = resultIfOk =<< cuCtxCreate flags dev
 
 {# fun unsafe cuCtxCreate
   { alloca-         `Context'       peekCtx*
@@ -70,8 +69,8 @@ create dev flags = resultIfOk =<< lift (cuCtxCreate flags dev)
 -- Increments the usage count of the context. API: no context flags are
 -- currently supported, so this parameter must be empty.
 --
---attach :: Context -> [ContextFlag] -> IO ()
-attach ctx flags = nothingIfOk =<< lift (cuCtxAttach ctx flags)
+attach :: Context -> [ContextFlag] -> IO ()
+attach ctx flags = nothingIfOk =<< cuCtxAttach ctx flags
 
 {# fun unsafe cuCtxAttach
   { withCtx*        `Context'
@@ -82,8 +81,8 @@ attach ctx flags = nothingIfOk =<< lift (cuCtxAttach ctx flags)
 -- |
 -- Detach the context, and destroy if no longer used
 --
---detach :: Context -> IO ()
-detach ctx = nothingIfOk =<< lift (cuCtxDetach ctx)
+detach :: Context -> IO ()
+detach ctx = nothingIfOk =<< cuCtxDetach ctx
 
 {# fun unsafe cuCtxDetach
   { useContext `Context' } -> `Status' cToEnum #}
@@ -93,8 +92,8 @@ detach ctx = nothingIfOk =<< lift (cuCtxDetach ctx)
 -- Destroy the specified context. This fails if the context is more than a
 -- single attachment (including that from initial creation).
 --
---destroy :: Context -> IO ()
-destroy ctx = nothingIfOk =<< lift (cuCtxDestroy ctx)
+destroy :: Context -> IO ()
+destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
 
 {# fun unsafe cuCtxDestroy
   { useContext `Context' } -> `Status' cToEnum #}
@@ -103,9 +102,8 @@ destroy ctx = nothingIfOk =<< lift (cuCtxDestroy ctx)
 -- |
 -- Return the device of the currently active context
 --
---current :: IO Device
-current :: Throws CUDAException l => EMT l IO Device
-current = resultIfOk =<< lift cuCtxGetDevice
+current :: IO Device
+current = resultIfOk =<< cuCtxGetDevice
 
 {# fun unsafe cuCtxGetDevice
   { alloca- `Device' dev* } -> `Status' cToEnum #}
@@ -117,9 +115,8 @@ current = resultIfOk =<< lift cuCtxGetDevice
 -- single usage count (matching calls to attach/detach). If successful, the new
 -- context is returned, and the old may be attached to a different CPU.
 --
---pop :: IO Context
-pop :: Throws CUDAException l => EMT l IO Context
-pop = resultIfOk =<< lift (cuCtxPopCurrent)
+pop :: IO Context
+pop = resultIfOk =<< cuCtxPopCurrent
 
 {# fun unsafe cuCtxPopCurrent
   { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
@@ -130,8 +127,8 @@ pop = resultIfOk =<< lift (cuCtxPopCurrent)
 -- Push the given context onto the CPU's thread stack of current contexts. The
 -- context must be floating (via `pop'), i.e. not attached to any thread.
 --
---push :: Context -> IO ()
-push ctx = nothingIfOk =<< lift (cuCtxPushCurrent ctx)
+push :: Context -> IO ()
+push ctx = nothingIfOk =<< cuCtxPushCurrent ctx
 
 {# fun unsafe cuCtxPushCurrent
   { useContext `Context' } -> `Status' cToEnum #}
@@ -140,9 +137,8 @@ push ctx = nothingIfOk =<< lift (cuCtxPushCurrent ctx)
 -- |
 -- Block until the device has completed all preceding requests
 --
---sync :: IO ()
-sync :: Throws CUDAException l => EMT l IO ()
-sync = nothingIfOk =<< lift cuCtxSynchronize
+sync :: IO ()
+sync = nothingIfOk =<< cuCtxSynchronize
 
 {# fun unsafe cuCtxSynchronize
   { } -> `Status' cToEnum #}
