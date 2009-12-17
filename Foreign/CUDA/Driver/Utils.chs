@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Utils
   (
-    forceEither, driverVersion
+    driverVersion
   )
   where
 
@@ -27,13 +27,6 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign
 import Foreign.C
 
-
--- |
--- Unwrap an Either construct, throwing an error for non-right values
---
-forceEither :: Either String a -> a
-forceEither (Left  s) = error s
-forceEither (Right r) = r
 
 -- |
 -- Return the version number of the installed CUDA driver
