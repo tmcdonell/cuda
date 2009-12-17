@@ -54,8 +54,8 @@ instance Enum StreamFlag where
 -- |
 -- Create a new stream
 --
-create :: [StreamFlag] -> IO Stream
-create flags = resultIfOk =<< cuStreamCreate flags
+--create :: [StreamFlag] -> IO Stream
+create flags = resultIfOk =<< lift (cuStreamCreate flags)
 
 {# fun unsafe cuStreamCreate
   { alloca-         `Stream'       peekStream*
@@ -65,8 +65,8 @@ create flags = resultIfOk =<< cuStreamCreate flags
 -- |
 -- Destroy a stream
 --
-destroy :: Stream -> IO ()
-destroy st = nothingIfOk =<< cuStreamDestroy st
+--destroy :: Stream -> IO ()
+destroy st = nothingIfOk =<< lift(cuStreamDestroy st)
 
 {# fun unsafe cuStreamDestroy
   { useStream `Stream' } -> `Status' cToEnum #}
@@ -75,9 +75,9 @@ destroy st = nothingIfOk =<< cuStreamDestroy st
 -- |
 -- Check if all operations in the stream have completed
 --
-finished :: Stream -> IO Bool
+--finished :: Stream -> IO Bool
 finished st =
-  cuStreamQuery st >>= \rv ->
+  lift (cuStreamQuery st) >>= \rv ->
   case rv of
     Success  -> return True
     NotReady -> return False
@@ -90,8 +90,8 @@ finished st =
 -- |
 -- Wait until the device has completed all operations in the Stream
 --
-block :: Stream -> IO ()
-block st = nothingIfOk =<< cuStreamSynchronize st
+--block :: Stream -> IO ()
+block st = nothingIfOk =<< lift(cuStreamSynchronize st)
 
 {# fun unsafe cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}

@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls, FlexibleContexts #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Device
@@ -29,7 +29,8 @@ import Foreign.CUDA.Internal.Offsets
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad            (liftM)
+import Control.Monad                                    (liftM)
+import Control.Monad.Exception.MTL
 
 
 --------------------------------------------------------------------------------
@@ -115,8 +116,8 @@ instance Enum InitFlag where
 -- Initialise the CUDA driver API. Must be called before any other driver
 -- function.
 --
-initialise :: [InitFlag] -> IO ()
-initialise flags = nothingIfOk =<< cuInit flags
+--initialise :: [InitFlag] -> IO ()
+initialise flags = nothingIfOk =<< lift (cuInit flags)
 
 {# fun unsafe cuInit
   { combineBitMasks `[InitFlag]' } -> `Status' cToEnum #}
@@ -129,9 +130,9 @@ initialise flags = nothingIfOk =<< cuInit flags
 -- |
 -- Return the compute compatibility revision supported by the device
 --
-capability :: Device -> IO Double
+--capability :: Device -> IO Double
 capability dev =
-  (\(s,a,b) -> resultIfOk (s,cap a b)) =<< cuDeviceComputeCapability dev
+  (\(s,a,b) -> resultIfOk (s,cap a b)) =<< lift (cuDeviceComputeCapability dev)
   where
     cap a b = let a' = fromIntegral a in
               let b' = fromIntegral b in
@@ -146,8 +147,8 @@ capability dev =
 -- |
 -- Return a device handle
 --
-device :: Int -> IO Device
-device d = resultIfOk =<< cuDeviceGet d
+--device :: Int -> IO Device
+device d = resultIfOk =<< lift (cuDeviceGet d)
 
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
@@ -158,8 +159,8 @@ device d = resultIfOk =<< cuDeviceGet d
 -- |
 -- Return the selected attribute for the given device
 --
-attribute :: Device -> DeviceAttribute -> IO Int
-attribute d a = resultIfOk =<< cuDeviceGetAttribute a d
+--attribute :: Device -> DeviceAttribute -> IO Int
+attribute d a = resultIfOk =<< lift (cuDeviceGetAttribute a d)
 
 {# fun unsafe cuDeviceGetAttribute
   { alloca-   `Int'             peekIntConv*
@@ -170,8 +171,9 @@ attribute d a = resultIfOk =<< cuDeviceGetAttribute a d
 -- |
 -- Return the number of device with compute capability > 1.0
 --
-count :: IO Int
-count = resultIfOk =<< cuDeviceGetCount
+--count :: IO Int
+count :: Throws CUDAException l => EMT l IO Int
+count = resultIfOk =<< lift cuDeviceGetCount
 
 {# fun unsafe cuDeviceGetCount
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
@@ -180,8 +182,8 @@ count = resultIfOk =<< cuDeviceGetCount
 -- |
 -- Name of the device
 --
-name :: Device -> IO String
-name d = resultIfOk =<< cuDeviceGetName d
+--name :: Device -> IO String
+name d = resultIfOk =<< lift (cuDeviceGetName d)
 
 {# fun unsafe cuDeviceGetName
   { allocaS-  `String'& peekS*
@@ -195,8 +197,8 @@ name d = resultIfOk =<< cuDeviceGetName d
 -- |
 -- Return the properties of the selected device
 --
-props :: Device -> IO DeviceProperties
-props d = resultIfOk =<< cuDeviceGetProperties d
+--props :: Device -> IO DeviceProperties
+props d = resultIfOk =<< lift (cuDeviceGetProperties d)
 
 {# fun unsafe cuDeviceGetProperties
   { alloca-   `DeviceProperties' peek*
@@ -206,8 +208,8 @@ props d = resultIfOk =<< cuDeviceGetProperties d
 -- |
 -- Total memory available on the device (bytes)
 --
-totalMem :: Device -> IO Int
-totalMem d = resultIfOk =<< cuDeviceTotalMem d
+--totalMem :: Device -> IO Int
+totalMem d = resultIfOk =<< lift (cuDeviceTotalMem d)
 
 {# fun unsafe cuDeviceTotalMem
   { alloca-   `Int' peekIntConv*

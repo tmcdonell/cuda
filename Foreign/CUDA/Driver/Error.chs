@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Error
@@ -8,14 +7,24 @@
 -- Error handling
 --
 --------------------------------------------------------------------------------
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_GHC -F -pgmF MonadLoc #-}
 
 module Foreign.CUDA.Driver.Error
+  (
+    Status(..), CUDAException(..),
+    runCUDA, cudaError, resultIfOk, nothingIfOk, lift
+  )
   where
 
 
 -- System
-import Data.Typeable
-import Control.Exception.Extensible
+-- import Data.Typeable
+-- import Control.Exception.Extensible
+import Control.Monad.Loc
+import Control.Monad.Trans                              (lift)
+import Control.Monad.Exception.MTL
+import qualified Control.Exception.Extensible as E
 
 #include <cuda.h>
 {# context lib="cuda" #}
@@ -87,20 +96,19 @@ instance Show CUDAException where
 -- |
 -- Raise a CUDAException in the IO Monad
 --
-cudaError :: String -> IO a
-cudaError s = throwIO (UserError s)
+--cudaError :: String -> IO a
+cudaError s = throw (UserError s)
 
 
 -- |
 -- Run a CUDA computation
 --
-{-
-runCUDA f = runEMT $ do
+runCUDA f = runEMT $
   f `catchWithSrcLoc` \l e -> lift (handle l e)
   where
-    handle :: CallTrace -> CUDAException -> IO ()
-    handle l e = putStrLn $ showExceptionWithTrace l e
--}
+    handle :: CallTrace -> CUDAException -> IO a
+    handle l e = error $ showExceptionWithTrace l e
+
 
 --------------------------------------------------------------------------------
 -- Helper Functions
@@ -110,20 +118,20 @@ runCUDA f = runEMT $ do
 -- Return the results of a function on successful execution, otherwise throw an
 -- exception with an error string associated with the return code
 --
-resultIfOk :: (Status, a) -> IO a
+--resultIfOk :: (Status, a) -> IO a
 resultIfOk (status,result) =
     case status of
-        Success -> return  result
-        _       -> throwIO (ExitCode status)
+        Success -> return result
+        _       -> throw (ExitCode status)
 
 
 -- |
 -- Throw an exception with an error string associated with an unsuccessful
 -- return code, otherwise return unit.
 --
-nothingIfOk :: Status -> IO ()
+--nothingIfOk :: Status -> IO ()
 nothingIfOk status =
     case status of
-        Success -> return  ()
-        _       -> throwIO (ExitCode status)
+        Success -> return ()
+        _       -> throw  (ExitCode status)
 

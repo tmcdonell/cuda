@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, FlexibleContexts #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Utils
@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Utils
   (
-    forceEither, driverVersion
+    driverVersion
   )
   where
 
@@ -26,6 +26,7 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Foreign
 import Foreign.C
+import Control.Monad.Exception.MTL
 
 
 -- |
@@ -38,8 +39,9 @@ forceEither (Right r) = r
 -- |
 -- Return the version number of the installed CUDA driver
 --
-driverVersion :: IO Int
-driverVersion =  resultIfOk =<< cuDriverGetVersion
+--driverVersion :: IO Int
+driverVersion :: Throws CUDAException l => EMT l IO Int
+driverVersion = resultIfOk =<< lift cuDriverGetVersion
 
 {# fun unsafe cuDriverGetVersion
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}

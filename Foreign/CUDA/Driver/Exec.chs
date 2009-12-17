@@ -67,8 +67,8 @@ data Storable a => FunParam a
 -- |
 -- Returns the value of the selected attribute requirement for the given kernel
 --
-requires :: Fun -> FunAttribute -> IO Int
-requires fn att = resultIfOk =<< cuFuncGetAttribute att fn
+--requires :: Fun -> FunAttribute -> IO Int
+requires fn att = resultIfOk =<< lift (cuFuncGetAttribute att fn)
 
 {# fun unsafe cuFuncGetAttribute
   { alloca-   `Int'          peekIntConv*
@@ -80,8 +80,8 @@ requires fn att = resultIfOk =<< cuFuncGetAttribute att fn
 -- Specify the (x,y,z) dimensions of the thread blocks that are created when the
 -- given kernel function is lanched
 --
-setBlockShape :: Fun -> (Int,Int,Int) -> IO ()
-setBlockShape fn (x,y,z) = nothingIfOk =<< cuFuncSetBlockShape fn x y z
+--setBlockShape :: Fun -> (Int,Int,Int) -> IO ()
+setBlockShape fn (x,y,z) = nothingIfOk =<< lift (cuFuncSetBlockShape fn x y z)
 
 {# fun unsafe cuFuncSetBlockShape
   { useFun `Fun'
@@ -94,8 +94,8 @@ setBlockShape fn (x,y,z) = nothingIfOk =<< cuFuncSetBlockShape fn x y z
 -- Set the number of bytes of dynamic shared memory to be available to each
 -- thread block when the function is launched
 --
-setSharedSize :: Fun -> Integer -> IO ()
-setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
+--setSharedSize :: Fun -> Integer -> IO ()
+setSharedSize fn bytes = nothingIfOk =<< lift (cuFuncSetSharedSize fn bytes)
 
 {# fun unsafe cuFuncSetSharedSize
   { useFun   `Fun'
@@ -107,11 +107,11 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 -- number of threads specified by a previous call to `setBlockShape'. The launch
 -- may also be associated with a specific `Stream'.
 --
-launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
+--launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
 launch fn (w,h) mst =
   nothingIfOk =<< case mst of
-    Nothing -> cuLaunchGridAsync fn w h (Stream nullPtr)
-    Just st -> cuLaunchGridAsync fn w h st
+    Nothing -> lift (cuLaunchGridAsync fn w h (Stream nullPtr))
+    Just st -> lift (cuLaunchGridAsync fn w h st)
 
 {# fun unsafe cuLaunchGridAsync
   { useFun    `Fun'
@@ -127,10 +127,10 @@ launch fn (w,h) mst =
 -- |
 -- Set the parameters that will specified next time the kernel is invoked
 --
-setParams :: Storable a => Fun -> [FunParam a] -> IO ()
+--setParams :: Storable a => Fun -> [FunParam a] -> IO ()
 setParams fn prs = do
   zipWithM_ (set fn) offsets prs
-  nothingIfOk =<< cuParamSetSize fn (last offsets)
+  nothingIfOk =<< lift (cuParamSetSize fn (last offsets))
   where
     offsets = scanl (\a b -> a + size b) 0 prs
 
@@ -138,9 +138,9 @@ setParams fn prs = do
     size (FArg v)    = sizeOf v
     size (VArg v)    = sizeOf v
 
-    set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
-    set f o (FArg v) = nothingIfOk =<< cuParamSetf f o v
-    set f o (VArg v) = with v $ \p -> (nothingIfOk =<< cuParamSetv f o p (sizeOf v))
+    set f o (IArg v) = nothingIfOk =<< lift (cuParamSeti f o v)
+    set f o (FArg v) = nothingIfOk =<< lift (cuParamSetf f o v)
+    set f o (VArg v) = nothingIfOk =<< lift (with v $ \p -> cuParamSetv f o p (sizeOf v))
 
 
 {# fun unsafe cuParamSetSize
