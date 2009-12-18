@@ -34,6 +34,7 @@ ROOTBINDIR      := $(ROOTDIR)/../bin
 BINDIR		:= $(ROOTBINDIR)/$(OSLOWER)
 ROOTOBJDIR      := obj
 LIBDIR          := $(ROOTDIR)/../lib
+COMMONDIR	:= $(ROOTDIR)/../common
 
 # Compilers
 NVCC            := nvcc
@@ -45,7 +46,7 @@ CC              := gcc
 LINK            := g++ -fPIC
 
 # Includes
-INCLUDES        += -I. -I$(CUDA_INSTALL_PATH)/include
+INCLUDES        += -I. -I$(CUDA_INSTALL_PATH)/include -I$(COMMONDIR)/include
 
 # architecture flag for cubin build
 CUBIN_ARCH_FLAG :=
@@ -101,7 +102,7 @@ endif
 
 # Compiler-specific flags
 NVCCFLAGS       +=
-GHCFLAGS        += $(GHCWARN_FLAGS) -i$(SRCDIR) -i$(OBJDIR) -odir $(OBJDIR) -hidir $(OBJDIR) --make
+GHCFLAGS        += $(GHCWARN_FLAGS) -i$(SRCDIR) -i$(COMMONDIR)/src -i$(OBJDIR) -odir $(OBJDIR) -hidir $(OBJDIR) --make
 CXXFLAGS        += $(CXXWARN_FLAGS) $(CXX_ARCH_FLAGS)
 CFLAGS          += $(CWARN_FLAGS) $(CXX_ARCH_FLAGS)
 LINK		+= $(CXX_ARCH_FLAGS)
@@ -215,9 +216,9 @@ else
     ifneq ($(HSMAIN),)
         ifeq ($(dbg),1)
 #            OBJS     += $(OBJDIR)/ptxvars.cu.o
-            LINKLINE  = $(GHC) -o $(TARGET) $(LIB) $(GHCFLAGS) $(HSMAIN)
+            LINKLINE  = $(GHC) -o $(TARGET) $(LIB) $(OBJS) $(GHCFLAGS) $(HSMAIN)
         else
-            LINKLINE  = $(GHC) -o $(TARGET) $(LIB) $(GHCFLAGS) $(HSMAIN)
+            LINKLINE  = $(GHC) -o $(TARGET) $(LIB) $(OBJS) $(GHCFLAGS) $(HSMAIN)
         endif
     else
         LINKLINE = $(LINK) -o $(TARGET) $(OBJS) $(LIB)

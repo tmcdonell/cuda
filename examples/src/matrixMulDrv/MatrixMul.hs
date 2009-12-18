@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, FlexibleContexts, ParallelListComp #-}
+{-# LANGUAGE CPP #-}
 --------------------------------------------------------------------------------
 --
 -- Module    : MatrixMul
@@ -13,35 +13,17 @@ module Main where
 
 #include "MatrixMul.h"
 
-import Foreign
-import qualified Foreign.CUDA.Driver as CUDA
+-- Friends
+import Array
 
+-- System
 import Numeric
 import Data.Array
-import Data.Array.Storable
-import System.Random
-import Control.Monad
 import Control.Exception
+import Data.Array.Storable
+import Foreign.Storable
 import qualified Data.ByteString.Char8 as B
-
-
-type Matrix e = StorableArray (Int,Int) e
-
-withMatrix :: Matrix e -> (Ptr e -> IO a) -> IO a
-withMatrix = withStorableArray
-
--- Generate a new random Matrix. This is stored in row-major order.
---
-randomMat :: (Ix i, Num e, Storable e, Random e, MArray StorableArray e IO)
-           => i -> i -> IO (StorableArray i e)
-randomMat l u = do
-  rg <- newStdGen
-  let -- The standard random number generator is too slow to generate really
-      -- large vectors. Instead, we generate a short vector and repeat that.
-      k     = 1000
-      rands = take k (randomRs (-1,1) rg)
-
-  newListArray (l,u) [rands !! (index (l,u) i`mod`k) | i <- range (l,u)]
+import qualified Foreign.CUDA.Driver   as CUDA
 
 
 -- Return the (width,height) of a matrix
@@ -156,22 +138,11 @@ testCUDA xs' ys' = doTest undefined xs' ys'
 -- Test & Verify
 --------------------------------------------------------------------------------
 
-verify :: (Ord e, Fractional e, Storable e) => Matrix e -> Matrix e -> IO ()
-verify ref arr = do
-  as <- getElems arr
-  bs <- getElems ref
-  if similar as bs
-    then putStrLn "Valid"
-    else putStrLn "INVALID!"
-  where
-    similar xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
-    epsilon       = 0.001
-
 main :: IO ()
 main = do
   putStrLn "== Generating random matrices"
-  xs <- randomMat (1,1) (8*BLOCK_SIZE, 4*BLOCK_SIZE) :: IO (Matrix Float)
-  ys <- randomMat (1,1) (4*BLOCK_SIZE,12*BLOCK_SIZE) :: IO (Matrix Float)
+  xs <- randomArr ((1,1),(8*BLOCK_SIZE, 4*BLOCK_SIZE)) :: IO (Matrix Float)
+  ys <- randomArr ((1,1),(4*BLOCK_SIZE,12*BLOCK_SIZE)) :: IO (Matrix Float)
 
   putStrLn "== Generating reference solution"
   ref <- matMult xs ys
@@ -180,5 +151,5 @@ main = do
   mat <- testCUDA xs ys
 
   putStr "== Validating: "
-  verify ref mat
+  verify ref mat >>= \rv -> putStrLn $ if rv then "Ok!" else "INVALID!"
 
