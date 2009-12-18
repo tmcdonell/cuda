@@ -21,7 +21,7 @@
 #define _MATRIXMUL_KERNEL_H_
 
 #include <stdio.h>
-#include "matrixMul.h"
+#include "matrix_mul.h"
 
 #define CHECK_BANK_CONFLICTS 0
 #if CHECK_BANK_CONFLICTS

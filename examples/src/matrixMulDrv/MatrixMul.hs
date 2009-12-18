@@ -11,7 +11,7 @@
 
 module Main where
 
-#include "MatrixMul.h"
+#include "matrix_mul.h"
 
 -- Friends
 import Array
@@ -64,7 +64,7 @@ initCUDA = do
   CUDA.initialise []
   dev     <- CUDA.device 0
   ctx     <- CUDA.create dev []
-  ptx     <- B.readFile "data/MatrixMul.ptx"
+  ptx     <- B.readFile "data/matrix_mul.ptx"
   (mdl,r) <- CUDA.loadDataEx ptx [CUDA.ThreadsPerBlock (BLOCK_SIZE*BLOCK_SIZE)]
   fun     <- CUDA.getFun mdl "matrixMul"
 

@@ -8,7 +8,7 @@
 EXECUTABLE	:= MatrixMul
 
 HSMAIN		:= MatrixMul.hs
-PTXFILES	:= MatrixMul.cu
+PTXFILES	:= matrix_mul.cu
 
 USEDRVAPI	:= 1
 

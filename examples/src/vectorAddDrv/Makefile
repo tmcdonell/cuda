@@ -8,7 +8,7 @@
 EXECUTABLE	:= VectorAdd
 
 HSMAIN		:= VectorAdd.hs
-PTXFILES	:= VectorAdd.cu
+PTXFILES	:= vector_add.cu
 
 USEDRVAPI	:= 1
 

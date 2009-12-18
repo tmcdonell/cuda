@@ -51,7 +51,7 @@ initCUDA = do
   CUDA.initialise []
   dev     <- CUDA.device 0
   ctx     <- CUDA.create dev []
-  ptx     <- B.readFile "data/VectorAdd.ptx"
+  ptx     <- B.readFile "data/vector_add.ptx"
   (mdl,r) <- CUDA.loadDataEx ptx [CUDA.MaxRegisters 32]
   fun     <- CUDA.getFun mdl "VecAdd"
 
