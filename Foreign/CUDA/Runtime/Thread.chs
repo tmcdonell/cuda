@@ -12,28 +12,34 @@
 
 module Foreign.CUDA.Runtime.Thread
   (
-    exit,
-    sync
+    sync, exit
   )
   where
 
-import Foreign.C
+#include <cuda_runtime_api.h>
+{# context lib="cudart" #}
 
+-- Friends
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
-#include <cuda_runtime_api.h>
-{# context lib="cudart" #}
+-- System
+import Foreign.C
+
+
+--------------------------------------------------------------------------------
+-- Thread management
+--------------------------------------------------------------------------------
 
 -- |
 -- Block until the device has completed all preceding requested tasks. Returns
 -- an error if one of the tasks fails.
 --
-sync :: IO (Maybe String)
-sync =  nothingIfOk `fmap` cudaThreadSynchronize
+sync :: IO ()
+sync =  nothingIfOk =<< cudaThreadSynchronize
 
 {# fun unsafe cudaThreadSynchronize
-    { } -> `Status' cToEnum #}
+  { } -> `Status' cToEnum #}
 
 
 -- |
@@ -41,9 +47,9 @@ sync =  nothingIfOk `fmap` cudaThreadSynchronize
 -- host thread. Any subsequent API call re-initialised the environment.
 -- Implicitly called on thread exit.
 --
-exit :: IO (Maybe String)
-exit =  nothingIfOk `fmap` cudaThreadExit
+exit :: IO ()
+exit =  nothingIfOk =<< cudaThreadExit
 
 {# fun unsafe cudaThreadExit
-    { } -> `Status' cToEnum #}
+  { } -> `Status' cToEnum #}
 
