@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, DeriveDataTypeable #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Error
@@ -10,25 +10,24 @@
 --------------------------------------------------------------------------------
 
 module Foreign.CUDA.Runtime.Error
-  (
-    Status(..),
-    describe,
-    resultIfOk,
-    nothingIfOk
-  )
   where
 
+
+-- Friends
+import Foreign.CUDA.Internal.C2HS
+
+-- System
 import Foreign
 import Foreign.C
-
-import Foreign.CUDA.Internal.C2HS
+import Data.Typeable
+import Control.Exception
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
 
 
 --------------------------------------------------------------------------------
--- Data Types
+-- Return Status
 --------------------------------------------------------------------------------
 
 --
@@ -39,7 +38,30 @@ import Foreign.CUDA.Internal.C2HS
     with prefix="cudaError" deriving (Eq, Show) #}
 
 --------------------------------------------------------------------------------
--- Functions
+-- Exceptions
+--------------------------------------------------------------------------------
+
+data CUDAException
+  = ExitCode Status
+  | UserError String
+  deriving Typeable
+
+instance Exception CUDAException
+
+instance Show CUDAException where
+  showsPrec _ (ExitCode  s) = showString ("CUDA Exception: " ++ describe s)
+  showsPrec _ (UserError s) = showString ("CUDA Exception: " ++ s)
+
+
+-- |
+-- Raise a CUDAException in the IO Monad
+--
+cudaError :: String -> IO a
+cudaError s = throwIO (UserError s)
+
+
+--------------------------------------------------------------------------------
+-- Helper Functions
 --------------------------------------------------------------------------------
 
 -- |
@@ -57,17 +79,20 @@ import Foreign.CUDA.Internal.C2HS
 -- Return the results of a function on successful execution, otherwise return
 -- the error string associated with the return code
 --
-resultIfOk :: (Status, a) -> Either String a
+resultIfOk :: (Status, a) -> IO a
 resultIfOk (status,result) =
     case status of
-        Success -> Right result
-        _       -> Left (describe status)
+        Success -> return  result
+        _       -> throwIO (ExitCode status)
 
 
 -- |
 -- Return the error string associated with an unsuccessful return code,
 -- otherwise Nothing
 --
-nothingIfOk :: Status -> Maybe String
-nothingIfOk = nothingIf (== Success) describe
+nothingIfOk :: Status -> IO ()
+nothingIfOk status =
+    case status of
+        Success -> return  ()
+        _       -> throwIO (ExitCode status)
 
