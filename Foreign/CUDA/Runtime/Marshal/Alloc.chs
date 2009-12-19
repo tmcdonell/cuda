@@ -69,18 +69,20 @@ import Foreign.CUDA.Internal.C2HS
 -- Allocate the specified number of bytes in linear memory on the device. The
 -- memory is suitably aligned for any kind of variable, and is not cleared.
 --
-malloc       :: Int64 -> IO (Either String (DevicePtr a))
+malloc :: Int64 -> IO (DevicePtr a)
 malloc bytes =  do
-    (rv,ptr) <- cudaMalloc bytes
-    case rv of
-        Success -> Right `fmap` newDevicePtr (castPtr ptr)
-        _       -> return . Left . describe $ rv
+  (rv,ptr) <- cudaMalloc bytes
+  case rv of
+      Success -> newDevicePtr (castPtr ptr)
+      _       -> resultIfOk (rv,undefined)
 
 {# fun unsafe cudaMalloc
-    { alloca'-  `Ptr ()' peek'* ,
-      cIntConv  `Int64'         } -> `Status' cToEnum #}
-    where alloca' = F.alloca
-          peek'   = F.peek
+  { alloca'- `Ptr ()' peek'*
+  , cIntConv `Int64'         } -> `Status' cToEnum #}
+  where
+    -- C-> Haskell doesn't like qualified imports in marshaller specifications
+    alloca' = F.alloca
+    peek'   = F.peek
 
 
 -- |
@@ -89,24 +91,22 @@ malloc bytes =  do
 -- meet coalescing requirements. The actual allocation width is returned.
 --
 malloc2D :: (Int64, Int64)              -- ^ allocation (width,height) in bytes
-         -> IO (Either String (DevicePtr a, Int64))
+         -> IO (DevicePtr a, Int64)
 malloc2D (width,height) =  do
-    (rv,ptr,pitch) <- cudaMallocPitch width height
-    case rv of
-        Success -> (\p -> Right (p,pitch)) `fmap` newDevicePtr (castPtr ptr)
-        _       -> return . Left . describe $ rv
+  (rv,ptr,pitch) <- cudaMallocPitch width height
+  case rv of
+      Success -> (\p -> (p,pitch)) `fmap` newDevicePtr (castPtr ptr)
+      _       -> resultIfOk (rv,undefined)
 
 {# fun unsafe cudaMallocPitch
-    { alloca'-  `Ptr ()' peek'*       ,
-      alloca'-  `Int64'  peekIntConv* ,
-      cIntConv  `Int64'               ,
-      cIntConv  `Int64'               } -> `Status' cToEnum #}
-    where
-        -- C->Haskell doesn't like qualified imports
-        --
-        alloca' :: Storable a => (Ptr a -> IO b) -> IO b
-        alloca' =  F.alloca
-        peek'   =  F.peek
+  { alloca'-  `Ptr ()' peek'*
+  , alloca'-  `Int64'  peekIntConv*
+  , cIntConv  `Int64'
+  , cIntConv  `Int64'               } -> `Status' cToEnum #}
+  where
+    alloca' :: Storable a => (Ptr a -> IO b) -> IO b
+    alloca' =  F.alloca
+    peek'   =  F.peek
 
 
 -- |
@@ -115,7 +115,7 @@ malloc2D (width,height) =  do
 -- requirements are met. The actual allocation pitch is returned
 --
 malloc3D :: (Int64,Int64,Int64)         -- ^ allocation (width,height,depth) in bytes
-         -> IO (Either String (DevicePtr a, Int64))
+         -> IO (DevicePtr a, Int64)
 malloc3D = moduleErr "malloc3D" "not implemented yet"
 
 
@@ -135,16 +135,16 @@ free =  finalizeDevicePtr
 memset :: DevicePtr a                   -- ^ The device memory
        -> Int64                         -- ^ Number of bytes
        -> Int                           -- ^ Value to set for each byte
-       -> IO (Maybe String)
+       -> IO ()
 memset ptr bytes symbol =
-    nothingIfOk `fmap` cudaMemset ptr symbol bytes
+  nothingIfOk =<< cudaMemset ptr symbol bytes
 
 {# fun unsafe cudaMemset
-    { withDevPtrCast* `DevicePtr a' ,
-                      `Int'         ,
-      cIntConv        `Int64'       } -> `Status' cToEnum #}
-    where
-      withDevPtrCast = withDevicePtr . castDevicePtr
+  { withDevPtrCast* `DevicePtr a'
+  ,                 `Int'
+  , cIntConv        `Int64'       } -> `Status' cToEnum #}
+  where
+    withDevPtrCast = withDevicePtr . castDevicePtr
 
 
 -- |
@@ -154,18 +154,18 @@ memset2D :: DevicePtr a                 -- ^ The device memory
          -> (Int64, Int64)              -- ^ The (width,height) of the matrix in bytes
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc2D'
          -> Int                         -- ^ Value to set for each byte
-         -> IO (Maybe String)
+         -> IO ()
 memset2D ptr (width,height) pitch symbol =
-    nothingIfOk `fmap` cudaMemset2D ptr pitch symbol width height
+  nothingIfOk =<< cudaMemset2D ptr pitch symbol width height
 
 {# fun unsafe cudaMemset2D
-    { withDevPtrCast* `DevicePtr a' ,
-      cIntConv        `Int64'       ,
-                      `Int'         ,
-      cIntConv        `Int64'       ,
-      cIntConv        `Int64'       } -> `Status' cToEnum #}
-    where
-      withDevPtrCast = withDevicePtr . castDevicePtr
+  { withDevPtrCast* `DevicePtr a'
+  , cIntConv        `Int64'
+  ,                 `Int'
+  , cIntConv        `Int64'
+  , cIntConv        `Int64'       } -> `Status' cToEnum #}
+  where
+    withDevPtrCast = withDevicePtr . castDevicePtr
 
 
 -- |
@@ -175,7 +175,7 @@ memset3D :: DevicePtr a                 -- ^ The device memory
          -> (Int64,Int64,Int64)         -- ^ The (width,height,depth) of the array in bytes
          -> Int64                       -- ^ The allocation pitch, as returned by 'malloc3D'
          -> Int                         -- ^ Value to set for each byte
-         -> IO (Maybe String)
+         -> IO ()
 memset3D = moduleErr "memset3D" "not implemented yet"
 
 
@@ -199,7 +199,7 @@ alloca =  doAlloca undefined
 --
 allocaBytes :: Int64 -> (DevicePtr a -> IO b) -> IO b
 allocaBytes bytes =
-    bracket (moduleForceEither `fmap` malloc bytes) free
+  bracket (malloc bytes) free
 
 
 -- |
@@ -207,12 +207,10 @@ allocaBytes bytes =
 -- a given value
 --
 allocaBytesMemset :: Int64 -> Int -> (DevicePtr a -> IO b) -> IO b
-allocaBytesMemset bytes symbol f =
-    allocaBytes bytes $ \dptr ->
-    memset dptr bytes symbol >>= \rv ->
-      case rv of
-        Nothing -> f dptr
-        Just e  -> error e
+allocaBytesMemset bytes symbol action =
+  allocaBytes bytes $ \dptr ->
+  memset dptr bytes symbol  >>
+  action dptr
 
 
 --------------------------------------------------------------------------------
@@ -232,15 +230,15 @@ memcpy :: Ptr a                 -- ^ destination
        -> Ptr a                 -- ^ source
        -> Int64                 -- ^ number of bytes
        -> CopyDirection
-       -> IO (Maybe String)
+       -> IO ()
 memcpy dst src bytes dir =
-    nothingIfOk `fmap` cudaMemcpy dst src bytes dir
+    nothingIfOk =<< cudaMemcpy dst src bytes dir
 
 {# fun unsafe cudaMemcpy
-    { castPtr   `Ptr a'         ,
-      castPtr   `Ptr a'         ,
-      cIntConv  `Int64'         ,
-      cFromEnum `CopyDirection' } -> `Status' cToEnum #}
+  { castPtr   `Ptr a'
+  , castPtr   `Ptr a'
+  , cIntConv  `Int64'
+  , cFromEnum `CopyDirection' } -> `Status' cToEnum #}
 
 
 {-
@@ -273,8 +271,4 @@ memcpyAsync stream dst src bytes dir =
 --
 moduleErr :: String -> String -> a
 moduleErr fun msg =  error ("Foreign.CUDA." ++ fun ++ ':':' ':msg)
-
-moduleForceEither :: Either String a -> a
-moduleForceEither (Left  s) = moduleErr "Marshal" s
-moduleForceEither (Right r) = r
 
