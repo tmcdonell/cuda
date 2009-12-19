@@ -214,6 +214,12 @@ else
     TARGETDIR   := $(BINDIR)/$(BINSUBDIR)
     TARGET      := $(TARGETDIR)/$(EXECUTABLE)
     ifneq ($(HSMAIN),)
+        ifeq ($(suffix $(HSMAIN)),.chs)
+            FOO      := $(HSMAIN)
+            CHSFILES += $(FOO)
+            HSMAIN    = $(OBJDIR)/$(basename $(FOO)).hs
+        endif
+
         ifeq ($(dbg),1)
 #            OBJS     += $(OBJDIR)/ptxvars.cu.o
             LINKLINE  = $(GHC) -o $(TARGET) $(LIB) $(OBJS) $(GHCFLAGS) $(HSMAIN)
