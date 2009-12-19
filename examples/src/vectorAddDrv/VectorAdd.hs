@@ -11,7 +11,7 @@
 module Main where
 
 -- Friends
-import Array
+import RandomVector
 
 -- System
 import Numeric

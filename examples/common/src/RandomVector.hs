@@ -1,18 +1,18 @@
 {-# LANGUAGE FlexibleContexts, ParallelListComp #-}
 --------------------------------------------------------------------------------
 --
--- Module    : Array
+-- Module    : RandomVector
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
--- Storable multi-dimensional arrays
+-- Storable multi-dimensional arrays and lists of random numbers
 --
 --------------------------------------------------------------------------------
 
-module Array
+module RandomVector
   (
     Storable,
-    module Array,
+    module RandomVector,
     module Data.Array.Storable
   )
   where
@@ -23,6 +23,10 @@ import Control.Exception                                (evaluate)
 import Data.Array.Storable
 import System.Random
 
+
+--------------------------------------------------------------------------------
+-- Arrays
+--------------------------------------------------------------------------------
 
 type Vector e = StorableArray Int e
 type Matrix e = StorableArray (Int,Int) e
@@ -69,4 +73,19 @@ verify ref arr = do
   where
     similar xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
     epsilon       = 0.001
+
+
+--------------------------------------------------------------------------------
+-- Lists
+--------------------------------------------------------------------------------
+
+randomList :: (Num e, Random e, Storable e) => Int -> IO [e]
+randomList len = do
+  rg <- newStdGen
+  let -- The standard random number generator is too slow to generate really
+      -- large vectors. Instead, we generate a short vector and repeat that.
+      k     = 1000
+      rands = take k (randomRs (-1,1) rg)
+
+  evaluate [rands !! (i`mod`k) | i <- [0..len-1]]
 

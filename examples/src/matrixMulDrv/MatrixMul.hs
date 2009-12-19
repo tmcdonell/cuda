@@ -14,7 +14,7 @@ module Main where
 #include "matrix_mul.h"
 
 -- Friends
-import Array
+import RandomVector
 
 -- System
 import Numeric
