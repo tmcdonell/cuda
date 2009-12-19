@@ -11,46 +11,38 @@
 
 module Foreign.CUDA.Runtime.Utils
   (
-    forceEither,
-    runtimeVersion,
-    driverVersion
+    runtimeVersion, driverVersion
   )
   where
-
-import Foreign
-import Foreign.C
-
-import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Internal.C2HS
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
 
+-- Friends
+import Foreign.CUDA.Runtime.Error
+import Foreign.CUDA.Internal.C2HS
 
--- |
--- Unwrap an Either construct, throwing an error for non-right values
---
-forceEither :: Either String a -> a
-forceEither (Left  s) = error s
-forceEither (Right r) = r
+-- System
+import Foreign
+import Foreign.C
 
 
 -- |
 -- Return the version number of the installed CUDA driver
 --
-runtimeVersion :: IO (Either String Int)
-runtimeVersion =  resultIfOk `fmap` cudaRuntimeGetVersion
+runtimeVersion :: IO Int
+runtimeVersion =  resultIfOk =<< cudaRuntimeGetVersion
 
 {# fun unsafe cudaRuntimeGetVersion
-    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
+  { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
 
 -- |
 -- Return the version number of the installed CUDA runtime
 --
-driverVersion :: IO (Either String Int)
-driverVersion =  resultIfOk `fmap` cudaDriverGetVersion
+driverVersion :: IO Int
+driverVersion =  resultIfOk =<< cudaDriverGetVersion
 
 {# fun unsafe cudaDriverGetVersion
-    { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
+  { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
