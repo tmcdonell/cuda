@@ -51,26 +51,24 @@ import Foreign.CUDA.Runtime.Marshal.Alloc
 -- |
 -- Retrieve the specified value from device memory
 --
-peek :: Storable a => DevicePtr a -> IO (Either String a)
+peek :: Storable a => DevicePtr a -> IO a
 peek d = doPeek undefined
   where
-    doPeek   :: Storable a' => a' -> IO (Either String a')
+    doPeek   :: Storable a' => a' -> IO a'
     doPeek x =  F.alloca         $ \hptr ->
                 withDevicePtr' d $ \dptr ->
-                memcpy hptr dptr (fromIntegral (F.sizeOf x)) DeviceToHost >>= \rv ->
-                case rv of
-                    Nothing -> Right `fmap` F.peek hptr
-                    Just s  -> return (Left s)
+                memcpy hptr dptr (fromIntegral (F.sizeOf x)) DeviceToHost >>
+                F.peek hptr
 
 
 -- |
 -- Store the given value to device memory
 --
-poke :: Storable a => DevicePtr a -> a -> IO (Maybe String)
+poke :: Storable a => DevicePtr a -> a -> IO ()
 poke d v =
-    F.with v        $ \hptr ->
-    withDevicePtr d $ \dptr ->
-    memcpy dptr hptr (fromIntegral (F.sizeOf v)) HostToDevice
+  F.with v        $ \hptr ->
+  withDevicePtr d $ \dptr ->
+  memcpy dptr hptr (fromIntegral (F.sizeOf v)) HostToDevice
 
 
 --------------------------------------------------------------------------------
@@ -81,7 +79,7 @@ poke d v =
 -- Retrieve the specified number of elements from device memory and return as a
 -- Haskell list
 --
-peekArray :: Storable a => Int -> DevicePtr a -> IO (Either String [a])
+peekArray :: Storable a => Int -> DevicePtr a -> IO [a]
 peekArray =  peekArrayElemOff 0
 
 
@@ -89,23 +87,21 @@ peekArray =  peekArrayElemOff 0
 -- Retrieve the specified number of elements from device memory, beginning at
 -- the specified index (from zero), and return as a Haskell list.
 --
-peekArrayElemOff :: Storable a => Int -> Int -> DevicePtr a -> IO (Either String [a])
+peekArrayElemOff :: Storable a => Int -> Int -> DevicePtr a -> IO [a]
 peekArrayElemOff o n d = doPeek undefined
   where
-    doPeek   :: Storable a' => a' -> IO (Either String [a'])
+    doPeek   :: Storable a' => a' -> IO [a']
     doPeek x =  let bytes = fromIntegral n * (fromIntegral (F.sizeOf x)) in
                 F.allocaArray  n $ \hptr ->
                 withDevicePtr' d $ \dptr ->
-                memcpy hptr (dptr `plusPtr` (o * F.sizeOf x)) bytes DeviceToHost >>= \rv ->
-                case rv of
-                   Nothing -> Right `fmap` F.peekArray n hptr
-                   Just s  -> return (Left s)
+                memcpy hptr (dptr `plusPtr` (o * F.sizeOf x)) bytes DeviceToHost >>
+                F.peekArray n hptr
 
 
 -- |
 -- Store the list elements consecutively in device memory
 --
-pokeArray :: Storable a => DevicePtr a -> [a] -> IO (Maybe String)
+pokeArray :: Storable a => DevicePtr a -> [a] -> IO ()
 pokeArray = pokeArrayElemOff 0
 
 
@@ -113,12 +109,12 @@ pokeArray = pokeArrayElemOff 0
 -- Store the list elements consecutively in device memory, beginning at the
 -- specified index (from zero)
 --
-pokeArrayElemOff :: Storable a => Int -> DevicePtr a -> [a] -> IO (Maybe String)
+pokeArrayElemOff :: Storable a => Int -> DevicePtr a -> [a] -> IO ()
 pokeArrayElemOff o d = doPoke undefined
   where
-    doPoke     :: Storable a' => a' -> [a'] -> IO (Maybe String)
+    doPoke     :: Storable a' => a' -> [a'] -> IO ()
     doPoke x v =  F.withArrayLen v $ \n hptr ->
-                  withDevicePtr' d $ \dptr ->
+                  withDevicePtr' d $ \dptr   ->
                   let bytes = (fromIntegral n) * (fromIntegral (F.sizeOf x)) in
                   memcpy (dptr `plusPtr` (o * F.sizeOf x)) hptr bytes HostToDevice
 
@@ -134,11 +130,9 @@ pokeArrayElemOff o d = doPoke undefined
 new :: Storable a => a -> IO (DevicePtr a)
 new v =
     let bytes = fromIntegral (F.sizeOf v) in
-    moduleForceEither `fmap` malloc bytes >>= \dptr ->
-    poke dptr v >>= \rv ->
-    case rv of
-        Nothing -> return dptr
-        Just s  -> moduleErr "new" s
+    malloc bytes >>= \dptr ->
+    poke dptr v  >>
+    return dptr
 
 
 -- |
@@ -148,11 +142,9 @@ new v =
 newArray   :: Storable a => [a] -> IO (DevicePtr a)
 newArray v =
     let bytes = fromIntegral (length v) * fromIntegral (F.sizeOf (head v)) in
-    moduleForceEither `fmap` malloc bytes >>= \dptr ->
-    pokeArray dptr v >>= \rv ->
-    case rv of
-        Nothing -> return dptr
-        Just s  -> moduleErr "newArray" s
+    malloc bytes     >>= \dptr ->
+    pokeArray dptr v >>
+    return dptr
 
 
 -- |
@@ -162,10 +154,8 @@ newArray v =
 with :: Storable a => a -> (DevicePtr a -> IO b) -> IO b
 with v f =
     alloca $ \dptr ->
-    poke dptr v >>= \rv ->
-    case rv of
-        Nothing -> f dptr
-        Just s  -> moduleErr "with" s
+    poke dptr v >>
+    f dptr
 
 
 -- |
@@ -185,10 +175,8 @@ withArrayLen vs f =
         b = fromIntegral l * fromIntegral (F.sizeOf (head vs))
     in
         allocaBytes b $ \dptr ->
-        pokeArray dptr vs >>= \rv ->
-        case rv of
-            Nothing -> f l dptr
-            Just s  -> moduleErr "withArray" s
+        pokeArray dptr vs >>
+        f l dptr
 
 
 --------------------------------------------------------------------------------
@@ -201,14 +189,4 @@ withArrayLen vs f =
 --
 withDevicePtr' :: DevicePtr a -> (Ptr b -> IO c) -> IO c
 withDevicePtr' =  withDevicePtr . castDevicePtr
-
---
--- Errors
---
-moduleErr :: String -> String -> a
-moduleErr fun msg =  error ("Foreign.CUDA." ++ fun ++ ':':' ':msg)
-
-moduleForceEither :: Either String a -> a
-moduleForceEither (Left  s) = moduleErr "Marshal" s
-moduleForceEither (Right r) = r
 
