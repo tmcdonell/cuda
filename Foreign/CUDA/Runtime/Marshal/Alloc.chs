@@ -125,6 +125,9 @@ malloc3D = moduleErr "malloc3D" "not implemented yet"
 free :: DevicePtr a -> IO ()
 free =  finalizeDevicePtr
 
+--{# fun unsafe cudaFree
+--    { castPtr `Ptr a' } -> `Status' cToEnum #}
+
 --free   :: DevicePtr a -> IO (Maybe String)
 --free p =  nothingIfOk `fmap` (withDevicePtr p cudaFree)
 
