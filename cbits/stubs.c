@@ -1,8 +1,6 @@
 /*
- * Extra bits for C binding
- * vim: syn=cuda
+ * Extra bits for CUDA binding
  */
 
 #include "cbits/stubs.h"
-#include <cuda_runtime_api.h>
 
