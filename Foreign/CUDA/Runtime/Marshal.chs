@@ -310,13 +310,13 @@ withListArray xs = bracket (newListArray xs) free
 --
 memset :: DevicePtr a                   -- ^ The device memory
        -> Int64                         -- ^ Number of bytes
-       -> Int                           -- ^ Value to set for each byte
+       -> Int8                          -- ^ Value to set for each byte
        -> IO ()
 memset dptr bytes symbol = nothingIfOk =<< cudaMemset dptr symbol bytes
 
 {# fun unsafe cudaMemset
   { dptr     `DevicePtr a'
-  ,          `Int'
+  , cIntConv `Int8'
   , cIntConv `Int64'       } -> `Status' cToEnum #}
   where
     dptr = useDevicePtr . castDevPtr
