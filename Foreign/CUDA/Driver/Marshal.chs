@@ -11,10 +11,23 @@
 
 module Foreign.CUDA.Driver.Marshal
   (
-    DevicePtr, HostPtr, AllocFlag(..), withHostPtr,
-    malloc, free, mallocHost, freeHost,
-    peekArray, peekArrayAsync, pokeArray, pokeArrayAsync, memset,
-    getDevicePtr
+    -- * Host Allocation
+    HostPtr, AllocFlag(..),
+    withHostPtr, mallocHostArray, freeHost,
+
+    -- * Device Allocation
+    DevicePtr,
+    mallocArray, allocaArray, free,
+
+    -- * Marshalling
+    peekArray, peekArrayAsync, peekListArray,
+    pokeArray, pokeArrayAsync, pokeListArray,
+
+    -- * Combined Allocation and Marshalling
+    newListArray, withListArray,
+
+    -- * Utility
+    memset, getDevicePtr
   )
   where
 
@@ -27,10 +40,14 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
 
 -- System
-import Foreign                           hiding (peekArray, pokeArray, malloc, free)
-import Foreign.C
-import Control.Monad                            (liftM)
 import Unsafe.Coerce
+import Control.Monad                            (liftM)
+import Control.Exception.Extensible
+
+import Foreign.C
+import Foreign.Ptr
+import Foreign.Storable
+import qualified Foreign.Marshal as F
 
 #c
 typedef enum CUmemhostalloc_option_enum {
@@ -93,8 +110,8 @@ withHostPtr p f = f (useHostPtr p)
 -- system performance may suffer. This is best used sparingly to allocate
 -- staging areas for data exchange.
 --
-mallocHost :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
-mallocHost flags = doMalloc undefined
+mallocHostArray :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
+mallocHostArray flags = doMalloc undefined
   where
     doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
     doMalloc x n = resultIfOk =<< cuMemHostAlloc (n * sizeOf x) flags
@@ -129,16 +146,32 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
 -- it. The memory is sufficient to hold the given number of elements of storable
 -- type. It is suitably aligned for any type, and is not cleared.
 --
-malloc :: Storable a => Int -> IO (DevicePtr a)
-malloc = doMalloc undefined
+mallocArray :: Storable a => Int -> IO (DevicePtr a)
+mallocArray = doMalloc undefined
   where
     doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
     doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
-  { alloca-  `DevicePtr a' dptr*
+  { alloca'- `DevicePtr a' peekDP*
   ,          `Int'               } -> `Status' cToEnum #}
-  where dptr = liftM DevicePtr . peek
+  where
+    alloca' = F.alloca
+    peekDP  = liftM DevicePtr . peek
+
+
+-- |
+-- Execute a computation on the device, passing a pointer to a temporarily
+-- allocated block of memory sufficient to hold the given number of elements of
+-- storable type. The memory is freed when the computation terminates (normally
+-- or via an exception), so the pointer must not be used after this.
+--
+-- Note that kernel launches can be asynchronous, so you may want to add a
+-- synchronisation point using 'sync' as part of the computation.
+--
+allocaArray :: Storable a => Int -> (DevicePtr a -> IO b) -> IO b
+allocaArray n = bracket (mallocArray n) free
+
 
 -- |
 -- Release a section of device memory
@@ -151,7 +184,7 @@ free dp = nothingIfOk =<< cuMemFree dp
 
 
 --------------------------------------------------------------------------------
--- Transfer
+-- Marshalling
 --------------------------------------------------------------------------------
 
 -- |
@@ -172,10 +205,9 @@ peekArray n dptr hptr = doPeek undefined dptr
 
 -- |
 -- Copy memory from the device asynchronously, possibly associated with a
--- particular stream. The destination host memory must be page-locked (allocated
--- by mallocHost)
+-- particular stream. The destination host memory must be page-locked.
 --
-peekArrayAsync :: Storable a => Int -> DevicePtr a -> Ptr a -> Maybe Stream -> IO ()
+peekArrayAsync :: Storable a => Int -> DevicePtr a -> HostPtr a -> Maybe Stream -> IO ()
 peekArrayAsync n dptr hptr mst = doPeek undefined dptr
   where
     doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
@@ -185,10 +217,24 @@ peekArrayAsync n dptr hptr mst = doPeek undefined dptr
         Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyDtoHAsync
-  { castPtr      `Ptr a'
+  { useHP        `HostPtr a'
   , useDevicePtr `DevicePtr a'
   ,              `Int'
   , useStream    `Stream'  } -> `Status' cToEnum #}
+  where
+    useHP = castPtr . useHostPtr
+
+
+-- |
+-- Copy a number of elements from the device into a new Haskell list. Note that
+-- this requires two memory copies: firstly from the device into a heap
+-- allocated array, and from there marshalled into a list.
+--
+peekListArray :: Storable a => Int -> DevicePtr a -> IO [a]
+peekListArray n dptr =
+  F.allocaArray n $ \p -> do
+    peekArray   n dptr p
+    F.peekArray n p
 
 
 -- |
@@ -208,10 +254,9 @@ pokeArray n hptr dptr = doPoke undefined dptr
 
 -- |
 -- Copy memory onto the device asynchronously, possibly associated with a
--- particular stream. The source host memory must be page-locked (allocated by
--- mallocHost)
+-- particular stream. The source host memory must be page-locked.
 --
-pokeArrayAsync :: Storable a => Int -> Ptr a -> DevicePtr a -> Maybe Stream -> IO ()
+pokeArrayAsync :: Storable a => Int -> HostPtr a -> DevicePtr a -> Maybe Stream -> IO ()
 pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
   where
     dopoke :: Storable a' => a' -> DevicePtr a' -> IO ()
@@ -222,9 +267,51 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
 
 {# fun unsafe cuMemcpyHtoDAsync
   { useDevicePtr `DevicePtr a'
-  , castPtr      `Ptr a'
+  , useHP        `HostPtr a'
   ,              `Int'
   , useStream    `Stream'  } -> `Status' cToEnum #}
+  where
+    useHP = castPtr . useHostPtr
+
+
+-- |
+-- Write a list of storable elements into a device array. The device array must
+-- be sufficiently large to hold the entire list. This requires two marshalling
+-- operations.
+--
+pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
+pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
+
+
+--------------------------------------------------------------------------------
+-- Combined Allocation and Marshalling
+--------------------------------------------------------------------------------
+
+-- |
+-- Write a list of storable elements into a newly allocated device array. Note
+-- that this requires two memory copies: firstly from a Haskell list to a heap
+-- allocated array, and from there onto the graphics device. The memory should
+-- be 'free'd when no longer required.
+--
+newListArray :: Storable a => [a] -> IO (DevicePtr a)
+newListArray xs =
+  F.withArrayLen xs                     $ \len p ->
+  bracketOnError (mallocArray len) free $ \d_xs  -> do
+    pokeArray len p d_xs
+    return d_xs
+
+
+-- |
+-- Temporarily store a list of elements into a newly allocated device array. An
+-- IO action is applied to to the array, the result of which is returned.
+-- Similar to 'newListArray', this requires copying the data twice.
+--
+-- As with 'allocaArray', the memory is freed once the action completes, so you
+-- should not return the pointer from the action, and be wary of asynchronous
+-- kernel execution.
+--
+withListArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
+withListArray xs = bracket (newListArray xs) free
 
 
 --------------------------------------------------------------------------------
@@ -264,7 +351,7 @@ memset dptr n val = case sizeOf val of
 
 -- |
 -- Return the device pointer associated with a mapped, pinned host buffer, which
--- was allocated with the 'DeviceMapped' option by 'mallocHost'.
+-- was allocated with the 'DeviceMapped' option by 'mallocHostArray'.
 --
 -- Currently, no options are supported and this must be empty.
 --
