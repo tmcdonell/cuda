@@ -27,11 +27,11 @@ Library
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Runtime
                         Foreign.CUDA.Runtime.Device
-                        Foreign.CUDA.Runtime.DevicePtr
                         Foreign.CUDA.Runtime.Error
                         Foreign.CUDA.Runtime.Marshal
                         Foreign.CUDA.Runtime.Marshal.Alloc
                         Foreign.CUDA.Runtime.Marshal.Array
+                        Foreign.CUDA.Runtime.Ptr
                         Foreign.CUDA.Runtime.Stream
                         Foreign.CUDA.Runtime.Thread
                         Foreign.CUDA.Runtime.Utils
