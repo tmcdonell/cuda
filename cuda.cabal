@@ -28,6 +28,7 @@ Library
                         Foreign.CUDA.Runtime
                         Foreign.CUDA.Runtime.Device
                         Foreign.CUDA.Runtime.Error
+                        Foreign.CUDA.Runtime.Event
                         Foreign.CUDA.Runtime.Marshal
                         Foreign.CUDA.Runtime.Ptr
                         Foreign.CUDA.Runtime.Stream
