@@ -65,13 +65,13 @@ instance Storable (DevicePtr a) where
 -- The driver automatically accelerates calls to functions such as `memcpy'
 -- which reference page-locked memory.
 --
-newtype HostPtr a = HostPtr (ForeignPtr a)
+newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
 
+-- |
+-- Unwrap a host pointer and execute a computation using the base pointer object
+--
 withHostPtr :: HostPtr a -> (Ptr a -> IO b) -> IO b
-withHostPtr (HostPtr hptr) = withForeignPtr hptr
-
-newHostPtr :: IO (HostPtr a)
-newHostPtr = HostPtr `fmap` mallocForeignPtrBytes (sizeOf (undefined :: Ptr ()))
+withHostPtr p f = f (useHostPtr p)
 
 -- |
 -- Options for host allocation
@@ -97,26 +97,28 @@ mallocHost :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
 mallocHost flags = doMalloc undefined
   where
     doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
-    doMalloc x n =
-      newHostPtr >>= \hp -> withHostPtr hp $ \p ->
-      cuMemHostAlloc p (n * sizeOf x) flags >>= nothingIfOk >>
-      return hp
+    doMalloc x n = resultIfOk =<< cuMemHostAlloc (n * sizeOf x) flags
 
 {# fun unsafe cuMemHostAlloc
-  { with'* `Ptr a'
-  ,        `Int'
-  , combineBitMasks `[AllocFlag]' } -> `Status' cToEnum #}
-  where with' = with . castPtr
+  { alloca'-        `HostPtr a'   peekHP*
+  ,                 `Int'
+  , combineBitMasks `[AllocFlag]'         } -> `Status' cToEnum #}
+  where
+    alloca'  = F.alloca
+    peekHP p = (HostPtr . castPtr) `fmap` peek p
 
 
 -- |
 -- Free a section of page-locked host memory
 --
 freeHost :: HostPtr a -> IO ()
-freeHost hp = withHostPtr hp $ \p -> (nothingIfOk =<< cuMemFreeHost p)
+freeHost p = nothingIfOk =<< cuMemFreeHost p
 
 {# fun unsafe cuMemFreeHost
-  { castPtr `Ptr a' } -> `Status' cToEnum #}
+  { useHP `HostPtr a' } -> `Status' cToEnum #}
+  where
+    useHP = castPtr . useHostPtr
+
 
 --------------------------------------------------------------------------------
 -- Device Allocation
@@ -262,16 +264,19 @@ memset dptr n val = case sizeOf val of
 
 -- |
 -- Return the device pointer associated with a mapped, pinned host buffer, which
--- was allocated with the DEVICE_MAPPED option.
+-- was allocated with the 'DeviceMapped' option by 'mallocHost'.
 --
 -- Currently, no options are supported and this must be empty.
 --
 getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
-getDevicePtr flags hptr = withHostPtr hptr $ \hp -> (resultIfOk =<< cuMemHostGetDevicePointer hp flags)
+getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 
 {# fun unsafe cuMemHostGetDevicePointer
-  { alloca-         `DevicePtr a' dptr*
-  , castPtr         `Ptr a'
-  , combineBitMasks `[AllocFlag]'       } -> `Status' cToEnum #}
-  where dptr = liftM DevicePtr . peek
+  { alloca'-        `DevicePtr a' peekDP*
+  , useHP           `HostPtr a'
+  , combineBitMasks `[AllocFlag]'         } -> `Status' cToEnum #}
+  where
+    alloca' = F.alloca
+    useHP   = castPtr . useHostPtr
+    peekDP  = liftM DevicePtr . peek
 
