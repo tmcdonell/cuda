@@ -10,6 +10,11 @@
 --------------------------------------------------------------------------------
 
 module Foreign.CUDA.Runtime.Error
+  (
+    Status(..), CUDAException(..),
+    cudaError, describe,
+    resultIfOk, nothingIfOk
+  )
   where
 
 
@@ -20,7 +25,7 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign
 import Foreign.C
 import Data.Typeable
-import Control.Exception
+import Control.Exception.Extensible
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
@@ -30,8 +35,8 @@ import Control.Exception
 -- Return Status
 --------------------------------------------------------------------------------
 
---
--- Error Codes
+-- |
+-- Return codes from API functions
 --
 {# enum cudaError as Status
     { cudaSuccess as Success }
@@ -54,7 +59,7 @@ instance Show CUDAException where
 
 
 -- |
--- Raise a CUDAException in the IO Monad
+-- Raise a 'CUDAException' in the IO Monad
 --
 cudaError :: String -> IO a
 cudaError s = throwIO (UserError s)
