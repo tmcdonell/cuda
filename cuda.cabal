@@ -29,8 +29,6 @@ Library
                         Foreign.CUDA.Runtime.Device
                         Foreign.CUDA.Runtime.Error
                         Foreign.CUDA.Runtime.Marshal
-                        Foreign.CUDA.Runtime.Marshal.Alloc
-                        Foreign.CUDA.Runtime.Marshal.Array
                         Foreign.CUDA.Runtime.Ptr
                         Foreign.CUDA.Runtime.Stream
                         Foreign.CUDA.Runtime.Thread

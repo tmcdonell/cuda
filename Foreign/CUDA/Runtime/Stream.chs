@@ -12,7 +12,7 @@
 
 module Foreign.CUDA.Runtime.Stream
   (
-    Stream,
+    Stream(..),
 
     -- ** Stream management
     create, destroy, finished, block

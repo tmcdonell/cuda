@@ -11,6 +11,7 @@
 module Foreign.CUDA.Runtime
   (
     module Foreign.CUDA.Runtime.Device,
+    module Foreign.CUDA.Runtime.Error,
     module Foreign.CUDA.Runtime.Marshal,
     module Foreign.CUDA.Runtime.Ptr,
     module Foreign.CUDA.Runtime.Stream,
@@ -20,6 +21,7 @@ module Foreign.CUDA.Runtime
   where
 
 import Foreign.CUDA.Runtime.Device
+import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Runtime.Marshal
 import Foreign.CUDA.Runtime.Ptr
 import Foreign.CUDA.Runtime.Stream
