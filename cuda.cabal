@@ -29,6 +29,7 @@ Library
                         Foreign.CUDA.Runtime.Device
                         Foreign.CUDA.Runtime.Error
                         Foreign.CUDA.Runtime.Event
+                        Foreign.CUDA.Runtime.Exec
                         Foreign.CUDA.Runtime.Marshal
                         Foreign.CUDA.Runtime.Ptr
                         Foreign.CUDA.Runtime.Stream
@@ -50,7 +51,7 @@ Library
                         Foreign.CUDA.Internal.Offsets
 
   Include-dirs:         .
-  C-sources:            
+  C-sources:            cbits/stubs.c
 
   Build-tools:          c2hs, hsc2hs
   Build-depends:        base >= 4.0, haskell98, bytestring, extensible-exceptions
