@@ -59,24 +59,6 @@ initCUDA = do
   B.putStrLn (CUDA.jitInfoLog r)
   return (ctx,fun)
 
---
--- Allocate some memory, and copy over the input data to the device. Should
--- probably catch allocation exceptions individually...
---
-initData :: (Num e, Storable e)
-         => Vector e -> Vector e -> IO (CUDA.DevicePtr e, CUDA.DevicePtr e, CUDA.DevicePtr e)
-initData xs ys = do
-  (m,n) <- getBounds xs
-  let len = (n-m+1)
-  dxs   <- CUDA.malloc len
-  dys   <- CUDA.malloc len
-  res   <- CUDA.malloc len
-
-  flip onException (mapM_ CUDA.free [dxs,dys,res]) $ do
-  withVector xs $ \p -> CUDA.pokeArray len p dxs
-  withVector ys $ \p -> CUDA.pokeArray len p dys
-  return (dxs, dys, res)
-
 
 --
 -- Run the test
@@ -91,25 +73,31 @@ testCUDA xs ys = do
   putStrLn ">> Initialising"
   bracket initCUDA (\(ctx,_) -> CUDA.destroy ctx) $ \(_,addVec) -> do
 
-  -- Ensure we release the memory, even if there was an error
+  -- Allocate some device memory. This will be freed once the computation
+  -- terminates, either normally or by exception.
   --
   putStrLn ">> Executing"
-  bracket
-    (initData xs ys)
-    (\(dx,dy,dz) -> mapM_ CUDA.free [dx,dy,dz]) $
-     \(dx,dy,dz) -> do
-      -- Repeat test many times...
-      --
-      CUDA.setParams     addVec [CUDA.VArg dx, CUDA.VArg dy, CUDA.VArg dz, CUDA.IArg len]
-      CUDA.setBlockShape addVec (128,1,1)
-      CUDA.launch        addVec ((len+128-1) `div` 128, 1) Nothing
-      CUDA.sync
+  CUDA.allocaArray len $ \dx -> do
+  CUDA.allocaArray len $ \dy -> do
+  CUDA.allocaArray len $ \dz -> do
 
-      -- Copy back result
-      --
-      zs <- newArray_ (m,n)
-      withVector zs $ \p -> CUDA.peekArray len dz p
-      return zs
+  -- Copy over the data
+  --
+  withVector xs $ \p -> CUDA.pokeArray len p dx
+  withVector ys $ \p -> CUDA.pokeArray len p dy
+
+  -- Setup and execute the kernel (repeat test many times...)
+  --
+  CUDA.setParams     addVec [CUDA.VArg dx, CUDA.VArg dy, CUDA.VArg dz, CUDA.IArg len]
+  CUDA.setBlockShape addVec (128,1,1)
+  CUDA.launch        addVec ((len+128-1) `div` 128, 1) Nothing
+  CUDA.sync
+
+  -- Copy back result
+  --
+  zs <- newArray_ (m,n)
+  withVector zs $ \p -> CUDA.peekArray len dz p
+  return zs
 
 
 --------------------------------------------------------------------------------

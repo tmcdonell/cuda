@@ -89,3 +89,8 @@ randomList len = do
 
   evaluate [rands !! (i`mod`k) | i <- [0..len-1]]
 
+
+verifyList :: (Ord e, Fractional e) => [e] -> [e] -> Bool
+verifyList xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
+  where epsilon = 0.001
+

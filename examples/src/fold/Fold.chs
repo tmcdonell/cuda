@@ -38,7 +38,9 @@ foldRef xs = evaluate (foldl (+) 0 xs)
 -- heap, and from there into the graphics card memory.
 --
 foldCUDA :: [Float] -> IO Float
-foldCUDA xs = CUDA.withArrayLen xs $ \len d_xs -> fold_plusf d_xs len
+foldCUDA xs =
+  let len = length xs in
+  CUDA.withListArray xs $ \d_xs -> fold_plusf d_xs len
 
 {# fun unsafe fold_plusf
   { withDP* `CUDA.DevicePtr Float'

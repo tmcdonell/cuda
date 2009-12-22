@@ -82,9 +82,9 @@ initData :: (Num e, Storable e)
 initData xs ys = do
   (wx,hx) <- getSize xs
   (wy,hy) <- getSize ys
-  dxs     <- CUDA.malloc (wx*hx)
-  dys     <- CUDA.malloc (wy*hy)
-  res     <- CUDA.malloc (wy*hx)
+  dxs     <- CUDA.mallocArray (wx*hx)
+  dys     <- CUDA.mallocArray (wy*hy)
+  res     <- CUDA.mallocArray (wy*hx)
 
   flip onException (mapM_ CUDA.free [dxs,dys,res]) $ do
   withMatrix xs $ \p -> CUDA.pokeArray (wx*hx) p dxs
