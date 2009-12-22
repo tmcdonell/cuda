@@ -62,7 +62,7 @@ CC              := gcc
 LINK            := g++ -fPIC
 
 # Includes
-INCLUDES        += -I. -I$(CUDA_INSTALL_PATH)/include -I$(COMMONDIR)/include
+INCLUDES        += -I. -I$(CUDA_INSTALL_PATH)/include -I$(COMMONDIR)/include -I$(COMMONDIR)/src
 
 # architecture flag for cubin build
 CUBIN_ARCH_FLAG :=
