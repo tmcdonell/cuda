@@ -105,7 +105,7 @@ scan_recursive
         vectorAddUniform4
             <T, op, SCAN_ELTS_PER_THREAD>
             <<<grid,block>>>
-            (sums, out, N, 4, 4, 0, 0);
+            (out, sums, N, 4, 4, 0, 0);
     }
 
 #undef MULTIBLOCK
