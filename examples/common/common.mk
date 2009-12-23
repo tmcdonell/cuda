@@ -53,7 +53,7 @@ LIBDIR          := $(ROOTDIR)/../lib
 COMMONDIR	:= $(ROOTDIR)/../common
 
 # Compilers
-NVCC            := nvcc
+NVCC            := $(CUDA_INSTALL_PATH)/bin/nvcc
 GHC             := ghc
 C2HS            := c2hs
 HSC2HS          := hsc2hs
