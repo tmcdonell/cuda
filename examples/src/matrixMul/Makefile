@@ -5,12 +5,12 @@
 # ------------------------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------------------------
-EXECUTABLE	:= MatrixMulDrv
+EXECUTABLE      := MatrixMul
 
-HSMAIN		:= MatrixMul.hs
-PTXFILES	:= matrix_mul.cu
+HSMAIN          := MatrixMul.hs
+CUFILES         := matrix_mul.cu
 
-USEDRVAPI	:= 1
+EXTRALIBS       := stdc++
 
 # ------------------------------------------------------------------------------
 # Haskell/CUDA build system

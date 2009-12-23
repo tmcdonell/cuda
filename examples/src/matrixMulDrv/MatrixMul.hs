@@ -5,7 +5,7 @@
 -- Copyright : (c) 2009 Trevor L. McDonell
 -- License   : BSD
 --
--- Matrix multiplication
+-- Matrix multiplication using driver interface
 --
 --------------------------------------------------------------------------------
 
