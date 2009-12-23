@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Runtime.Exec
   (
-    FunAttributes(..),
+    FunAttributes(..), FunParam(..),
     attributes, setConfig, setParams, launch
   )
   where
@@ -74,6 +74,15 @@ instance Storable FunAttributes where
         numRegs                  = nr
       }
 
+-- |
+-- Kernel function parameters. Doubles will be converted to an internal float
+-- representation on devices that do not support doubles natively.
+--
+data Storable a => FunParam a
+    = IArg Int
+    | FArg Float
+    | DArg Double
+    | VArg a
 
 --------------------------------------------------------------------------------
 -- Execution Control
@@ -122,12 +131,26 @@ setConfig (gx,gy) (bx,by,bz) sharedMem mst =
 -- Set the argument parameters that will be passed to the next kernel
 -- invocation. This is used in conjunction with 'setConfig' to control kernel
 -- execution.
-setParams :: Storable a => [a] -> IO ()
-setParams prs =
-  zipWithM_ set prs offsets
+setParams :: Storable a => [FunParam a] -> IO ()
+setParams = foldM_ k 0
   where
-    set v o = nothingIfOk =<< cudaSetupArgument v (sizeOf v) o
-    offsets = scanl (\a b -> a + sizeOf b) 0 prs
+    k offset arg = do
+      let s = size arg
+      set arg s offset >>= nothingIfOk
+      return (offset + s)
+
+    size (IArg _) = sizeOf (undefined :: Int)
+    size (FArg _) = sizeOf (undefined :: Float)
+    size (DArg _) = sizeOf (undefined :: Double)
+    size (VArg a) = sizeOf a
+
+    set (IArg v) s o = cudaSetupArgument v s o
+    set (FArg v) s o = cudaSetupArgument v s o
+    set (VArg v) s o = cudaSetupArgument v s o
+    set (DArg v) s o =
+      cudaSetDoubleForDevice v >>= resultIfOk >>= \d ->
+      cudaSetupArgument d s o
+
 
 {# fun unsafe cudaSetupArgument
   `Storable a' =>
@@ -136,6 +159,12 @@ setParams prs =
   ,        `Int'   } -> `Status' cToEnum #}
   where
     with' v a = with v $ \p -> a (castPtr p)
+
+{# fun unsafe cudaSetDoubleForDevice
+  { with'* `Double' peek'* } -> `Status' cToEnum #}
+  where
+    with' v a = with v $ \p -> a (castPtr p)
+    peek'     = peek . castPtr
 
 
 -- |
