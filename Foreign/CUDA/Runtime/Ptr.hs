@@ -13,6 +13,7 @@ module Foreign.CUDA.Runtime.Ptr
 
 -- System
 import Foreign.Ptr
+import Foreign.Storable
 
 
 --------------------------------------------------------------------------------
@@ -27,6 +28,12 @@ data DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
 
 instance Show (DevicePtr a) where
   showsPrec n (DevicePtr p) rs = showsPrec n p rs
+
+instance Storable (DevicePtr a) where
+  sizeOf _    = sizeOf    (undefined :: Ptr a)
+  alignment _ = alignment (undefined :: Ptr a)
+  peek p      = DevicePtr `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useDevicePtr v)
 
 
 -- |
@@ -86,6 +93,12 @@ data HostPtr a = HostPtr { useHostPtr :: Ptr a }
 
 instance Show (HostPtr a) where
   showsPrec n (HostPtr p) rs = showsPrec n p rs
+
+instance Storable (HostPtr a) where
+  sizeOf _    = sizeOf    (undefined :: Ptr a)
+  alignment _ = alignment (undefined :: Ptr a)
+  peek p      = HostPtr `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useHostPtr v)
 
 
 -- |
