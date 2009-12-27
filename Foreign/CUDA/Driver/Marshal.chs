@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Marshal
     -- * Marshalling
     peekArray, peekArrayAsync, peekListArray,
     pokeArray, pokeArrayAsync, pokeListArray,
+               copyArrayAsync,
 
     -- * Combined Allocation and Marshalling
     newListArray, withListArray,
@@ -269,7 +270,7 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
   { useDevicePtr `DevicePtr a'
   , useHP        `HostPtr a'
   ,              `Int'
-  , useStream    `Stream'  } -> `Status' cToEnum #}
+  , useStream    `Stream'      } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
 
@@ -281,6 +282,24 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
 --
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
 pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
+
+
+-- |
+-- Copy the given number of elements from the first device array (source) to the
+-- second (destination). The copied areas may not overlap. This operation is
+-- asynchronous with respect to the host, but will never overlap with kernel
+-- execution.
+--
+copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
+copyArrayAsync n = docopy undefined
+  where
+    docopy :: Storable a' => a' -> DevicePtr a' -> DevicePtr a' -> IO ()
+    docopy x src dst = nothingIfOk =<< cuMemcpyDtoD dst src (n * sizeOf x)
+
+{# fun unsafe cuMemcpyDtoD
+  { useDevicePtr `DevicePtr a'
+  , useDevicePtr `DevicePtr a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------

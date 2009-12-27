@@ -21,6 +21,7 @@ module Foreign.CUDA.Runtime.Marshal
     -- * Marshalling
     peekArray, peekArrayAsync, peekListArray,
     pokeArray, pokeArrayAsync, pokeListArray,
+    copyArray, copyArrayAsync,
 
     -- * Combined Allocation and Marshalling
     newListArray, withListArray,
@@ -211,6 +212,26 @@ pokeArrayAsync n hptr dptr mst =
 --
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
 pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
+
+
+-- |
+-- Copy the given number of elements from the first device array (source) to the
+-- second (destination). The copied areas may not overlap. This is a synchronous
+-- operation.
+--
+copyArray :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
+copyArray n src dst = memcpy (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice
+
+
+-- |
+-- Copy the given number of elements from the first device array (source) to the
+-- second (destination). The copied areas may not overlap. This operation is
+-- asynchronous with respect to host, but will never overlap with kernel
+-- execution.
+--
+copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Stream -> IO ()
+copyArrayAsync n src dst mst =
+  memcpyAsync (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice mst
 
 
 --
