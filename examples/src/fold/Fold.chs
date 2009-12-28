@@ -15,6 +15,7 @@ module Main where
 
 -- Friends
 import C2HS
+import Time
 import RandomVector
 
 -- System
@@ -26,8 +27,11 @@ import qualified Foreign.CUDA.Runtime as CUDA
 -- Reference
 --------------------------------------------------------------------------------
 
-foldRef :: (Num e, Storable e) => [e] -> IO e
-foldRef xs = evaluate (foldl (+) 0 xs)
+foldRef :: Num e => [e] -> IO e
+foldRef xs = do
+  (t,r) <- benchmark 100 (evaluate (foldl (+) 0 xs)) (return ())
+  putStrLn $ "== Reference: " ++ show (timeIn millisecond t) ++ "ms"
+  return r
 
 --------------------------------------------------------------------------------
 -- CUDA
@@ -35,12 +39,18 @@ foldRef xs = evaluate (foldl (+) 0 xs)
 
 --
 -- Note that this requires two memory copies: once from a Haskell list to the C
--- heap, and from there into the graphics card memory.
+-- heap, and from there into the graphics card memory. See the `bandwidthTest'
+-- example for the atrocious performance of this operation.
+--
+-- For this test, cheat a little and just time the pure computation.
 --
 foldCUDA :: [Float] -> IO Float
-foldCUDA xs =
-  let len = length xs in
-  CUDA.withListArray xs $ \d_xs -> fold_plusf d_xs len
+foldCUDA xs = do
+  let len = length xs
+  CUDA.withListArray xs $ \d_xs -> do
+    (t,r) <- benchmark 100 (fold_plusf d_xs len) CUDA.sync
+    putStrLn $ "== CUDA: " ++ show (timeIn millisecond t) ++ "ms"
+    return r
 
 {# fun unsafe fold_plusf
   { withDP* `CUDA.DevicePtr Float'
@@ -57,15 +67,13 @@ foldCUDA xs =
 
 main :: IO ()
 main = do
-  putStrLn "== Generating random numbers"
+  dev   <- CUDA.get
+  props <- CUDA.props dev
+  putStrLn $ "Using device " ++ show dev ++ ": " ++ CUDA.deviceName props
+
   xs   <- randomList 30000
-
-  putStrLn "== Generating reference solution"
   ref  <- foldRef xs
-
-  putStrLn "== Testing CUDA"
   cuda <- foldCUDA xs
 
-  putStr   "== Validating: "
-  putStrLn $ if ((ref-cuda)/ref) < 0.0001 then "Ok!" else "INVALID!"
+  putStrLn $ "== Validating: " ++ if ((ref-cuda)/ref) < 0.0001 then "Ok!" else "INVALID!"
 
