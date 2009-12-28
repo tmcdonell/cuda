@@ -24,7 +24,7 @@ module Foreign.CUDA.Runtime.Marshal
     copyArray, copyArrayAsync,
 
     -- * Combined Allocation and Marshalling
-    newListArray, withListArray,
+    newListArray, withListArray, withListArrayLen,
 
     -- * Utility
     memset
@@ -304,7 +304,7 @@ memcpyAsync dst src n kind mst = doMemcpy undefined dst
 newListArray :: Storable a => [a] -> IO (DevicePtr a)
 newListArray xs =
   F.withArrayLen xs                     $ \len p ->
-  bracketOnError (mallocArray len) free $ \d_xs -> do
+  bracketOnError (mallocArray len) free $ \d_xs  -> do
     pokeArray len p d_xs
     return d_xs
 
@@ -320,6 +320,18 @@ newListArray xs =
 --
 withListArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
 withListArray xs = bracket (newListArray xs) free
+
+
+-- |
+-- A variant of 'withListArray' which also supplies the number of elements in
+-- the array to the applied function
+--
+withListArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
+withListArrayLen xs f =
+  F.withArrayLen xs $ \len p ->
+  allocaArray len   $ \d_xs  -> do
+    pokeArray len p d_xs
+    f len d_xs
 
 
 --------------------------------------------------------------------------------
