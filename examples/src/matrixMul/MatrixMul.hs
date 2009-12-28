@@ -15,10 +15,12 @@ module Main where
 #include "matrix_mul.h"
 
 -- Friends
+import Time
 import RandomVector
 
 -- System
 import Data.Array
+import System.IO
 import Foreign
 import qualified Foreign.CUDA as CUDA
 
@@ -92,15 +94,20 @@ matMultCUDA xs' ys' = doMult undefined xs' ys'
 
 main :: IO ()
 main = do
-  putStrLn "== Generating random matrices"
+  dev   <- CUDA.get
+  props <- CUDA.props dev
+  putStrLn $ "Using device " ++ show dev ++ ": " ++ CUDA.deviceName props
+
   xs <- randomArr ((1,1),(8*BLOCK_SIZE, 4*BLOCK_SIZE)) :: IO (Matrix Float)
   ys <- randomArr ((1,1),(4*BLOCK_SIZE,12*BLOCK_SIZE)) :: IO (Matrix Float)
 
-  putStrLn "== Generating reference solution"
-  ref <- matMult xs ys
+  putStr   "== Reference: " >> hFlush stdout
+  (tr,ref) <- benchmark 100 (matMult xs ys) (return ())
+  putStrLn $  shows (fromInteger (timeIn millisecond tr) / 100::Float) " ms"
 
-  putStrLn "== Testing CUDA"
-  mat <- matMultCUDA xs ys
+  putStr   "== CUDA: " >> hFlush stdout
+  (tc,mat) <- benchmark 100 (matMultCUDA xs ys) (CUDA.sync)
+  putStrLn $  shows (fromInteger (timeIn millisecond tc) / 100::Float) " ms"
 
   putStr "== Validating: "
   verify ref mat >>= \rv -> putStrLn $ if rv then "Ok!" else "INVALID!"

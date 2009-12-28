@@ -30,7 +30,7 @@ import qualified Foreign.CUDA.Runtime as CUDA
 foldRef :: Num e => [e] -> IO e
 foldRef xs = do
   (t,r) <- benchmark 100 (evaluate (foldl (+) 0 xs)) (return ())
-  putStrLn $ "== Reference: " ++ show (timeIn millisecond t) ++ "ms"
+  putStrLn $ "== Reference: " ++ shows (fromInteger (timeIn millisecond t)/100::Float) " ms"
   return r
 
 --------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ foldCUDA xs = do
   let len = length xs
   CUDA.withListArray xs $ \d_xs -> do
     (t,r) <- benchmark 100 (fold_plusf d_xs len) CUDA.sync
-    putStrLn $ "== CUDA: " ++ show (timeIn millisecond t) ++ "ms"
+    putStrLn $ "== CUDA: " ++ shows (fromInteger (timeIn millisecond t)/100::Float) " ms"
     return r
 
 {# fun unsafe fold_plusf
