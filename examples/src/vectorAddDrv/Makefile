@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------------------------
-EXECUTABLE	:= VectorAdd
+EXECUTABLE	:= vectorAddDrv
 
 HSMAIN		:= VectorAdd.hs
 PTXFILES	:= vector_add.cu

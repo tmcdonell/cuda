@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------------------------
-EXECUTABLE	:= MatrixMulDrv
+EXECUTABLE	:= matrixMulDrv
 
 HSMAIN		:= MatrixMul.hs
 PTXFILES	:= matrix_mul.cu

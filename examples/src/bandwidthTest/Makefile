@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------------------------
-EXECUTABLE      := BandwidthTest
+EXECUTABLE      := bandwidthTest
 
 HSMAIN          := BandwidthTest.hs
 CUFILES         :=

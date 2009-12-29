@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------------------------
-EXECUTABLE      := MatrixMul
+EXECUTABLE      := matrixMul
 
 HSMAIN          := MatrixMul.hs
 CUFILES         := matrix_mul.cu
