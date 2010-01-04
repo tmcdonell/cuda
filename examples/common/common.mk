@@ -212,12 +212,12 @@ endif
 # Library/executable configuration
 ifneq ($(STATIC_LIB),)
     TARGETDIR   := $(LIBDIR)
-    TARGET      := $(subst .a,$(LIBSUFFIX).a,$(LIBDIR)/$(STATIC_LIB))
+    TARGET      := $(LIBDIR)/$(basename $(STATIC_LIB))$(LIBSUFFIX)$(suffix $(STATIC_LIB))
     LINKLINE     = ar rucv $(TARGET) $(OBJS); ranlib $(TARGET)
 else
 ifneq ($(DYNAMIC_LIB),)
     TARGETDIR   := $(LIBDIR)
-    TARGET      := $(subst .dylib,$(LIBSUFFIX).dylib,$(LIBDIR)/$(DYNAMIC_LIB))
+    TARGET      := $(LIBDIR)/$(basename $(DYNAMIC_LIB))$(LIBSUFFIX)$(suffix $(DYNAMIC_LIB))
     CFLAGS      += -fPIC
     CXXFLAGS    += -fPIC
     NVCCFLAGS   += -Xcompiler -fPIC
