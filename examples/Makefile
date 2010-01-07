@@ -14,3 +14,5 @@ all : $(addsuffix .do,$(PROJECTS))
 clean : $(addsuffix .do,$(PROJECTS))
 	@echo "Finished cleaning all"
 
+clobber : $(addsuffix .do,$(PROJECTS))
+	@echo "Finished cleaning all"
