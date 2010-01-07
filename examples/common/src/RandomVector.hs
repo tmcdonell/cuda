@@ -74,10 +74,7 @@ verify :: (Ix i, Ord e, Fractional e, Storable e)
 verify ref arr = do
   as <- getElems arr
   bs <- getElems ref
-  return (similar as bs)
-  where
-    similar xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
-    epsilon       = 0.001
+  return (verifyList as bs)
 
 
 --------------------------------------------------------------------------------
@@ -99,6 +96,6 @@ randomList len = randomListR len (-1,1)
 
 
 verifyList :: (Ord e, Fractional e) => [e] -> [e] -> Bool
-verifyList xs ys = all (< epsilon) [abs ((x-y)/x) | x <- xs | y <- ys]
-  where epsilon = 0.001
+verifyList xs ys = all (< epsilon) [abs ((x-y)/(x+y+epsilon)) | x <- xs | y <- ys]
+  where epsilon = 0.0005
 
