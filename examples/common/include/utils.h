@@ -13,12 +13,14 @@
 #include <math.h>
 #include <stdio.h>
 
+
 #ifndef _DEBUG
 #define assert(e)               ((void)0)
 #else
 
 /*
  * Test the given expression, and abort the program if it evaluates to false.
+ * Only available in debug mode.
  */
 #define assert(e)  \
     ((void) ((e) ? (void(0)) : __assert (#e, __FILE__, __LINE__)))
@@ -31,9 +33,35 @@
  * Macro to insert __syncthreads() in device emulation mode
  */
 #ifdef __DEVICE_EMULATION__
-#define __EMUSYNC       __syncthreads()
+#define __EMUSYNC               __syncthreads()
 #else
 #define __EMUSYNC
+#endif
+
+
+/*
+ * Check the return status of CUDA API calls, and abort on failure. Only
+ * available in debug mode.
+ */
+#ifndef _DEBUG
+# define CUDA_SAFE_CALL_NO_SYNC(x)
+# define CUDA_SAFE_CALL(x)
+#else
+
+# define CUDA_SAFE_CALL_NO_SYNC(call)                                          \
+    do {                                                                       \
+        cudaError err = call;                                                  \
+        if(cudaSuccess != err) {                                               \
+            __assert(cudaGetErrorString(err), __FILE__, __LINE__);             \
+        }                                                                      \
+    } while (0)
+
+# define CUDA_SAFE_CALL(call)                                                  \
+    do {                                                                       \
+        CUDA_SAFE_CALL_NO_SYNC(call);                                          \
+        CUDA_SAFE_CALL_NO_SYNC(cudaThreadSynchronize());                       \
+    } while (0)
+
 #endif
 
 
