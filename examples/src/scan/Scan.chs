@@ -69,13 +69,13 @@ scanCUDA xs = do
   let len = rangeSize bnds
   CUDA.allocaArray len $ \d_xs -> do
   CUDA.allocaArray len $ \d_zs -> do
-  (t,_) <- flip (benchmark 100) (return ()) $ do
+  (t,_) <- flip (benchmark 100) CUDA.sync $ do
     withVector xs $ \p -> CUDA.pokeArray len p d_xs
     scanl1_plusf d_xs d_zs len
     withVector zs $ \p -> CUDA.peekArray len d_zs p
   putStrLn $ "CUDA: " ++ shows (fromInteger (timeIn millisecond t)/100::Float) " ms (with copy)"
 
-  (t',_) <- benchmark 100 (scanl1_plusf d_xs d_zs len) (return ())
+  (t',_) <- benchmark 100 (scanl1_plusf d_xs d_zs len) CUDA.sync
   putStrLn $ "CUDA: " ++ shows (fromInteger (timeIn millisecond t')/100::Float) " ms (compute only)"
 
   return zs
