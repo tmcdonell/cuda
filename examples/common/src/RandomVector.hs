@@ -49,16 +49,21 @@ evaluateArr l arr = (join $ evaluate (arr `readArray` l)) >> return arr
 --
 -- Generate a new random array
 --
-randomArr :: (Ix i, Num e, Storable e, Random e, MArray StorableArray e IO)
-          => (i,i) -> IO (StorableArray i e)
-randomArr (l,u) = do
+randomArrR :: (Ix i, Num e, Storable e, Random e, MArray StorableArray e IO)
+           => (i,i) -> (e,e) -> IO (StorableArray i e)
+randomArrR (l,u) bnds = do
   rg <- newStdGen
   let -- The standard random number generator is too slow to generate really
       -- large vectors. Instead, we generate a short vector and repeat that.
       k     = 1000
-      rands = take k (randomRs (-1,1) rg)
+      rands = take k (randomRs bnds rg)
 
   newListArray (l,u) [rands !! (index (l,u) i`mod`k) | i <- range (l,u)] >>= evaluateArr l
+
+
+randomArr :: (Ix i, Num e, Storable e, Random e, MArray StorableArray e IO)
+          => (i,i) -> IO (StorableArray i e)
+randomArr (l,u) = randomArrR (l,u) (-1,1)
 
 
 --
@@ -79,15 +84,18 @@ verify ref arr = do
 -- Lists
 --------------------------------------------------------------------------------
 
-randomList :: (Num e, Random e, Storable e) => Int -> IO [e]
-randomList len = do
+randomListR :: (Num e, Random e, Storable e) => Int -> (e,e) -> IO [e]
+randomListR len bnds = do
   rg <- newStdGen
   let -- The standard random number generator is too slow to generate really
       -- large vectors. Instead, we generate a short vector and repeat that.
       k     = 1000
-      rands = take k (randomRs (-1,1) rg)
+      rands = take k (randomRs bnds rg)
 
   evaluate [rands !! (i`mod`k) | i <- [0..len-1]]
+
+randomList :: (Num e, Random e, Storable e) => Int -> IO [e]
+randomList len = randomListR len (-1,1)
 
 
 verifyList :: (Ord e, Fractional e) => [e] -> [e] -> Bool
