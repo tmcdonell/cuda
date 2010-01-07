@@ -14,18 +14,21 @@
 #include <stdio.h>
 
 
-#ifndef _DEBUG
-#define assert(e)               ((void)0)
-#else
+/*
+ * Core assert function. Don't let this escape...
+ */
+#define __assert(e, file, line) \
+    ((void) fprintf (stderr, "%s:%u: failed assertion `%s'\n", file, line, e), abort())
 
 /*
  * Test the given expression, and abort the program if it evaluates to false.
  * Only available in debug mode.
  */
+#ifndef _DEBUG
+#define assert(e)               ((void)0)
+#else
 #define assert(e)  \
     ((void) ((e) ? (void(0)) : __assert (#e, __FILE__, __LINE__)))
-#define __assert(e, file, line) \
-    ((void) fprintf (stderr, "%s:%u: failed assertion `%s'\n", file, line, e), abort())
 #endif
 
 
@@ -40,29 +43,23 @@
 
 
 /*
- * Check the return status of CUDA API calls, and abort on failure. Only
- * available in debug mode.
+ * Check the return status of CUDA API calls, and abort with an appropriate
+ * error string on failure.
  */
-#ifndef _DEBUG
-# define CUDA_SAFE_CALL_NO_SYNC(x)
-# define CUDA_SAFE_CALL(x)
-#else
-
-# define CUDA_SAFE_CALL_NO_SYNC(call)                                          \
+#define CUDA_SAFE_CALL_NO_SYNC(call)                                           \
     do {                                                                       \
         cudaError err = call;                                                  \
         if(cudaSuccess != err) {                                               \
-            __assert(cudaGetErrorString(err), __FILE__, __LINE__);             \
+            const char *str = cudaGetErrorString(err);                         \
+            __assert(str, __FILE__, __LINE__);                                 \
         }                                                                      \
     } while (0)
 
-# define CUDA_SAFE_CALL(call)                                                  \
+#define CUDA_SAFE_CALL(call)                                                   \
     do {                                                                       \
         CUDA_SAFE_CALL_NO_SYNC(call);                                          \
         CUDA_SAFE_CALL_NO_SYNC(cudaThreadSynchronize());                       \
     } while (0)
-
-#endif
 
 
 #ifdef __cplusplus
@@ -114,6 +111,8 @@ floorPow2(unsigned int x)
     frexp(x, &exp);
     return 1 << (exp - 1);
 }
+
+#undef __asert
 
 #ifdef __cplusplus
 }
