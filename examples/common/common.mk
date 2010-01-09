@@ -152,6 +152,8 @@ ifeq ($(emu),1)
     BINSUBDIR   := emu$(BINSUBDIR)
     LIBSUFFIX   := $(LIBSUFFIX)_emu
     # consistency, makes developing easier
+    C2HSFLAGS   += --cppopts=-D__DEVICE_EMULATION__
+    GHCFLAGS    += -D__DEVICE_EMULATION__
     CXXFLAGS    += -D__DEVICE_EMULATION__
     CFLAGS      += -D__DEVICE_EMULATION__
 endif
@@ -334,7 +336,7 @@ $(OBJDIR)/%.cu.o : $(SRCDIR)/%.cu $(CU_DEPS)
 	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(SMVERSIONFLAGS) -o $@ -c $<
 
 $(OBJDIR)/%.hs : $(SRCDIR)/%.chs
-	$(VERBOSE)$(C2HS) --include=$(OBJDIR) $(addprefix --cppopts=,$(INCLUDES)) --output-dir=$(OBJDIR) --output=$(notdir $@) $<
+	$(VERBOSE)$(C2HS) $(C2HSFLAGS) --include=$(OBJDIR) $(addprefix --cppopts=,$(INCLUDES)) --output-dir=$(OBJDIR) --output=$(notdir $@) $<
 
 $(OBJDIR)/%.hs : $(SRCDIR)/%.hsc
 	$(VERBOSE)$(HSC2HS) $(INCLUDES) -o $@ $<
