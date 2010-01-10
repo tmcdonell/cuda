@@ -17,8 +17,12 @@
 /*
  * Core assert function. Don't let this escape...
  */
+#if defined(__CUDACC__) || !defined(__DEVICE_EMULATION__)
+#define __assert(e, file, line) ((void)0)
+#else
 #define __assert(e, file, line) \
     ((void) fprintf (stderr, "%s:%u: failed assertion `%s'\n", file, line, e), abort())
+#endif
 
 /*
  * Test the given expression, and abort the program if it evaluates to false.
