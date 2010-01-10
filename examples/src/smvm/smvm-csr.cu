@@ -51,7 +51,7 @@
  *      Networking, Storage and Analysis, pages 1-11, 2009.
  */
 template <unsigned int BlockSize, typename T, bool UseCache>
-__global__ void
+__global__ static void
 smvm_k
 (
     T                   *d_y,
@@ -66,11 +66,11 @@ smvm_k
      * Require at least a full warp for each row. This could be relaxed by
      * modifying the cooperative reduction step
      */
-    assert(BlockSize >= WARP_SIZE);
+    assert(BlockSize % WARP_SIZE == 0);
 
     const unsigned int vectorsPerBlock = BlockSize / WARP_SIZE;
     const unsigned int num_vectors     = vectorsPerBlock * gridDim.x;
-    const unsigned int thread_id       = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int thread_id       = BlockSize * blockIdx.x + threadIdx.x;
     const unsigned int vector_id       = thread_id / WARP_SIZE;
     const unsigned int thread_lane     = threadIdx.x & (WARP_SIZE-1);
     const unsigned int vector_lane     = threadIdx.x / WARP_SIZE;
@@ -128,7 +128,7 @@ smvm_k
 
 
 template <typename T, bool UseCache>
-void
+static void
 smvm_dispatch
 (
     T                   *d_y,
@@ -150,11 +150,6 @@ smvm_dispatch
     case 128: smvm_k<128,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
     case  64: smvm_k< 64,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
     case  32: smvm_k< 32,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
-    case  16: smvm_k< 16,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
-    case   8: smvm_k<  8,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
-    case   4: smvm_k<  4,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
-    case   2: smvm_k<  2,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
-    case   1: smvm_k<  1,T,UseCache><<<blocks,threads,smem>>>(d_y, d_x, d_data, d_ptr, d_indices, num_rows); break;
     default:
         assert(!"Non-exhaustive patterns in match");
     }
@@ -171,7 +166,7 @@ smvm_dispatch
  * Additionally, each block will have at least one full warp, as required by the
  * core kernel.
  */
-void
+static void
 smvm_control
 (
     unsigned int        n,
@@ -215,7 +210,7 @@ smvm_control
  * d_indices    Column indices
  */
 template <typename T, bool UseCache>
-void
+static void
 smvm_csr
 (
     T                   *d_y,
