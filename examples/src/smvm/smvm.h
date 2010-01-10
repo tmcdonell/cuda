@@ -24,11 +24,8 @@
 extern "C" {
 #endif
 
-/*
- * Compressed sparse row
- */
 void smvm_csr_f(float *d_y, float *d_x, float *d_data, unsigned int *d_rowPtr, unsigned int *d_colIdx, unsigned int num_rows);
-
+void smvm_cudpp_f(float *d_y, float *d_x, float *h_data, unsigned int *h_rowPtr, unsigned int *h_colIdx, unsigned int num_rows, unsigned int num_nonzeros);
 
 #ifdef __cplusplus
 }
