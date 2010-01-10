@@ -24,6 +24,7 @@ import Data.List
 import Control.Monad
 import Control.Applicative
 import System.Random
+import Foreign.CUDA                             (withDevicePtr)
 import qualified Foreign.CUDA as CUDA
 
 --
@@ -54,29 +55,32 @@ smvm sm v = [ sum [ x * (v!!col) | (col,x) <- sv ]  | sv <- sm ]
 --
 smvm_csr :: SparseMatrix Float -> Vector Float -> IO (Vector Float)
 smvm_csr sm v =
-  let matData  = concatMap (snd . unzip) sm
-      colIdx   = concatMap (fst . unzip) sm
-      rowPtr   = scanl (+) 0 (map length sm)
+  let matData  = concatMap (map cFloatConv . snd . unzip) sm
+      colIdx   = concatMap (map cIntConv   . fst . unzip) sm
+      rowPtr   = scanl (+) 0 (map (cIntConv . length) sm)
+      v'       = map cFloatConv v
+#ifdef __DEVICE_EMULATION__
+      iters    = 1
+#else
       iters    = 100
+#endif
   in
   CUDA.withListArray    matData  $ \d_data       ->
   CUDA.withListArray    rowPtr   $ \d_ptr        ->
   CUDA.withListArray    colIdx   $ \d_indices    ->
-  CUDA.withListArrayLen v        $ \num_rows d_x ->
+  CUDA.withListArrayLen v'       $ \num_rows d_x ->
   CUDA.allocaArray      num_rows $ \d_y          -> do
     (t,_) <- benchmark iters (smvm_csr_f d_y d_x d_data d_ptr d_indices num_rows) CUDA.sync
     putStrLn $ "Elapsed time: " ++ shows (fromInteger (timeIn millisecond t)/100::Float) " ms"
-    CUDA.peekListArray num_rows d_y
+    map cFloatConv <$> CUDA.peekListArray num_rows d_y
 
 {# fun unsafe smvm_csr_f
-  { withDP* `CUDA.DevicePtr Float'
-  , withDP* `CUDA.DevicePtr Float'
-  , withDP* `CUDA.DevicePtr Float'
-  , withDP* `CUDA.DevicePtr Int'
-  , withDP* `CUDA.DevicePtr Int'
-  ,         `Int'                  } -> `()' #}
-  where
-    withDP dp a = CUDA.withDevicePtr dp $ \p -> a (castPtr p)
+  { withDevicePtr* `CUDA.DevicePtr CFloat'
+  , withDevicePtr* `CUDA.DevicePtr CFloat'
+  , withDevicePtr* `CUDA.DevicePtr CFloat'
+  , withDevicePtr* `CUDA.DevicePtr CUInt'
+  , withDevicePtr* `CUDA.DevicePtr CUInt'
+  ,                `Int'                   } -> `()' #}
 
 --------------------------------------------------------------------------------
 -- Main
