@@ -28,7 +28,6 @@ import Foreign.CUDA.Driver.Stream               (Stream(..))
 -- System
 import Foreign
 import Foreign.C
-import Data.Maybe
 import Control.Monad                            (zipWithM_)
 
 
