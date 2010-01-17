@@ -281,12 +281,7 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
 -- operations.
 --
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
-pokeListArray xs dptr =
-  bracket (mallocHostArray [WriteCombined] len) freeHost $ \(HostPtr h_xs) -> do
-    F.pokeArray h_xs xs
-    pokeArray len h_xs dptr
-  where
-    len = length xs
+pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
 
 
 -- |
@@ -319,11 +314,10 @@ copyArrayAsync n = docopy undefined
 --
 newListArray :: Storable a => [a] -> IO (DevicePtr a)
 newListArray xs =
-  bracketOnError (mallocArray len) free $ \d_xs -> do
-    pokeListArray xs d_xs
+  F.withArrayLen xs                     $ \len p ->
+  bracketOnError (mallocArray len) free $ \d_xs  -> do
+    pokeArray len p d_xs
     return d_xs
-  where
-    len = length xs
 
 
 -- |
@@ -345,9 +339,11 @@ withListArray xs = withListArrayLen xs . const
 --
 withListArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
 withListArrayLen xs f =
-  allocaArray len $ \d_xs -> do
-    pokeListArray xs d_xs
-    f len d_xs
+  allocaArray   len $ \d_xs -> do
+  F.allocaArray len $ \h_xs -> do
+    F.pokeArray h_xs xs
+    pokeArray len h_xs d_xs
+  f len d_xs
   where
     len = length xs
 
