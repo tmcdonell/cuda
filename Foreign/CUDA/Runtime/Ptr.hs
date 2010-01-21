@@ -80,6 +80,15 @@ alignDevPtr (DevicePtr p) i = DevicePtr (p `alignPtr` i)
 minusDevPtr :: DevicePtr a -> DevicePtr a -> Int
 minusDevPtr (DevicePtr a) (DevicePtr b) = a `minusPtr` b
 
+-- |
+-- Advance a pointer into a device array by the given number of elements
+--
+advanceDevPtr :: Storable a => DevicePtr a -> Int -> DevicePtr a
+advanceDevPtr  = doAdvance undefined
+  where
+    doAdvance :: Storable a' => a' -> DevicePtr a' -> Int -> DevicePtr a'
+    doAdvance x p i = p `plusDevPtr` (i * sizeOf x)
+
 
 --------------------------------------------------------------------------------
 -- Host Pointer
@@ -140,4 +149,13 @@ alignHostPtr (HostPtr p) i = HostPtr (p `alignPtr` i)
 --
 minusHostPtr :: HostPtr a -> HostPtr a -> Int
 minusHostPtr (HostPtr a) (HostPtr b) = a `minusPtr` b
+
+-- |
+-- Advance a pointer into a host array by a given number of elements
+--
+advanceHostPtr :: Storable a => HostPtr a -> Int -> HostPtr a
+advanceHostPtr  = doAdvance undefined
+  where
+    doAdvance :: Storable a' => a' -> HostPtr a' -> Int -> HostPtr a'
+    doAdvance x p i = p `plusHostPtr` (i * sizeOf x)
 
