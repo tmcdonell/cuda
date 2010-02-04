@@ -7,7 +7,7 @@ Description:
     The CUDA library provides a direct, general purpose SPMD programming model
     for NVIDIA graphics cards (G8x series onwards).
 
-Copyright:              Copyright (c) 2009 Trevor L. McDonell
+Copyright:              Copyright (c) 2009-10 Trevor L. McDonell
 License:                BSD3
 License-file:           LICENSE
 Copyright:              (c) 2009. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
