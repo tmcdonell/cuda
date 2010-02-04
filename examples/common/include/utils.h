@@ -116,6 +116,27 @@ floorPow2(unsigned int x)
     return 1 << (exp - 1);
 }
 
+
+/*
+ * computes next highest multiple of f from x
+ */
+inline unsigned int
+multiple(unsigned int x, unsigned int f)
+{
+    return ((x + (f-1)) / f);
+}
+
+
+/*
+ * MS Excel-style CEIL() function. Rounds x up to nearest multiple of f
+ */
+inline unsigned int
+ceiling(unsigned int x, unsigned int f)
+{
+    return multiple(x, f) * f;
+}
+
+
 #undef __asert
 
 #ifdef __cplusplus

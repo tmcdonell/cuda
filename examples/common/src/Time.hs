@@ -46,7 +46,7 @@ benchmark
 benchmark n testee finaliser = do
   t1    <- getTime
   (r:_) <- replicateM n testee
-  finaliser
+  _     <- finaliser
   t2    <- getTime
   return (elapsedTime t1 t2, r)
 
