@@ -1,11 +1,18 @@
 Name:                   cuda
 Version:                0.1
-Synopsis:               Haskell+CUDA
+Synopsis:               A binding to the CUDA interface for programming NVIDIA GPUs
 Description:    
-    A binding to the /C for CUDA/ interface for programming NVIDIA GPUs
-    .
     The CUDA library provides a direct, general purpose SPMD programming model
-    for NVIDIA graphics cards (G8x series onwards).
+    for NVIDIA graphics cards (G8x series onwards). You will need to install the
+    CUDA driver and developer toolkit, and has been tested with the v2.x series.
+    .
+    <http://developer.nvidia.com/object/cuda.html>
+    .
+    Note that on Snow Leopard, the c2hs preprocessor is confused by the notation
+    for Apple's Blocks extension, so to work around this:
+    .
+    > cabal install --c2hs-option=-ccpp-4.0
+    .
 
 Copyright:              Copyright (c) 2009-10 Trevor L. McDonell
 License:                BSD3
