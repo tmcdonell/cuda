@@ -12,7 +12,7 @@
 module Foreign.CUDA.Driver.Marshal
   (
     -- * Host Allocation
-    HostPtr, AllocFlag(..),
+    HostPtr(..), AllocFlag(..),
     withHostPtr, mallocHostArray, freeHost,
 
     -- * Device Allocation
