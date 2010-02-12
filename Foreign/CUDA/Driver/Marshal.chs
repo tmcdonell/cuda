@@ -17,7 +17,7 @@ module Foreign.CUDA.Driver.Marshal
 
     -- * Device Allocation
     DevicePtr,
-    mallocArray, allocaArray, free,
+    mallocArray, allocaArray, free, nullDevPtr,
 
     -- * Marshalling
     peekArray, peekArrayAsync, peekListArray,
@@ -183,6 +183,12 @@ free dp = nothingIfOk =<< cuMemFree dp
 {# fun unsafe cuMemFree
   { useDevicePtr `DevicePtr a' } -> `Status' cToEnum #}
 
+-- |
+-- The constant 'nullDevPtr' contains the distinguished memory location that is
+-- not associated with a valid memory location
+--
+nullDevPtr :: DevicePtr a
+nullDevPtr =  DevicePtr 0
 
 --------------------------------------------------------------------------------
 -- Marshalling
