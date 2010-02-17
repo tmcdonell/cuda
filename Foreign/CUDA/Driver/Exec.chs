@@ -133,8 +133,8 @@ setParams fn prs = do
   where
     offsets = scanl (\a b -> a + size b) 0 prs
 
-    size (IArg v)    = sizeOf v
-    size (FArg v)    = sizeOf v
+    size (IArg _)    = sizeOf (undefined::CUInt)
+    size (FArg _)    = sizeOf (undefined::CFloat)
     size (VArg v)    = sizeOf v
 
     set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
