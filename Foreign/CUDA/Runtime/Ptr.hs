@@ -27,7 +27,7 @@ data DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
   deriving (Eq,Ord)
 
 instance Show (DevicePtr a) where
-  showsPrec n (DevicePtr p) rs = showsPrec n p rs
+  showsPrec n (DevicePtr p) = showsPrec n p
 
 instance Storable (DevicePtr a) where
   sizeOf _    = sizeOf    (undefined :: Ptr a)
@@ -101,7 +101,7 @@ data HostPtr a = HostPtr { useHostPtr :: Ptr a }
   deriving (Eq,Ord)
 
 instance Show (HostPtr a) where
-  showsPrec n (HostPtr p) rs = showsPrec n p rs
+  showsPrec n (HostPtr p) = showsPrec n p
 
 instance Storable (HostPtr a) where
   sizeOf _    = sizeOf    (undefined :: Ptr a)
