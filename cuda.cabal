@@ -4,7 +4,7 @@ Synopsis:               A binding to the CUDA interface for programming NVIDIA G
 Description:    
     The CUDA library provides a direct, general purpose SPMD programming model
     for NVIDIA graphics cards (G8x series onwards). You will need to install the
-    CUDA driver and developer toolkit, and has been tested with the v2.x series.
+    CUDA driver and developer toolkit (tested with v2.3).
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
