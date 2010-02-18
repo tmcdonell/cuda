@@ -13,7 +13,7 @@ module Foreign.CUDA.Driver.Marshal
   (
     -- * Host Allocation
     HostPtr(..), AllocFlag(..),
-    withHostPtr, mallocHostArray, freeHost,
+    withHostPtr, mallocHostArray, freeHost, nullHostPtr,
 
     -- * Device Allocation
     DevicePtr,
@@ -138,6 +138,14 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
     useHP = castPtr . useHostPtr
 
 
+-- |
+-- The constant 'nullHostPtr' contains the distinguished memory location that is
+-- not associated with a valid memory location
+--
+nullHostPtr :: HostPtr a
+nullHostPtr =  HostPtr nullPtr
+
+
 --------------------------------------------------------------------------------
 -- Device Allocation
 --------------------------------------------------------------------------------
@@ -183,12 +191,14 @@ free dp = nothingIfOk =<< cuMemFree dp
 {# fun unsafe cuMemFree
   { useDevicePtr `DevicePtr a' } -> `Status' cToEnum #}
 
+
 -- |
 -- The constant 'nullDevPtr' contains the distinguished memory location that is
 -- not associated with a valid memory location
 --
 nullDevPtr :: DevicePtr a
 nullDevPtr =  DevicePtr 0
+
 
 --------------------------------------------------------------------------------
 -- Marshalling
