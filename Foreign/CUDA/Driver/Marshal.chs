@@ -16,7 +16,7 @@ module Foreign.CUDA.Driver.Marshal
     withHostPtr, mallocHostArray, freeHost, nullHostPtr,
 
     -- * Device Allocation
-    DevicePtr,
+    DevicePtr, devPtrToWordPtr, wordPtrToDevPtr,
     mallocArray, allocaArray, free, nullDevPtr,
 
     -- * Marshalling
@@ -72,6 +72,18 @@ instance Storable (DevicePtr a) where
   alignment _   = alignment (undefined :: {# type CUdeviceptr #})
   peek p        = DevicePtr `fmap` peek (castPtr p)
   poke p v      = poke (castPtr p) (useDevicePtr v)
+
+-- |
+-- Return a unique handle associated with the given device pointer
+--
+devPtrToWordPtr :: DevicePtr a -> WordPtr
+devPtrToWordPtr = fromIntegral . useDevicePtr
+
+-- |
+-- Return a device pointer from the given handle
+--
+wordPtrToDevPtr :: WordPtr -> DevicePtr a
+wordPtrToDevPtr = DevicePtr . fromIntegral
 
 
 -- |
