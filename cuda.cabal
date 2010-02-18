@@ -2,9 +2,11 @@ Name:                   cuda
 Version:                0.1
 Synopsis:               A binding to the CUDA interface for programming NVIDIA GPUs
 Description:    
-    The CUDA library provides a direct, general purpose SPMD programming model
-    for NVIDIA graphics cards (G8x series onwards). You will need to install the
-    CUDA driver and developer toolkit (tested with v2.3).
+    The CUDA library provides a direct, general purpose C-like SPMD programming
+    model for NVIDIA graphics cards (G8x series onwards). This is a collection
+    of bindings to allow you to call and control, although not write, such
+    functions from Haskell land. You will need to install the CUDA driver and
+    developer toolkit (tested with v2.3).
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
