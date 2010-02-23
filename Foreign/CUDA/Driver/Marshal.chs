@@ -25,7 +25,8 @@ module Foreign.CUDA.Driver.Marshal
                copyArrayAsync,
 
     -- * Combined Allocation and Marshalling
-    newListArray, withListArray, withListArrayLen,
+    newListArray,  newListArrayLen,
+    withListArray, withListArrayLen,
 
     -- * Utility
     memset, getDevicePtr
@@ -335,17 +336,26 @@ copyArrayAsync n = docopy undefined
 --------------------------------------------------------------------------------
 
 -- |
--- Write a list of storable elements into a newly allocated device array. Note
--- that this requires two memory copies: firstly from a Haskell list to a heap
--- allocated array, and from there onto the graphics device. The memory should
--- be 'free'd when no longer required.
+-- Write a list of storable elements into a newly allocated device array,
+-- returning the device pointer together with the number of elements that were
+-- written. Note that this requires two memory copies: firstly from a Haskell
+-- list to a heap allocated array, and from there onto the graphics device. The
+-- memory should be 'free'd when no longer required.
 --
-newListArray :: Storable a => [a] -> IO (DevicePtr a)
-newListArray xs =
+newListArrayLen :: Storable a => [a] -> IO (DevicePtr a, Int)
+newListArrayLen xs =
   F.withArrayLen xs                     $ \len p ->
   bracketOnError (mallocArray len) free $ \d_xs  -> do
     pokeArray len p d_xs
-    return d_xs
+    return (d_xs, len)
+
+
+-- |
+-- Write a list of storable elements into a newly allocated device array. This
+-- is 'newListArrayLen' composed with 'fst'.
+--
+newListArray :: Storable a => [a] -> IO (DevicePtr a)
+newListArray xs = fst `fmap` newListArrayLen xs
 
 
 -- |
@@ -367,13 +377,11 @@ withListArray xs = withListArrayLen xs . const
 --
 withListArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
 withListArrayLen xs f =
-  allocaArray   len $ \d_xs -> do
-  F.allocaArray len $ \h_xs -> do
-    F.pokeArray h_xs xs
-    pokeArray len h_xs d_xs
-  f len d_xs
-  where
-    len = length xs
+  bracket (newListArrayLen xs) (free . fst) (uncurry . flip $ f)
+--
+-- XXX: Will this attempt to double-free the device array on error (together
+-- with newListArrayLen)?
+--
 
 
 --------------------------------------------------------------------------------
