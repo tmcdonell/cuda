@@ -65,6 +65,13 @@ describe LaunchFailed                = "unspecified launch failure"
 describe LaunchOutOfResources        = "too many resources requested for launch"
 describe LaunchTimeout               = "the launch timed out and was terminated"
 describe LaunchIncompatibleTexturing = "launch with incompatible texturing"
+#if CUDA_VERSION >= 3000
+describe NotMappedAsArray            = "mapped resource not available for access as an array"
+describe NotMappedAsPointer          = "mapped resource not available for access as a pointer"
+describe EccUncorrectable            = "uncorrectable ECC error detected"
+describe PointerIs64bit              = "attempt to retrieve a 64-bit pointer via a 32-bit API function"
+describe SizeIs64bit                 = "attempt to retrieve 64-bit size via a 32-bit API function"
+#endif
 describe Unknown                     = "unknown error"
 
 
