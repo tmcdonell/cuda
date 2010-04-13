@@ -19,6 +19,12 @@ devNameOffset         = #{offset struct cudaDeviceProp, name}
 devMaxThreadDimOffset = #{offset struct cudaDeviceProp, maxThreadsDim}
 devMaxGridSizeOffset  = #{offset struct cudaDeviceProp, maxGridSize}
 
+#if CUDART_VERSION >= 3000
+devMaxTexture2DOffset, devMaxTexture3DOffset :: Int
+devMaxTexture2DOffset = #{offset struct cudaDeviceProp, maxTexture2D}
+devMaxTexture3DOffset = #{offset struct cudaDeviceProp, maxTexture3D}
+#endif
+
 
 --------------------------------------------------------------------------------
 -- Driver API

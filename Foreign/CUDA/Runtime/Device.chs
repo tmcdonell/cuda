@@ -35,11 +35,14 @@ typedef struct cudaDeviceProp   cudaDeviceProp;
 
 typedef enum
 {
-    cudaDeviceFlagScheduleAuto  = cudaDeviceScheduleAuto,
-    cudaDeviceFlagScheduleSpin  = cudaDeviceScheduleSpin,
-    cudaDeviceFlagScheduleYield = cudaDeviceScheduleYield,
-    cudaDeviceFlagBlockingSync  = cudaDeviceBlockingSync,
-    cudaDeviceFlagMapHost       = cudaDeviceMapHost
+    cudaDeviceFlagScheduleAuto    = cudaDeviceScheduleAuto,
+    cudaDeviceFlagScheduleSpin    = cudaDeviceScheduleSpin,
+    cudaDeviceFlagScheduleYield   = cudaDeviceScheduleYield,
+    cudaDeviceFlagBlockingSync    = cudaDeviceBlockingSync,
+    cudaDeviceFlagMapHost         = cudaDeviceMapHost,
+#if CUDART_VERSION >= 3000
+    cudaDeviceFlagLMemResizeToMax = cudaDeviceLmemResizeToMax
+#endif
 } cudaDeviceFlags;
 #endc
 
@@ -75,14 +78,22 @@ data DeviceProperties = DeviceProperties
     regsPerBlock             :: Int,            -- ^ 32-bit registers per block
     warpSize                 :: Int,            -- ^ Warp size in threads
     maxThreadsPerBlock       :: Int,            -- ^ Max number of threads per block
-    maxThreadsDim            :: (Int,Int,Int),  -- ^ Max size of each dimension of a block
+    maxBlockSize             :: (Int,Int,Int),  -- ^ Max size of each dimension of a block
     maxGridSize              :: (Int,Int,Int),  -- ^ Max size of each dimension of a grid
+#if CUDART_VERSION >= 3000
+    maxTextureDim1D          :: Int,            -- ^ Maximum texture dimensions
+    maxTextureDim2D          :: (Int,Int),
+    maxTextureDim3D          :: (Int,Int,Int),
+#endif
     clockRate                :: Int,            -- ^ Clock frequency in kilohertz
     multiProcessorCount      :: Int,            -- ^ Number of multiprocessors on the device
     memPitch                 :: Int64,          -- ^ Max pitch in bytes allowed by memory copies
     textureAlignment         :: Int64,          -- ^ Alignment requirement for textures
     computeMode              :: ComputeMode,
     deviceOverlap            :: Bool,           -- ^ Device can concurrently copy memory and execute a kernel
+#if CUDART_VERSION >= 3000
+    concurrentKernels        :: Bool,           -- ^ Device can possibly execute multiple kernels concurrently
+#endif
     kernelExecTimeoutEnabled :: Bool,           -- ^ Whether there is a runtime limit on kernels
     integrated               :: Bool,           -- ^ As opposed to discrete
     canMapHostMemory         :: Bool            -- ^ Device can use pinned memory
@@ -112,6 +123,10 @@ instance Storable DeviceProperties where
     tg <- cToBool      `fmap` {#get cudaDeviceProp.integrated#} p
     hm <- cToBool      `fmap` {#get cudaDeviceProp.canMapHostMemory#} p
     md <- cToEnum      `fmap` {#get cudaDeviceProp.computeMode#} p
+#if CUDART_VERSION >= 3000
+    ck <- cToBool      `fmap` {#get cudaDeviceProp.concurrentKernels#} p
+    u1 <- cIntConv     `fmap` {#get cudaDeviceProp.maxTexture1D#} p
+#endif
 
     --
     -- C->Haskell returns the wrong type when accessing static arrays in
@@ -121,6 +136,10 @@ instance Storable DeviceProperties where
     n            <- peekCString (p `plusPtr` devNameOffset)
     (t1:t2:t3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxThreadDimOffset :: Ptr CInt)
     (g1:g2:g3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxGridSizeOffset  :: Ptr CInt)
+#if CUDART_VERSION >= 3000
+    (u21:u22:_)     <- map cIntConv `fmap` peekArray 2 (p `plusPtr` devMaxTexture2DOffset :: Ptr CInt)
+    (u31:u32:u33:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxTexture3DOffset :: Ptr CInt)
+#endif
 
     return DeviceProperties
       {
@@ -132,7 +151,7 @@ instance Storable DeviceProperties where
         regsPerBlock             = rb,
         warpSize                 = ws,
         maxThreadsPerBlock       = tb,
-        maxThreadsDim            = (t1,t2,t3),
+        maxBlockSize             = (t1,t2,t3),
         maxGridSize              = (g1,g2,g3),
         clockRate                = cl,
         multiProcessorCount      = pc,
@@ -140,6 +159,12 @@ instance Storable DeviceProperties where
         textureAlignment         = ta,
         computeMode              = md,
         deviceOverlap            = ov,
+#if CUDART_VERSION >= 3000
+        concurrentKernels        = ck,
+        maxTextureDim1D          = u1,
+        maxTextureDim2D          = (u21,u22),
+        maxTextureDim3D          = (u31,u32,u33),
+#endif
         kernelExecTimeoutEnabled = ke,
         integrated               = tg,
         canMapHostMemory         = hm
