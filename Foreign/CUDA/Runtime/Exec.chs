@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -78,11 +79,12 @@ instance Storable FunAttributes where
 -- Kernel function parameters. Doubles will be converted to an internal float
 -- representation on devices that do not support doubles natively.
 --
-data Storable a => FunParam a
-    = IArg Int
-    | FArg Float
-    | DArg Double
-    | VArg a
+data FunParam where
+  IArg :: Int    -> FunParam
+  FArg :: Float  -> FunParam
+  DArg :: Double -> FunParam
+  VArg :: Storable a => a -> FunParam
+
 
 --------------------------------------------------------------------------------
 -- Execution Control
@@ -131,7 +133,7 @@ setConfig (gx,gy) (bx,by,bz) sharedMem mst =
 -- Set the argument parameters that will be passed to the next kernel
 -- invocation. This is used in conjunction with 'setConfig' to control kernel
 -- execution.
-setParams :: Storable a => [FunParam a] -> IO ()
+setParams :: [FunParam] -> IO ()
 setParams = foldM_ k 0
   where
     k offset arg = do

@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -53,11 +54,12 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 -- |
 -- Kernel function parameters
 --
-data Storable a => FunParam a
-    = IArg Int
-    | FArg Float
-    | VArg a
---  | TArg Texture
+data FunParam where
+  IArg :: Int   -> FunParam
+  FArg :: Float -> FunParam
+--  TArg :: Texture -> FunParam
+  VArg :: Storable a => a -> FunParam
+
 
 --------------------------------------------------------------------------------
 -- Execution Control
@@ -126,7 +128,7 @@ launch fn (w,h) mst =
 -- |
 -- Set the parameters that will specified next time the kernel is invoked
 --
-setParams :: Storable a => Fun -> [FunParam a] -> IO ()
+setParams :: Fun -> [FunParam] -> IO ()
 setParams fn prs = do
   zipWithM_ (set fn) offsets prs
   nothingIfOk =<< cuParamSetSize fn (last offsets)

@@ -1,12 +1,12 @@
 Name:                   cuda
-Version:                0.1
-Synopsis:               A binding to the CUDA interface for programming NVIDIA GPUs
-Description:    
+Version:                0.1.2
+Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
+Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
     model for NVIDIA graphics cards (G8x series onwards). This is a collection
     of bindings to allow you to call and control, although not write, such
-    functions from Haskell land. You will need to install the CUDA driver and
-    developer toolkit (tested with v2.3).
+    functions from Haskell-land. You will need to install the CUDA driver and
+    developer toolkit.
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
@@ -28,6 +28,10 @@ Build-type:             Configure
 Extra-tmp-files:        cuda.buildinfo
 Extra-source-files:     configure
                         cuda.buildinfo.in
+
+Flag emu
+  Description:  Use runtime device emulation (cuda >= 3.0)
+  Default:      False
 
 Library
   Exposed-Modules:      Foreign.CUDA
@@ -63,5 +67,10 @@ Library
   Build-depends:        base >= 3 && < 5, haskell98, bytestring, extensible-exceptions
   Extensions:
   ghc-options:          -Wall
-  extra-libraries:      cuda cudart
+  extra-libraries:      cuda
+
+  if flag(emu)
+    extra-libraries:    cudartemu
+  else
+    extra-libraries:    cudart
 
