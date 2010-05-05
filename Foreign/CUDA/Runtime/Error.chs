@@ -27,6 +27,7 @@ import Foreign.C
 import Data.Typeable
 import Control.Exception.Extensible
 
+#include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
 
@@ -47,7 +48,7 @@ import Control.Exception.Extensible
 --------------------------------------------------------------------------------
 
 data CUDAException
-  = ExitCode Status
+  = ExitCode  Status
   | UserError String
   deriving Typeable
 
@@ -72,7 +73,7 @@ cudaError s = throwIO (UserError s)
 -- |
 -- Return the descriptive string associated with a particular error code
 --
-{# fun pure unsafe cudaGetErrorString as describe
+{# fun pure unsafe cudaGetErrorStringWrapper as describe
     { cFromEnum `Status' } -> `String' #}
 --
 -- Logically, this must be a pure function, returning a pointer to a statically

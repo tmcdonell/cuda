@@ -14,6 +14,8 @@ extern "C" {
 cudaError_t
 cudaConfigureCallSimple(int gx, int gy, int bx, int by, int bz, size_t sharedMem, cudaStream_t stream);
 
+const char*
+cudaGetErrorStringWrapper(cudaError_t error);
 
 #ifdef __cplusplus
 }

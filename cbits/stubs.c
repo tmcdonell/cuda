@@ -14,3 +14,9 @@ cudaConfigureCallSimple(int gx, int gy, int bx, int by, int bz, size_t sharedMem
     return cudaConfigureCall(gridDim, blockDim, sharedMem, stream);
 }
 
+const char*
+cudaGetErrorStringWrapper(cudaError_t error)
+{
+    return cudaGetErrorString(error);
+}
+
