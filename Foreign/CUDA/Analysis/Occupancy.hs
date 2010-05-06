@@ -48,7 +48,7 @@
 module Foreign.CUDA.Analysis.Occupancy
   (
     Compute, Occupancy(..),
-    calcOccupancy, calcOptimalThreads
+    occupancy, optimalBlockSize
   )
   where
 
@@ -102,13 +102,13 @@ gpuData =
 -- |
 -- Calculate occupancy data for a given GPU and kernel resource usage
 --
-calcOccupancy
+occupancy
     :: Compute          -- ^ Compute capability of card in question
     -> Int              -- ^ Threads per block
     -> Int              -- ^ Registers per thread
     -> Int              -- ^ Shared memory per block (bytes)
     -> Occupancy
-calcOccupancy capability thds regs smem
+occupancy capability thds regs smem
   = Occupancy at ab aw oc
   where
     at = ab * thds
@@ -147,14 +147,14 @@ calcOccupancy capability thds regs smem
 -- Optimise multiprocessor occupancy as a function of thread block size and
 -- resource usage. This returns the smallest satisfying block size.
 --
-calcOptimalThreads
+optimalBlockSize
     :: Compute                  -- ^ Architecture to optimise for
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
     -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-calcOptimalThreads compute freg fsmem
-  = maximumBy (comparing (occupancy100 . snd)) $ zip threads occupancy
+optimalBlockSize compute freg fsmem
+  = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
   where
     threads   = enumFromThenTo 512 496 16
-    occupancy = map (\t -> calcOccupancy compute t (freg t) (fsmem t)) threads
+    residency = map (\t -> occupancy compute t (freg t) (fsmem t)) threads
 
