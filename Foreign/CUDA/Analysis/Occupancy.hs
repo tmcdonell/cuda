@@ -42,14 +42,18 @@
 -- occupancy can help better hide the latency of memory accesses, and therefore
 -- improve performance.
 --
+--------------------------------------------------------------------------------
 
 
 module Foreign.CUDA.Analysis.Occupancy
   (
-    calcOccupancy, Compute, Occupancy(..)
+    Compute, Occupancy(..),
+    calcOccupancy, calcOptimalThreads
   )
   where
 
+import Data.Ord
+import Data.List
 import Data.Maybe
 
 
@@ -95,13 +99,15 @@ gpuData =
   ]
 
 
+-- |
 -- Calculate occupancy data for a given GPU and kernel resource usage
 --
-calcOccupancy :: Compute        -- ^ Compute capability of card in question
-              -> Int            -- ^ Threads per block
-              -> Int            -- ^ Registers per thread
-              -> Int            -- ^ Shared memory per block (bytes)
-              -> Occupancy
+calcOccupancy
+    :: Compute          -- ^ Compute capability of card in question
+    -> Int              -- ^ Threads per block
+    -> Int              -- ^ Registers per thread
+    -> Int              -- ^ Shared memory per block (bytes)
+    -> Occupancy
 calcOccupancy capability thds regs smem
   = Occupancy at ab aw oc
   where
@@ -135,4 +141,20 @@ calcOccupancy capability thds regs smem
     limitWarpBlock = threadBlocksPerMP gpu `min` floor' (fromIntegral (warpsPerMP gpu)     / fromIntegral warps)
     limitRegMP     = threadBlocksPerMP gpu `min` floor' (fromIntegral (regFileSize gpu)    / fromIntegral registers)
     limitSMemMP    = threadBlocksPerMP gpu `min` floor' (fromIntegral (sharedMemPerMP gpu) / fromIntegral sharedMem)
+
+
+-- |
+-- Optimise multiprocessor occupancy as a function of thread block size and
+-- resource usage. This returns the smallest satisfying block size.
+--
+calcOptimalThreads
+    :: Compute                  -- ^ Architecture to optimise for
+    -> (Int -> Int)             -- ^ Register count as a function of thread block size
+    -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
+    -> (Int, Occupancy)
+calcOptimalThreads compute freg fsmem
+  = maximumBy (comparing (occupancy100 . snd)) $ zip threads occupancy
+  where
+    threads   = enumFromThenTo 512 496 16
+    occupancy = map (\t -> calcOccupancy compute t (freg t) (fsmem t)) threads
 
