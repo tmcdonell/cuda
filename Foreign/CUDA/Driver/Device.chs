@@ -12,7 +12,7 @@
 module Foreign.CUDA.Driver.Device
   (
     Device(..), -- should be exported abstractly
-    DeviceProperties(..), DeviceAttribute(..), InitFlag,
+    DeviceProperties(..), DeviceAttribute(..), ComputeMode(..), InitFlag,
 
     initialise, capability, device, attribute, count, name, props, totalMem
   )
@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Device
 {# context lib="cuda" #}
 
 -- Friends
+import Foreign.CUDA.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets
@@ -46,31 +47,33 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
     { underscoreToCase }
     with prefix="CU_DEVICE_ATTRIBUTE" deriving (Eq, Show) #}
 
-{# pointer *CUdevprop as ^ foreign -> DeviceProperties nocode #}
+{# pointer *CUdevprop as ^ foreign -> CUDevProp nocode #}
 
 
--- |
--- Properties of the compute device
 --
-data DeviceProperties = DeviceProperties
+-- Properties of the compute device (internal helper)
+--
+data CUDevProp = CUDevProp
   {
-    maxThreadsPerBlock  :: Int,           -- ^ Maximum number of threads per block
-    maxThreadsDim       :: (Int,Int,Int), -- ^ Maximum size of each dimension of a block
-    maxGridSize         :: (Int,Int,Int), -- ^ Maximum size of each dimension of a grid
-    sharedMemPerBlock   :: Int,           -- ^ Shared memory available per block in bytes
-    totalConstantMemory :: Int,           -- ^ Constant memory available on device in bytes
-    warpSize            :: Int,           -- ^ Warp size in threads (SIMD width)
-    memPitch            :: Int,           -- ^ Maximum pitch in bytes allowed by memory copies
-    regsPerBlock        :: Int,           -- ^ 32-bit registers available per block
-    clockRate           :: Int,           -- ^ Clock frequency in kilohertz
-    textureAlign        :: Int            -- ^ Alignment requirement for textures
+    cuMaxThreadsPerBlock :: Int,           -- Maximum number of threads per block
+    cuMaxBlockSize       :: (Int,Int,Int), -- Maximum size of each dimension of a block
+    cuMaxGridSize        :: (Int,Int,Int), -- Maximum size of each dimension of a grid
+    cuSharedMemPerBlock  :: Int64,         -- Shared memory available per block in bytes
+    cuTotalConstMem      :: Int64,         -- Constant memory available on device in bytes
+    cuWarpSize           :: Int,           -- Warp size in threads (SIMD width)
+    cuMemPitch           :: Int64,         -- Maximum pitch in bytes allowed by memory copies
+    cuRegsPerBlock       :: Int,           -- 32-bit registers available per block
+    cuClockRate          :: Int,           -- Clock frequency in kilohertz
+    cuTextureAlignment   :: Int64          -- Alignment requirement for textures
   }
   deriving (Show)
 
-instance Storable DeviceProperties where
+
+instance Storable CUDevProp where
   sizeOf _    = {#sizeof CUdevprop#}
   alignment _ = alignment (undefined :: Ptr ())
 
+  poke _ _    = error "no instance for Foreign.Storable.poke DeviceProperties"
   peek p      = do
     tb <- cIntConv `fmap` {#get CUdevprop.maxThreadsPerBlock#} p
     sm <- cIntConv `fmap` {#get CUdevprop.sharedMemPerBlock#} p
@@ -84,19 +87,20 @@ instance Storable DeviceProperties where
     (t1:t2:t3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxThreadDimOffset' :: Ptr CInt)
     (g1:g2:g3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxGridSizeOffset'  :: Ptr CInt)
 
-    return DeviceProperties
+    return CUDevProp
       {
-        maxThreadsPerBlock  = tb,
-        maxThreadsDim       = (t1,t2,t3),
-        maxGridSize         = (g1,g2,g3),
-        sharedMemPerBlock   = sm,
-        totalConstantMemory = cm,
-        warpSize            = ws,
-        memPitch            = mp,
-        regsPerBlock        = rb,
-        clockRate           = cl,
-        textureAlign        = ta
+        cuMaxThreadsPerBlock = tb,
+        cuMaxBlockSize       = (t1,t2,t3),
+        cuMaxGridSize        = (g1,g2,g3),
+        cuSharedMemPerBlock  = sm,
+        cuTotalConstMem      = cm,
+        cuWarpSize           = ws,
+        cuMemPitch           = mp,
+        cuRegsPerBlock       = rb,
+        cuClockRate          = cl,
+        cuTextureAlignment   = ta
       }
+
 
 -- |
 -- Possible option flags for CUDA initialisation. Dummy instance until the API
@@ -187,29 +191,87 @@ name d = resultIfOk =<< cuDeviceGetName d
   { allocaS-  `String'& peekS*
   , useDevice `Device'         } -> `Status' cToEnum #}
   where
-    len            = 512
-    allocaS a      = allocaBytes len $ \p -> a (p, cIntConv len)
-    peekS s _      = peekCString s
+    len       = 512
+    allocaS a = allocaBytes len $ \p -> a (p, cIntConv len)
+    peekS s _ = peekCString s
 
 
 -- |
 -- Return the properties of the selected device
 --
+
+-- Annoyingly, the driver API requires several different functions to extract
+-- all device properties that are part of a single structure in the runtime API
+--
 props :: Device -> IO DeviceProperties
-props d = resultIfOk =<< cuDeviceGetProperties d
+props d = do
+  p   <- resultIfOk =<< cuDeviceGetProperties d
+
+  -- And the remaining properties
+  --
+  n   <- name d
+  cc  <- capability d
+  gm  <- totalMem d
+  pc  <- attribute d MultiprocessorCount
+  md  <- toEnum `fmap` attribute d ComputeMode
+  ov  <- toBool `fmap` attribute d GpuOverlap
+  ke  <- toBool `fmap` attribute d KernelExecTimeout
+  tg  <- toBool `fmap` attribute d Integrated
+  hm  <- toBool `fmap` attribute d CanMapHostMemory
+#if CUDA_VERSION >= 3000
+  ck  <- toBool `fmap` attribute d ConcurrentKernels
+  ee  <- toBool `fmap` attribute d EccEnabled
+  u1  <- attribute d MaximumTexture1dWidth
+  u21 <- attribute d MaximumTexture2dWidth
+  u22 <- attribute d MaximumTexture2dHeight
+  u31 <- attribute d MaximumTexture3dWidth
+  u32 <- attribute d MaximumTexture3dHeight
+  u33 <- attribute d MaximumTexture3dDepth
+#endif
+
+  return DeviceProperties
+    {
+      deviceName               = n,
+      computeCapability        = cc,
+      totalGlobalMem           = gm,
+      totalConstMem            = cuTotalConstMem p,
+      sharedMemPerBlock        = cuSharedMemPerBlock p,
+      regsPerBlock             = cuRegsPerBlock p,
+      warpSize                 = cuWarpSize p,
+      maxThreadsPerBlock       = cuMaxThreadsPerBlock p,
+      maxBlockSize             = cuMaxBlockSize p,
+      maxGridSize              = cuMaxGridSize p,
+      clockRate                = cuClockRate p,
+      multiProcessorCount      = pc,
+      memPitch                 = cuMemPitch p,
+      textureAlignment         = cuTextureAlignment p,
+      computeMode              = md,
+      deviceOverlap            = ov,
+#if CUDA_VERSION >= 3000
+      concurrentKernels        = ck,
+      eccEnabled               = ee,
+      maxTextureDim1D          = u1,
+      maxTextureDim2D          = (u21,u22),
+      maxTextureDim3D          = (u31,u32,u33),
+#endif
+      kernelExecTimeoutEnabled = ke,
+      integrated               = tg,
+      canMapHostMemory         = hm
+    }
+
 
 {# fun unsafe cuDeviceGetProperties
-  { alloca-   `DeviceProperties' peek*
-  , useDevice `Device'                 } -> `Status' cToEnum #}
+  { alloca-   `CUDevProp' peek*
+  , useDevice `Device'          } -> `Status' cToEnum #}
 
 
 -- |
 -- Total memory available on the device (bytes)
 --
-totalMem :: Device -> IO Int
+totalMem :: Device -> IO Int64
 totalMem d = resultIfOk =<< cuDeviceTotalMem d
 
 {# fun unsafe cuDeviceTotalMem
-  { alloca-   `Int' peekIntConv*
-  , useDevice `Device'           } -> `Status' cToEnum #}
+  { alloca-   `Int64'  peekIntConv*
+  , useDevice `Device'              } -> `Status' cToEnum #}
 

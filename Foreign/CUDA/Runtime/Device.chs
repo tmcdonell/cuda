@@ -22,6 +22,7 @@ module Foreign.CUDA.Runtime.Device
 {# context lib="cudart" #}
 
 -- Friends
+import Foreign.CUDA.Device
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets
@@ -53,11 +54,6 @@ typedef enum
 
 {# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 
--- |
--- The compute mode the device is currently in
---
-{# enum cudaComputeMode as ComputeMode { }
-    with prefix="cudaComputeMode" deriving (Eq, Show) #}
 
 -- |
 -- Device execution flags
@@ -65,46 +61,12 @@ typedef enum
 {# enum cudaDeviceFlags as DeviceFlag { }
     with prefix="cudaDeviceFlag" deriving (Eq, Show) #}
 
--- |
--- The properties of a compute device
---
-data DeviceProperties = DeviceProperties
-  {
-    deviceName               :: String,         -- ^ Identifier
-    computeCapability        :: Double,         -- ^ Supported compute capability
-    totalGlobalMem           :: Int64,          -- ^ Available global memory on the device in bytes
-    totalConstMem            :: Int64,          -- ^ Available constant memory on the device in bytes
-    sharedMemPerBlock        :: Int64,          -- ^ Available shared memory per block in bytes
-    regsPerBlock             :: Int,            -- ^ 32-bit registers per block
-    warpSize                 :: Int,            -- ^ Warp size in threads
-    maxThreadsPerBlock       :: Int,            -- ^ Max number of threads per block
-    maxBlockSize             :: (Int,Int,Int),  -- ^ Max size of each dimension of a block
-    maxGridSize              :: (Int,Int,Int),  -- ^ Max size of each dimension of a grid
-#if CUDART_VERSION >= 3000
-    maxTextureDim1D          :: Int,            -- ^ Maximum texture dimensions
-    maxTextureDim2D          :: (Int,Int),
-    maxTextureDim3D          :: (Int,Int,Int),
-#endif
-    clockRate                :: Int,            -- ^ Clock frequency in kilohertz
-    multiProcessorCount      :: Int,            -- ^ Number of multiprocessors on the device
-    memPitch                 :: Int64,          -- ^ Max pitch in bytes allowed by memory copies
-    textureAlignment         :: Int64,          -- ^ Alignment requirement for textures
-    computeMode              :: ComputeMode,
-    deviceOverlap            :: Bool,           -- ^ Device can concurrently copy memory and execute a kernel
-#if CUDART_VERSION >= 3000
-    concurrentKernels        :: Bool,           -- ^ Device can possibly execute multiple kernels concurrently
-#endif
-    kernelExecTimeoutEnabled :: Bool,           -- ^ Whether there is a runtime limit on kernels
-    integrated               :: Bool,           -- ^ As opposed to discrete
-    canMapHostMemory         :: Bool            -- ^ Device can use pinned memory
-  }
-  deriving (Show)
-
 
 instance Storable DeviceProperties where
   sizeOf _    = {#sizeof cudaDeviceProp#}
   alignment _ = alignment (undefined :: Ptr ())
 
+  poke _ _    = error "no instance for Foreign.Storable.poke DeviceProperties"
   peek p      = do
     gm <- cIntConv     `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
     sm <- cIntConv     `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
@@ -161,6 +123,7 @@ instance Storable DeviceProperties where
         deviceOverlap            = ov,
 #if CUDART_VERSION >= 3000
         concurrentKernels        = ck,
+        eccEnabled               = False,       -- not visible from runtime API
         maxTextureDim1D          = u1,
         maxTextureDim2D          = (u21,u22),
         maxTextureDim3D          = (u31,u32,u33),
