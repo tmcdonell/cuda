@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Device
+-- Module    : Foreign.CUDA.Analysis.Device
 -- Copyright : (c) [2009..2010] Trevor L. McDonell
 -- License   : BSD
 --
@@ -8,19 +8,30 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Device
+module Foreign.CUDA.Analysis.Device
+  (
+    ComputeMode(..), DeviceProperties(..), DeviceResources(..), Allocation(..),
+    resources
+  )
   where
 
 #include <cuda.h>
 
 import Data.Int
+import Data.Maybe
 
 
 -- |
 -- The compute mode the device is currently in
 --
-{# enum CUcomputemode as ComputeMode { }
+{# enum CUcomputemode as ComputeMode
+    { underscoreToCase }
     with prefix="CU_COMPUTEMODE" deriving (Eq, Show) #}
+
+-- |
+-- GPU compute capability
+--
+type Compute = Double
 
 -- |
 -- The properties of a compute device
@@ -28,7 +39,7 @@ import Data.Int
 data DeviceProperties = DeviceProperties
   {
     deviceName               :: String,         -- ^ Identifier
-    computeCapability        :: Double,         -- ^ Supported compute capability
+    computeCapability        :: Compute,        -- ^ Supported compute capability
     totalGlobalMem           :: Int64,          -- ^ Available global memory on the device in bytes
     totalConstMem            :: Int64,          -- ^ Available constant memory on the device in bytes
     sharedMemPerBlock        :: Int64,          -- ^ Available shared memory per block in bytes
@@ -57,4 +68,41 @@ data DeviceProperties = DeviceProperties
     canMapHostMemory         :: Bool            -- ^ Device can use pinned memory
   }
   deriving (Show)
+
+
+-- GPU Hardware Resources
+--
+data Allocation      = Warp | Block
+data DeviceResources = DeviceResources
+  {
+    threadsPerWarp     :: Int,          -- ^ Warp size
+    threadsPerMP       :: Int,          -- ^ Maximum number of in-flight threads on a multiprocessor
+    threadBlocksPerMP  :: Int,          -- ^ Maximum number of thread blocks resident on a multiprocessor
+    warpsPerMP         :: Int,          -- ^ Maximum number of in-flight warps per multiprocessor
+    sharedMemPerMP     :: Int,          -- ^ Total amount of shared memory per multiprocessor (bytes)
+    sharedMemAllocUnit :: Int,          -- ^ Shared memory allocation unit size (bytes)
+    regFileSize        :: Int,          -- ^ Total number of registers in a multiprocessor
+    regAllocUnit       :: Int,          -- ^ Register allocation unit size
+    regAllocWarp       :: Int,          -- ^ Register allocation granularity for warps
+    allocation         :: Allocation    -- ^ How multiprocessor resources are divided
+  }
+
+
+-- |
+-- Extract some additional hardware resource limitations for a given device
+--
+resources :: DeviceProperties -> DeviceResources
+resources dev = fromMaybe err (lookup compute gpuData)
+  where
+    compute = computeCapability dev
+    err     = error $  "No data for device: "
+                    ++ shows (deviceName dev) " (compute " ++ shows compute ")"
+
+    gpuData =
+      [(1.0, DeviceResources 32  768 8 24 16384 512  8192 256 2 Block)
+      ,(1.1, DeviceResources 32  768 8 24 16384 512  8192 256 2 Block)
+      ,(1.2, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
+      ,(1.3, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
+      ,(2.0, DeviceResources 32 1536 8 48 49152 128 32768  64 1 Warp)
+      ]
 

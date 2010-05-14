@@ -22,7 +22,7 @@ module Foreign.CUDA.Driver.Device
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Device
+import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets

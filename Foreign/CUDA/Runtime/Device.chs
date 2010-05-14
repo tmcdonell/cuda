@@ -22,7 +22,7 @@ module Foreign.CUDA.Runtime.Device
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Device
+import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Internal.Offsets

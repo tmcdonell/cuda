@@ -47,33 +47,16 @@
 
 module Foreign.CUDA.Analysis.Occupancy
   (
-    Compute, Occupancy(..),
+    Occupancy(..),
     occupancy, optimalBlockSize
   )
   where
 
 import Data.Ord
 import Data.List
-import Data.Maybe
 
+import Foreign.CUDA.Analysis.Device
 
--- GPU Hardware Resources
-type Compute    = Double                -- ^ Compute capability
-
-data Allocation = Warp | Block
-data Resources  = Resources
-  {
-    threadsPerWarp     :: Int,          -- ^ Warp size
-   _threadsPerMP       :: Int,          -- ^ Maximum number of in-flight threads on a multiprocessor
-    threadBlocksPerMP  :: Int,          -- ^ Maximum number of thread blocks resident on a multiprocessor
-    warpsPerMP         :: Int,          -- ^ Maximum number of in-flight warps per multiprocessor
-    sharedMemPerMP     :: Int,          -- ^ Total amount of shared memory per multiprocessor (bytes)
-    sharedMemAllocUnit :: Int,          -- ^ Shared memory allocation unit size (bytes)
-    regFileSize        :: Int,          -- ^ Total number of registers in a multiprocessor
-    regAllocUnit       :: Int,          -- ^ Register allocation unit size
-    regAllocWarp       :: Int,          -- ^ Register allocation granularity for warps
-    allocation         :: Allocation    -- ^ How multiprocessor resources are divided
-  }
 
 -- GPU Occupancy per multiprocessor
 --
@@ -87,28 +70,16 @@ data Occupancy = Occupancy
   deriving (Eq, Ord, Show)
 
 
--- Raw GPU Data
---
-gpuData :: [(Compute, Resources)]
-gpuData =
-  [(1.0, Resources 32  768 8 24 16384 512  8192 256 2 Block)
-  ,(1.1, Resources 32  768 8 24 16384 512  8192 256 2 Block)
-  ,(1.2, Resources 32 1024 8 32 16384 512 16384 512 2 Block)
-  ,(1.3, Resources 32 1024 8 32 16384 512 16384 512 2 Block)
-  ,(2.0, Resources 32 1536 8 48 49152 128 32768  64 1 Warp)
-  ]
-
-
 -- |
 -- Calculate occupancy data for a given GPU and kernel resource usage
 --
 occupancy
-    :: Compute          -- ^ Compute capability of card in question
+    :: DeviceProperties -- ^ Properties of the card in question
     -> Int              -- ^ Threads per block
     -> Int              -- ^ Registers per thread
     -> Int              -- ^ Shared memory per block (bytes)
     -> Occupancy
-occupancy capability thds regs smem
+occupancy dev thds regs smem
   = Occupancy at ab aw oc
   where
     at = ab * thds
@@ -123,10 +94,9 @@ occupancy capability thds regs smem
     ceiling'      = ceiling :: Double -> Int
     ceilingBy x s = s * ceiling' (fromIntegral x / fromIntegral s)
 
-    -- Physical resources (default to compute 1.0)
+    -- Physical resources
     --
-    def = snd (head gpuData)
-    gpu = fromMaybe def (lookup capability gpuData)
+    gpu = resources dev
 
     -- Allocation per thread block
     --
@@ -148,13 +118,15 @@ occupancy capability thds regs smem
 -- resource usage. This returns the smallest satisfying block size.
 --
 optimalBlockSize
-    :: Compute                  -- ^ Architecture to optimise for
+    :: DeviceProperties         -- ^ Architecture to optimise for
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
     -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-optimalBlockSize compute freg fsmem
+optimalBlockSize dev freg fsmem
   = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
   where
-    threads   = enumFromThenTo 512 496 16
-    residency = map (\t -> occupancy compute t (freg t) (fsmem t)) threads
+    residency = map (\t -> occupancy dev t (freg t) (fsmem t)) threads
+    threads   = let det = warpSize dev `div` 2
+                    mts = maxThreadsPerBlock dev
+                in  enumFromThenTo mts (mts - det) det
 
