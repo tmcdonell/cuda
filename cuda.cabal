@@ -34,7 +34,8 @@ Flag emu
   Default:      False
 
 Library
-  Exposed-Modules:      Foreign.CUDA.Analysis.Device
+  Exposed-Modules:      Foreign.CUDA.Analysis
+                        Foreign.CUDA.Analysis.Device
                         Foreign.CUDA.Analysis.Occupancy
 
                         Foreign.CUDA
