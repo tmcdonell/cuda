@@ -48,7 +48,7 @@
 module Foreign.CUDA.Analysis.Occupancy
   (
     Occupancy(..),
-    occupancy, optimalBlockSize
+    occupancy, optimalBlockSize, maxResidentBlocks
   )
   where
 
@@ -129,4 +129,18 @@ optimalBlockSize dev freg fsmem
     threads   = let det = warpSize dev `div` 2
                     mts = maxThreadsPerBlock dev
                 in  enumFromThenTo mts (mts - det) det
+
+
+-- |
+-- Determine the maximum number of CTAs that can be run simultaneously for a
+-- given kernel / device combination.
+--
+maxResidentBlocks
+  :: DeviceProperties   -- ^ Properties of the card in question
+  -> Int                -- ^ Threads per block
+  -> Int                -- ^ Registers per thread
+  -> Int                -- ^ Shared memory per block (bytes)
+  -> Int                -- ^ Maximum number of resident blocks
+maxResidentBlocks dev thds regs smem =
+  multiProcessorCount dev * activeThreadBlocks (occupancy dev thds regs smem)
 
