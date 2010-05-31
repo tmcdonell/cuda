@@ -62,10 +62,10 @@ import Foreign.CUDA.Analysis.Device
 --
 data Occupancy = Occupancy
   {
-    activeThreads     :: Int,           -- ^ Active threads per multiprocessor
-    activeTreadBlocks :: Int,           -- ^ Active thread blocks per multiprocessor
-    activeWarps       :: Int,           -- ^ Active warps per multiprocessor
-    occupancy100      :: Double         -- ^ Occupancy of each multiprocessor (percent)
+    activeThreads      :: Int,          -- ^ Active threads per multiprocessor
+    activeThreadBlocks :: Int,          -- ^ Active thread blocks per multiprocessor
+    activeWarps        :: Int,          -- ^ Active warps per multiprocessor
+    occupancy100       :: Double        -- ^ Occupancy of each multiprocessor (percent)
   }
   deriving (Eq, Ord, Show)
 
