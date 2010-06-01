@@ -126,7 +126,7 @@ optimalBlockSize dev freg fsmem
   = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
   where
     residency = map (\t -> occupancy dev t (freg t) (fsmem t)) threads
-    threads   = let det = warpSize dev `div` 2
+    threads   = let det = warpSize dev
                     mts = maxThreadsPerBlock dev
                 in  enumFromThenTo mts (mts - det) det
 
