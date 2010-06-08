@@ -10,6 +10,7 @@
 
 module Foreign.CUDA.Driver
   (
+    module Foreign.CUDA.Ptr,
     module Foreign.CUDA.Driver.Context,
     module Foreign.CUDA.Driver.Device,
     module Foreign.CUDA.Driver.Error,
@@ -20,6 +21,7 @@ module Foreign.CUDA.Driver
   )
   where
 
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Context
 import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error

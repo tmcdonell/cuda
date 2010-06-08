@@ -1,14 +1,16 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Runtime.Ptr
+-- Module    : Foreign.CUDA.Ptr
 -- Copyright : (c) [2009..2010] Trevor L. McDonell
 -- License   : BSD
 --
--- References to objects stored on the CUDA devices
+-- A common interface for host and device pointers. While it is possible mix the
+-- Driver and Runtime environments with CUDA versions >= 3.0, it is still a good
+-- idea to pick one interface and stick to it.
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Ptr
+module Foreign.CUDA.Ptr
   where
 
 -- System
@@ -44,6 +46,17 @@ instance Storable (DevicePtr a) where
 withDevicePtr :: DevicePtr a -> (Ptr a -> IO b) -> IO b
 withDevicePtr p f = f (useDevicePtr p)
 
+-- |
+-- Return a unique handle associated with the given device pointer
+--
+devPtrToWordPtr :: DevicePtr a -> WordPtr
+devPtrToWordPtr = ptrToWordPtr . useDevicePtr
+
+-- |
+-- Return a device pointer from the given handle
+--
+wordPtrToDevPtr :: WordPtr -> DevicePtr a
+wordPtrToDevPtr = DevicePtr . wordPtrToPtr
 
 -- |
 -- The constant 'nullDevPtr' contains the distinguished memory location that is

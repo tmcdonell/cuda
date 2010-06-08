@@ -12,12 +12,10 @@
 module Foreign.CUDA.Driver.Marshal
   (
     -- * Host Allocation
-    HostPtr(..), AllocFlag(..),
-    withHostPtr, mallocHostArray, freeHost, nullHostPtr,
+    AllocFlag(..), mallocHostArray, freeHost,
 
     -- * Device Allocation
-    DevicePtr, devPtrToWordPtr, wordPtrToDevPtr,
-    mallocArray, allocaArray, free, nullDevPtr,
+    mallocArray, allocaArray, free,
 
     -- * Marshalling
     peekArray, peekArrayAsync, peekListArray,
@@ -37,13 +35,14 @@ module Foreign.CUDA.Driver.Marshal
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
+import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Unsafe.Coerce
-import Control.Monad                            (liftM)
+import Control.Applicative
 import Control.Exception.Extensible
 
 import Foreign.C
@@ -59,50 +58,10 @@ typedef enum CUmemhostalloc_option_enum {
 } CUmemhostalloc_option;
 #endc
 
+
 --------------------------------------------------------------------------------
--- Data Types
+-- Host Allocation
 --------------------------------------------------------------------------------
-
--- |
--- A reference to memory allocated on the device
---
-newtype DevicePtr a = DevicePtr { useDevicePtr :: {# type CUdeviceptr #}}
-
-instance Storable (DevicePtr a) where
-  sizeOf _      = sizeOf    (undefined :: {# type CUdeviceptr #})
-  alignment _   = alignment (undefined :: {# type CUdeviceptr #})
-  peek p        = DevicePtr `fmap` peek (castPtr p)
-  poke p v      = poke (castPtr p) (useDevicePtr v)
-
--- |
--- Return a unique handle associated with the given device pointer
---
-devPtrToWordPtr :: DevicePtr a -> WordPtr
-devPtrToWordPtr = fromIntegral . useDevicePtr
-
--- |
--- Return a device pointer from the given handle
---
-wordPtrToDevPtr :: WordPtr -> DevicePtr a
-wordPtrToDevPtr = DevicePtr . fromIntegral
-
-
--- |
--- A reference to memory on the host that is page-locked and directly-accessible
--- from the device. Since the memory can be accessed directly, it can be read or
--- written at a much higher bandwidth than pageable memory from the traditional
--- malloc.
---
--- The driver automatically accelerates calls to functions such as `memcpy'
--- which reference page-locked memory.
---
-newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
-
--- |
--- Unwrap a host pointer and execute a computation using the base pointer object
---
-withHostPtr :: HostPtr a -> (Ptr a -> IO b) -> IO b
-withHostPtr p f = f (useHostPtr p)
 
 -- |
 -- Options for host allocation
@@ -110,10 +69,6 @@ withHostPtr p f = f (useHostPtr p)
 {# enum CUmemhostalloc_option as AllocFlag
     { underscoreToCase }
     with prefix="CU_MEMHOSTALLOC_OPTION" deriving (Eq, Show) #}
-
---------------------------------------------------------------------------------
--- Host Allocation
---------------------------------------------------------------------------------
 
 -- |
 -- Allocate a section of linear memory on the host which is page-locked and
@@ -151,14 +106,6 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
     useHP = castPtr . useHostPtr
 
 
--- |
--- The constant 'nullHostPtr' contains the distinguished memory location that is
--- not associated with a valid memory location
---
-nullHostPtr :: HostPtr a
-nullHostPtr =  HostPtr nullPtr
-
-
 --------------------------------------------------------------------------------
 -- Device Allocation
 --------------------------------------------------------------------------------
@@ -178,8 +125,8 @@ mallocArray = doMalloc undefined
   { alloca'- `DevicePtr a' peekDP*
   ,          `Int'               } -> `Status' cToEnum #}
   where
-    alloca' = F.alloca
-    peekDP  = liftM DevicePtr . peek
+    alloca'  = F.alloca
+    peekDP p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 
 -- |
@@ -202,15 +149,7 @@ free :: DevicePtr a -> IO ()
 free dp = nothingIfOk =<< cuMemFree dp
 
 {# fun unsafe cuMemFree
-  { useDevicePtr `DevicePtr a' } -> `Status' cToEnum #}
-
-
--- |
--- The constant 'nullDevPtr' contains the distinguished memory location that is
--- not associated with a valid memory location
---
-nullDevPtr :: DevicePtr a
-nullDevPtr =  DevicePtr 0
+  { useDeviceHandle `DevicePtr a' } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
@@ -228,9 +167,9 @@ peekArray n dptr hptr = doPeek undefined dptr
     doPeek x _ = nothingIfOk =<< cuMemcpyDtoH hptr dptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyDtoH
-  { castPtr      `Ptr a'
-  , useDevicePtr `DevicePtr a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { castPtr         `Ptr a'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -247,10 +186,10 @@ peekArrayAsync n dptr hptr mst = doPeek undefined dptr
         Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyDtoHAsync
-  { useHP        `HostPtr a'
-  , useDevicePtr `DevicePtr a'
-  ,              `Int'
-  , useStream    `Stream'  } -> `Status' cToEnum #}
+  { useHP           `HostPtr a'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
 
@@ -277,9 +216,9 @@ pokeArray n hptr dptr = doPoke undefined dptr
     doPoke x _ = nothingIfOk =<< cuMemcpyHtoD dptr hptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyHtoD
-  { useDevicePtr `DevicePtr a'
-  , castPtr      `Ptr a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , castPtr         `Ptr a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -296,10 +235,10 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
         Just st -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyHtoDAsync
-  { useDevicePtr `DevicePtr a'
-  , useHP        `HostPtr a'
-  ,              `Int'
-  , useStream    `Stream'      } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , useHP           `HostPtr a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
 
@@ -326,9 +265,9 @@ copyArrayAsync n = docopy undefined
     docopy x src dst = nothingIfOk =<< cuMemcpyDtoD dst src (n * sizeOf x)
 
 {# fun unsafe cuMemcpyDtoD
-  { useDevicePtr `DevicePtr a'
-  , useDevicePtr `DevicePtr a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
@@ -404,19 +343,19 @@ memset dptr n val = case sizeOf val of
 -- into the integer type required by the setting functions.
 --
 {# fun unsafe cuMemsetD8
-  { useDevicePtr `DevicePtr a'
-  , unsafeCoerce `a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 {# fun unsafe cuMemsetD16
-  { useDevicePtr `DevicePtr a'
-  , unsafeCoerce `a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 {# fun unsafe cuMemsetD32
-  { useDevicePtr `DevicePtr a'
-  , unsafeCoerce `a'
-  ,              `Int'         } -> `Status' cToEnum #}
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -433,7 +372,14 @@ getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
   , useHP           `HostPtr a'
   , combineBitMasks `[AllocFlag]'         } -> `Status' cToEnum #}
   where
-    alloca' = F.alloca
-    useHP   = castPtr . useHostPtr
-    peekDP  = liftM DevicePtr . peek
+    alloca'  = F.alloca
+    useHP    = castPtr . useHostPtr
+    peekDP p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
+
+
+--
+-- Use a device pointer as an opaque handle type
+--
+useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
+useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 

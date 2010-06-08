@@ -36,7 +36,7 @@ module Foreign.CUDA.Runtime.Marshal
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Runtime.Ptr
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Runtime.Stream
 import Foreign.CUDA.Internal.C2HS
