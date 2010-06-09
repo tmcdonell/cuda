@@ -27,7 +27,10 @@ module Foreign.CUDA.Driver.Marshal
     withListArray, withListArrayLen,
 
     -- * Utility
-    memset, getDevicePtr
+    memset, getDevicePtr,
+
+    -- Internal
+    useDeviceHandle, peekDevPtr
   )
   where
 
@@ -122,11 +125,10 @@ mallocArray = doMalloc undefined
     doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
-  { alloca'- `DevicePtr a' peekDP*
-  ,          `Int'               } -> `Status' cToEnum #}
+  { alloca'- `DevicePtr a' peekDevPtr*
+  ,          `Int'                     } -> `Status' cToEnum #}
   where
     alloca'  = F.alloca
-    peekDP p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 
 -- |
@@ -368,16 +370,23 @@ getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
 getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 
 {# fun unsafe cuMemHostGetDevicePointer
-  { alloca'-        `DevicePtr a' peekDP*
+  { alloca'-        `DevicePtr a' peekDevPtr*
   , useHP           `HostPtr a'
-  , combineBitMasks `[AllocFlag]'         } -> `Status' cToEnum #}
+  , combineBitMasks `[AllocFlag]'             } -> `Status' cToEnum #}
   where
     alloca'  = F.alloca
     useHP    = castPtr . useHostPtr
-    peekDP p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 
+--------------------------------------------------------------------------------
+-- Internal
+--------------------------------------------------------------------------------
+
+-- Lift an opaque handle to a typed DevicePtr representation
 --
+peekDevPtr :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
+peekDevPtr p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
+
 -- Use a device pointer as an opaque handle type
 --
 useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}

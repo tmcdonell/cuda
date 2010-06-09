@@ -25,7 +25,8 @@ module Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Texture
+import Foreign.CUDA.Driver.Marshal              (peekDevPtr)
+import Foreign.CUDA.Driver.Texture              (Texture(..))
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -33,7 +34,6 @@ import Foreign
 import Foreign.C
 import Unsafe.Coerce
 
-import Control.Applicative
 import Control.Monad                            (liftM)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8 as B
@@ -115,8 +115,6 @@ getPtr mdl name = do
   , alloca-      `Int'         peekIntConv*
   , useModule    `Module'
   , withCString* `String'                   } -> `Status' cToEnum #}
-  where
-    peekDevPtr p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 
 -- |
@@ -142,7 +140,6 @@ loadFile ptx = resultIfOk =<< cuModuleLoad ptx
 {# fun unsafe cuModuleLoad
   { alloca-      `Module' peekMod*
   , withCString* `String'          } -> `Status' cToEnum #}
-  where peekMod = liftM Module . peek
 
 
 -- |
@@ -154,11 +151,8 @@ loadData :: ByteString -> IO Module
 loadData img = resultIfOk =<< cuModuleLoadData img
 
 {# fun unsafe cuModuleLoadData
-  { alloca- `Module'     peekMod*
-  , useBS*  `ByteString'          } -> ` Status' cToEnum #}
-  where
-    peekMod      = liftM Module . peek
-    useBS bs act = B.useAsCString bs $ \p -> act (castPtr p)
+  { alloca-        `Module'     peekMod*
+  , useByteString* `ByteString'          } -> ` Status' cToEnum #}
 
 
 -- |
@@ -196,13 +190,10 @@ loadDataEx img options =
 
 {# fun unsafe cuModuleLoadDataEx
   { alloca- `Module'       peekMod*
-  , useBS*  `ByteString'
-  ,         `Int'
-  , id      `Ptr CInt'
-  , id      `Ptr (Ptr ())'          } -> `Status' cToEnum #}
-  where
-    peekMod      = liftM Module . peek
-    useBS bs act = B.useAsCString bs $ \p -> act (castPtr p)
+  , useByteString* `ByteString'
+  ,                `Int'
+  , id             `Ptr CInt'
+  , id             `Ptr (Ptr ())'          } -> `Status' cToEnum #}
 
 
 -- |
@@ -213,4 +204,15 @@ unload m = nothingIfOk =<< cuModuleUnload m
 
 {# fun unsafe cuModuleUnload
   { useModule `Module' } -> `Status' cToEnum #}
+
+
+--------------------------------------------------------------------------------
+-- Internal
+--------------------------------------------------------------------------------
+
+peekMod :: Ptr {# type CUmodule #} -> IO Module
+peekMod = liftM Module . peek
+
+useByteString :: ByteString -> (Ptr a -> IO b) -> IO b
+useByteString bs act = B.useAsCString bs $ \p -> act (castPtr p)
 
