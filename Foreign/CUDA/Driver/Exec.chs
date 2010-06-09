@@ -13,8 +13,8 @@
 module Foreign.CUDA.Driver.Exec
   (
     Fun(Fun),  -- need to export the data constructor for use by Module )=
-    FunParam(..), FunAttribute(..),
-    requires, setBlockShape, setSharedSize, setParams, launch
+    FunParam(..), FunAttribute(..), CacheConfig(..),
+    requires, setBlockShape, setSharedSize, setCacheConfig, setParams, launch
   )
   where
 
@@ -50,6 +50,14 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
     , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock }
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
 
+#if CUDA_VERSION >= 3000
+-- |
+-- Cache configuration preference
+--
+{# enum CUfunc_cache_enum as CacheConfig
+    { underscoreToCase }
+    with prefix="CU_FUNC_CACHE_PREFER" deriving (Eq, Show) #}
+#endif
 
 -- |
 -- Kernel function parameters
@@ -102,6 +110,23 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
   { useFun   `Fun'
   , cIntConv `Integer' } -> `Status' cToEnum #}
 
+#if CUDA_VERSION >= 3000
+-- |
+-- On devices where the L1 cache and shared memory use the same hardware
+-- resources, this sets the preferred cache configuration for the given device
+-- function. This is only a preference; and the driver is free to choose a
+-- different configuration as required to execute the function.
+--
+-- Switching between configuration modes may insert a device-side
+-- synchronisation point for streamed kernel launches.
+--
+setCacheConfig :: Fun -> CacheConfig -> IO ()
+setCacheConfig fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
+
+{# fun unsafe cuFuncSetCacheConfig
+  { useFun    `Fun'
+  , cFromEnum `CacheConfig' } -> `Status' cToEnum #}
+#endif
 
 -- |
 -- Invoke the kernel on a size (w,h) grid of blocks. Each block contains the
