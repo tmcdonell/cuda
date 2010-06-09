@@ -60,6 +60,7 @@ Library
                         Foreign.CUDA.Driver.Marshal
                         Foreign.CUDA.Driver.Module
                         Foreign.CUDA.Driver.Stream
+                        Foreign.CUDA.Driver.Texture
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS

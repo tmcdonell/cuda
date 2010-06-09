@@ -13,7 +13,8 @@ module Foreign.CUDA.Driver.Module
   (
     Module,
     JITOption(..), JITTarget(..), JITResult(..),
-    getFun, loadFile, loadData, loadDataEx, unload
+    getFun, getPtr, getTex,
+    loadFile, loadData, loadDataEx, unload
   )
   where
 
@@ -21,15 +22,18 @@ module Foreign.CUDA.Driver.Module
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
+import Foreign.CUDA.Driver.Texture
+import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Foreign
 import Foreign.C
 import Unsafe.Coerce
 
+import Control.Applicative
 import Control.Monad                            (liftM)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8 as B
@@ -96,6 +100,36 @@ getFun mdl fn = resultIfOk =<< cuModuleGetFunction mdl fn
   , useModule    `Module'
   , withCString* `String'          } -> `Status' cToEnum #}
   where peekFun = liftM Fun . peek
+
+
+-- |
+-- Return a global pointer, and size of the global (in bytes)
+--
+getPtr :: Module -> String -> IO (DevicePtr a, Int)
+getPtr mdl name = do
+  (status,dptr,bytes) <- cuModuleGetGlobal mdl name
+  resultIfOk (status,(dptr,bytes))
+
+{# fun unsafe cuModuleGetGlobal
+  { alloca-      `DevicePtr a' peekDevPtr*
+  , alloca-      `Int'         peekIntConv*
+  , useModule    `Module'
+  , withCString* `String'                   } -> `Status' cToEnum #}
+  where
+    peekDevPtr p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
+
+
+-- |
+-- Return a handle to a texture reference
+--
+getTex :: Module -> String -> IO Texture
+getTex mdl name = resultIfOk =<< cuModuleGetTexRef mdl name
+
+{# fun unsafe cuModuleGetTexRef
+  { alloca-      `Texture' peekTex*
+  , useModule    `Module'
+  , withCString* `String'           } -> `Status' cToEnum #}
+  where peekTex = liftM Texture . peek
 
 
 -- |

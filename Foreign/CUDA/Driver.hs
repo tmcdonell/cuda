@@ -17,6 +17,7 @@ module Foreign.CUDA.Driver
     module Foreign.CUDA.Driver.Exec,
     module Foreign.CUDA.Driver.Marshal,
     module Foreign.CUDA.Driver.Module,
+    module Foreign.CUDA.Driver.Texture,
     module Foreign.CUDA.Driver.Utils
   )
   where
@@ -28,5 +29,6 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
 import Foreign.CUDA.Driver.Marshal
 import Foreign.CUDA.Driver.Module
+import Foreign.CUDA.Driver.Texture
 import Foreign.CUDA.Driver.Utils
 
