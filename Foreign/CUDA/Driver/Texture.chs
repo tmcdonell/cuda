@@ -71,6 +71,18 @@ instance Storable Texture where
   , SIGNED_INT32   as Int32 }
   with prefix="CU_AD_FORMAT" deriving (Eq, Show) #}
 
+#c
+typedef enum CUtexture_flag_enum {
+  CU_TEXTURE_FLAG_READ_AS_INTEGER        = CU_TRSF_READ_AS_INTEGER,
+  CU_TEXTURE_FLAG_NORMALIZED_COORDINATES = CU_TRSF_NORMALIZED_COORDINATES
+} CUtexture_flag;
+#endc
+
+-- |Texture read mode options
+{# enum CUtexture_flag as ReadMode
+  { underscoreToCase }
+  with prefix="CU_TEXTURE_FLAG" deriving (Eq, Show) #}
+
 
 --------------------------------------------------------------------------------
 -- Texture management
