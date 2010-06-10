@@ -26,7 +26,7 @@ import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
 import Foreign.CUDA.Driver.Marshal              (peekDevPtr)
-import Foreign.CUDA.Driver.Texture              (Texture(..))
+import Foreign.CUDA.Driver.Texture              hiding (getPtr)
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -118,16 +118,19 @@ getPtr mdl name = do
 
 
 -- |
--- Return a handle to a texture reference
+-- Return a handle to a texture reference, of specified type and number of
+-- channel components
 --
-getTex :: Module -> String -> IO Texture
-getTex mdl name = resultIfOk =<< cuModuleGetTexRef mdl name
+getTex :: Format a => Module -> String -> Int -> IO (Texture a)
+getTex mdl name dim = do
+  tex <- resultIfOk =<< cuModuleGetTexRef mdl name
+  setFormat tex dim
+  return tex
 
 {# fun unsafe cuModuleGetTexRef
-  { alloca-      `Texture' peekTex*
+  { alloca-      `Texture a' peekTex*
   , useModule    `Module'
-  , withCString* `String'           } -> `Status' cToEnum #}
-  where peekTex = liftM Texture . peek
+  , withCString* `String'             } -> `Status' cToEnum #}
 
 
 -- |
