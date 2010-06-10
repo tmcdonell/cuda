@@ -41,6 +41,12 @@ import Control.Monad
 --
 newtype Texture = Texture { useTexture :: {# type CUtexref #}}
 
+instance Storable Texture where
+  sizeOf _    = sizeOf    (undefined :: {# type CUtexref #})
+  alignment _ = alignment (undefined :: {# type CUtexref #})
+  peek p      = Texture `fmap` peek (castPtr p)
+  poke p t    = poke (castPtr p) (useTexture t)
+
 -- |Texture reference addressing modes
 --
 {# enum CUaddress_mode as AddressMode
