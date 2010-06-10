@@ -83,17 +83,28 @@ typedef enum CUtexture_flag_enum {
 
 
 class Format a where
-  tag :: a -> Int
+  tag      :: a -> Int
+  channels :: a -> Int
+  channels _ = 1
 
+instance Format Word   where tag _ = fromEnum UNSIGNED_INT32
 instance Format Word8  where tag _ = fromEnum UNSIGNED_INT8
 instance Format Word16 where tag _ = fromEnum UNSIGNED_INT16
 instance Format Word32 where tag _ = fromEnum UNSIGNED_INT32
+
+instance Format Int    where tag _ = fromEnum SIGNED_INT32
 instance Format Int8   where tag _ = fromEnum SIGNED_INT8
 instance Format Int16  where tag _ = fromEnum SIGNED_INT16
 instance Format Int32  where tag _ = fromEnum SIGNED_INT32
-instance Format Float  where tag _ = fromEnum FLOAT
 
--- FIXME: Half (16-bit float)
+instance Format Float  where tag _ = fromEnum FLOAT
+instance Format Double where
+  tag _      = fromEnum SIGNED_INT32
+  channels _ = 2
+  -- __hiloint2double()
+
+-- FIXME: half (16-bit float) ??
+-- FIXME: vector types ??
 
 --------------------------------------------------------------------------------
 -- Texture management
@@ -104,10 +115,10 @@ instance Format Float  where tag _ = fromEnum FLOAT
 -- reference functions are used to specify the format and interpretation to be
 -- used when the memory is read through this reference.
 --
-create :: Format a => Int -> IO (Texture a)
-create dim = do
+create :: Format a => IO (Texture a)
+create = do
   tex <- resultIfOk =<< cuTexRefCreate
-  setFormat tex dim
+  setFormat tex
   return tex
 
 {# fun unsafe cuTexRefCreate
@@ -205,11 +216,11 @@ setFilterMode tex mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
 
 -- |Specify the format of the data to be read by the texture reference
 --
-setFormat :: Format a => Texture a -> Int -> IO ()
-setFormat tex dim = doSet undefined tex
+setFormat :: Format a => Texture a -> IO ()
+setFormat tex = doSet undefined tex
   where
     doSet :: Format b => b -> Texture b -> IO ()
-    doSet fmt _ = nothingIfOk =<< cuTexRefSetFormat tex (tag fmt) dim
+    doSet fmt _ = nothingIfOk =<< cuTexRefSetFormat tex (tag fmt) (channels fmt)
 
 {# fun unsafe cuTexRefSetFormat
   { useTexture `Texture a'

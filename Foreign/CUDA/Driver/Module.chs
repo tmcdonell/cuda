@@ -118,14 +118,13 @@ getPtr mdl name = do
 
 
 -- |
--- Return a handle to a texture reference, of specified type and number of
--- channel components
+-- Return a handle to a texture reference
 --
-getTex :: Format a => Module -> String -> Int -> IO (Texture a)
-getTex mdl name dim = do
+getTex :: Format a => Module -> String -> IO (Texture a)
+getTex mdl name = do
   tex <- resultIfOk =<< cuModuleGetTexRef mdl name
-  setFormat tex dim
-  return tex
+  setFormat tex
+  return    tex
 
 {# fun unsafe cuModuleGetTexRef
   { alloca-      `Texture a' peekTex*
