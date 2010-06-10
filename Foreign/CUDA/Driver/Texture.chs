@@ -103,8 +103,12 @@ instance Format Double where
   channels _ = 2
   -- __hiloint2double()
 
--- FIXME: half (16-bit float) ??
--- FIXME: vector types ??
+-- FIXME:
+--  * half (16-bit float)
+--  * vector types
+--  * A Int or Word on the GPU is 32-bits, but this may not be the same bitwidth
+--    as Haskell-side computations.
+--
 
 --------------------------------------------------------------------------------
 -- Texture management
