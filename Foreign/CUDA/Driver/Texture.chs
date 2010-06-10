@@ -56,7 +56,13 @@ newtype Texture = Texture { useTexture :: {# type CUtexref #}}
 -- |Texture data formats
 --
 {# enum CUarray_format as Format
-  { underscoreToCase }
+  { underscoreToCase
+  , UNSIGNED_INT8  as Word8
+  , UNSIGNED_INT16 as Word16
+  , UNSIGNED_INT32 as Word32
+  , SIGNED_INT8    as Int8
+  , SIGNED_INT16   as Int16
+  , SIGNED_INT32   as Int32 }
   with prefix="CU_AD_FORMAT" deriving (Eq, Show) #}
 
 
