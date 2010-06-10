@@ -191,7 +191,7 @@ loadDataEx img options =
 
 
 {# fun unsafe cuModuleLoadDataEx
-  { alloca- `Module'       peekMod*
+  { alloca-        `Module'       peekMod*
   , useByteString* `ByteString'
   ,                `Int'
   , id             `Ptr CInt'
