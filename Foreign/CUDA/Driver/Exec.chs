@@ -1,5 +1,4 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs, ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
@@ -25,6 +24,7 @@ module Foreign.CUDA.Driver.Exec
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
+import Foreign.CUDA.Driver.Texture              (Texture(..))
 
 -- System
 import Foreign
@@ -65,7 +65,7 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 data FunParam where
   IArg :: Int   -> FunParam
   FArg :: Float -> FunParam
---  TArg :: Texture -> FunParam
+  TArg :: Texture -> FunParam
   VArg :: Storable a => a -> FunParam
 
 
@@ -162,10 +162,12 @@ setParams fn prs = do
 
     size (IArg _)    = sizeOf (undefined::CUInt)
     size (FArg _)    = sizeOf (undefined::CFloat)
+    size (TArg _)    = 0
     size (VArg v)    = sizeOf v
 
     set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
     set f o (FArg v) = nothingIfOk =<< cuParamSetf f o v
+    set f _ (TArg v) = nothingIfOk =<< cuParamSetTexRef f (-1) v
     set f o (VArg v) = with v $ \p -> (nothingIfOk =<< cuParamSetv f o p (sizeOf v))
 
 
@@ -189,4 +191,9 @@ setParams fn prs = do
   ,         `Int'
   , castPtr `Ptr a'
   ,         `Int'   } -> `Status' cToEnum #}
+
+{# fun unsafe cuParamSetTexRef
+  { useFun     `Fun'
+  ,            `Int'    -- must be CU_PARAM_TR_DEFAULT (-1)
+  , useTexture `Texture' } -> `Status' cToEnum #}
 

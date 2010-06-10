@@ -11,7 +11,7 @@
 
 module Foreign.CUDA.Driver.Texture
   (
-    Texture(Texture), AddressMode(..), FilterMode(..), Format(..),
+    Texture(..), AddressMode(..), FilterMode(..), Format(..),
     create, destroy,
     getPtr, getAddressMode, getFilterMode, getFormat,
     setPtr, setAddressMode, setFilterMode, setFormat
