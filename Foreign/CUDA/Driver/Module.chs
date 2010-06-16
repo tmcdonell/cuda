@@ -136,12 +136,12 @@ getTex mdl name = do
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context
 --
-loadFile :: String -> IO Module
+loadFile :: FilePath -> IO Module
 loadFile ptx = resultIfOk =<< cuModuleLoad ptx
 
 {# fun unsafe cuModuleLoad
-  { alloca-      `Module' peekMod*
-  , withCString* `String'          } -> `Status' cToEnum #}
+  { alloca-      `Module'   peekMod*
+  , withCString* `FilePath'          } -> `Status' cToEnum #}
 
 
 -- |
