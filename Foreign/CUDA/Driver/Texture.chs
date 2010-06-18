@@ -91,11 +91,17 @@ instance Format Word   where tag _ = fromEnum UNSIGNED_INT32
 instance Format Word8  where tag _ = fromEnum UNSIGNED_INT8
 instance Format Word16 where tag _ = fromEnum UNSIGNED_INT16
 instance Format Word32 where tag _ = fromEnum UNSIGNED_INT32
+instance Format Word64  where
+  tag _      = fromEnum UNSIGNED_INT32
+  channels _ = 2
 
 instance Format Int    where tag _ = fromEnum SIGNED_INT32
 instance Format Int8   where tag _ = fromEnum SIGNED_INT8
 instance Format Int16  where tag _ = fromEnum SIGNED_INT16
 instance Format Int32  where tag _ = fromEnum SIGNED_INT32
+instance Format Int64  where
+  tag _      = fromEnum SIGNED_INT32
+  channels _ = 2
 
 instance Format Float  where tag _ = fromEnum FLOAT
 instance Format Double where
