@@ -10,16 +10,23 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Exec
-  (
-    FunAttributes(..), FunParam(..),
-    attributes, setConfig, setParams, launch
-  )
-  where
-
 #include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
+
+module Foreign.CUDA.Runtime.Exec
+  (
+    FunAttributes(..), FunParam(..),
+#if CUDART_VERSION >= 3000
+    CacheConfig(..),
+#endif
+    attributes, setConfig, setParams,
+#if CUDART_VERSION >= 3000
+    setCacheConfig,
+#endif
+    launch
+  )
+  where
 
 -- Friends
 import Foreign.CUDA.Runtime.Stream
@@ -74,6 +81,15 @@ instance Storable FunAttributes where
         maxKernelThreadsPerBlock = tb,
         numRegs                  = nr
       }
+
+#if CUDART_VERSION >= 3000
+-- |
+-- Cache configuration preference
+--
+{# enum cudaFuncCache as CacheConfig
+    { }
+    with prefix="cudaFuncCachePrefer" deriving (Eq, Show) #}
+#endif
 
 -- |
 -- Kernel function parameters. Doubles will be converted to an internal float
@@ -167,6 +183,25 @@ setParams = foldM_ k 0
   where
     with' v a = with v $ \p -> a (castPtr p)
     peek'     = peek . castPtr
+
+
+#if CUDART_VERSION >= 3000
+-- |
+-- On devices where the L1 cache and shared memory use the same hardware
+-- resources, this sets the preferred cache configuration for the given device
+-- function. This is only a preference; the driver is free to choose a different
+-- configuration as required to execute the function.
+--
+-- Switching between configuration modes may insert a device-side
+-- synchronisation point for streamed kernel launches
+--
+setCacheConfig :: String -> CacheConfig -> IO ()
+setCacheConfig fn pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
+
+{# fun unsafe cudaFuncSetCacheConfig
+  { withCString* `String'
+  , cFromEnum    `CacheConfig' } -> `Status' cToEnum #}
+#endif
 
 
 -- |
