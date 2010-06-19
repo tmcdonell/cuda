@@ -159,7 +159,7 @@ loadData img = resultIfOk =<< cuModuleLoadData img
 
 -- |
 -- Load a module with online compiler options. The actual attributes of the
--- compiled kernel can be probed using `requirements'.
+-- compiled kernel can be probed using 'requires'.
 --
 loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
 loadDataEx img options =

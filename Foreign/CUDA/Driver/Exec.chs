@@ -9,16 +9,22 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Exec
-  (
-    Fun(Fun),  -- need to export the data constructor for use by Module )=
-    FunParam(..), FunAttribute(..), CacheConfig(..),
-    requires, setBlockShape, setSharedSize, setCacheConfig, setParams, launch
-  )
-  where
-
 #include <cuda.h>
 {# context lib="cuda" #}
+
+module Foreign.CUDA.Driver.Exec
+  (
+    Fun(Fun), FunParam(..), FunAttribute(..),
+#if CUDA_VERSION >= 3000
+    CacheConfig(..),
+#endif
+    requires, setBlockShape, setSharedSize, setParams,
+#if CUDA_VERSION >= 3000
+    setCacheConfig,
+#endif
+    launch
+  )
+  where
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
@@ -114,8 +120,8 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 -- |
 -- On devices where the L1 cache and shared memory use the same hardware
 -- resources, this sets the preferred cache configuration for the given device
--- function. This is only a preference; and the driver is free to choose a
--- different configuration as required to execute the function.
+-- function. This is only a preference; the driver is free to choose a different
+-- configuration as required to execute the function.
 --
 -- Switching between configuration modes may insert a device-side
 -- synchronisation point for streamed kernel launches.
