@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Texture
@@ -12,7 +12,7 @@
 module Foreign.CUDA.Runtime.Texture
   (
     Texture(..), FormatKind(..), AddressMode(..), FilterMode(..), FormatDesc(..),
-    getTex, bind, bind2D, unbind
+    bind, bind2D
   )
   where
 
@@ -41,11 +41,11 @@ typedef struct cudaChannelFormatDesc cudaChannelFormatDesc;
 
 -- |A texture reference
 --
-{# pointer *textureReference as ^ foreign -> Texture nocode #}
+{# pointer *textureReference as ^ -> Texture #}
 
 data Texture = Texture
   {
-    normalised :: Bool,         -- ^ access texture using normalised coordinates [0.0,1.0]
+    normalised :: Bool,         -- ^ access texture using normalised coordinates [0.0,1.0)
     filtering  :: FilterMode,
     addressing :: (AddressMode, AddressMode, AddressMode),
     format     :: FormatDesc
@@ -109,14 +109,17 @@ instance Storable Texture where
   alignment _ = alignment (undefined :: Ptr ())
 
   peek p = do
-    n  <- cToBool `fmap` {# get textureReference.normalized #} p
-    fm <- cToEnum `fmap` {# get textureReference.filterMode #} p
-    am <- {# get textureReference.addressMode #} p
-    a0 <- cToEnum `fmap` peekElemOff am 0
-    a1 <- cToEnum `fmap` peekElemOff am 1
-    a2 <- cToEnum `fmap` peekElemOff am 2
-    cd <- peekByteOff p devTexChannelDescOffset
-    return $ Texture n fm (a0,a1,a2) cd
+    norm    <- cToBool     `fmap` {# get textureReference.normalized #} p
+    fmt     <- cToEnum     `fmap` {# get textureReference.filterMode #} p
+    [x,y,z] <- map cToEnum `fmap` (peekArray 3 =<< {# get textureReference.addressMode #} p)
+    dsc     <- peekByteOff p devTexChannelDescOffset
+    return $ Texture norm fmt (x,y,z) dsc
+
+  poke p (Texture norm fmt (x,y,z) dsc) = do
+    {# set textureReference.normalized #} p (cFromBool norm)
+    {# set textureReference.filterMode #} p (cFromEnum fmt)
+    flip pokeArray (map cFromEnum [x,y,z]) =<< {# get textureReference.addressMode #} p
+    pokeByteOff p devTexChannelDescOffset dsc
 
 
 --------------------------------------------------------------------------------
@@ -124,56 +127,53 @@ instance Storable Texture where
 --------------------------------------------------------------------------------
 
 -- |Bind the memory area associated with the device pointer to a texture
--- reference. Any previously bound references are unbound.
+-- reference given by the named symbol. Any previously bound references are
+-- unbound.
 --
-bind :: Texture -> FormatDesc -> DevicePtr a -> Int64 -> IO ()
-bind tex desc dptr bytes = nothingIfOk =<< cudaBindTexture tex dptr desc bytes
+bind :: String -> Texture -> DevicePtr a -> Int64 -> IO ()
+bind name tex dptr bytes = do
+  ref <- getTex name
+  poke ref tex
+  nothingIfOk =<< cudaBindTexture ref dptr (format tex) bytes
 
 {# fun unsafe cudaBindTexture
   { alloca- `Int'
-  , with_*  `Texture'
+  , id      `TextureReference'
   , dptr    `DevicePtr a'
   , with_*  `FormatDesc'
-  ,         `Int64'       } -> `Status' cToEnum #}
+  ,         `Int64'            } -> `Status' cToEnum #}
   where dptr = useDevicePtr . castDevPtr
 
--- |Bind the two-dimensional memory area to a texture reference. The size of the
--- area is constrained by (width,height) in texel units, and the row pitch in
--- bytes. Any previously bound references are unbound.
+-- |Bind the two-dimensional memory area to the texture reference associated
+-- with the given symbol. The size of the area is constrained by (width,height)
+-- in texel units, and the row pitch in bytes. Any previously bound references
+-- are unbound.
 --
-bind2D :: Texture -> FormatDesc -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
-bind2D tex desc dptr (width,height) bytes =
-  nothingIfOk =<< cudaBindTexture2D tex dptr desc width height bytes
+bind2D :: String -> Texture -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
+bind2D name tex dptr (width,height) bytes = do
+  ref <- getTex name
+  poke ref tex
+  nothingIfOk =<< cudaBindTexture2D ref dptr (format tex) width height bytes
 
 {# fun unsafe cudaBindTexture2D
   { alloca- `Int'
-  , with_*  `Texture'
+  , id      `TextureReference'
   , dptr    `DevicePtr a'
   , with_*  `FormatDesc'
   ,         `Int'
   ,         `Int'
-  ,         `Int64'       } -> `Status' cToEnum #}
+  ,         `Int64'             } -> `Status' cToEnum #}
   where dptr = useDevicePtr . castDevPtr
 
 
 -- |Returns the texture reference associated with the given symbol
 --
-getTex :: String -> IO (Texture)
-getTex name =
-  allocaBytes (sizeOf (undefined :: Ptr ())) $ \p ->
-    peek =<< resultIfOk =<< cudaGetTextureReference p name
+getTex :: String -> IO TextureReference
+getTex name = resultIfOk =<< cudaGetTextureReference name
 
 {# fun unsafe cudaGetTextureReference
-  { with_*       `Ptr Texture' peek*
+  { alloca-      `Ptr Texture' peek*
   , withCString* `String'            } -> `Status' cToEnum #}
-
--- |Unbind a texture reference
---
-unbind :: Texture -> IO ()
-unbind tex = nothingIfOk =<< cudaUnbindTexture tex
-
-{# fun unsafe cudaUnbindTexture
-  { with_* `Texture' } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
