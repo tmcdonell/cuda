@@ -20,3 +20,15 @@ cudaGetErrorStringWrapper(cudaError_t error)
     return cudaGetErrorString(error);
 }
 
+CUresult
+cuTexRefSetAddress2DSimple(CUtexref tex, CUarray_format fmt, int chn, CUdeviceptr dptr, int width, int height, int pitch)
+{
+    CUDA_ARRAY_DESCRIPTOR desc;
+    desc.Format      = fmt;
+    desc.NumChannels = chn;
+    desc.Width       = width;
+    desc.Height      = height;
+
+    return cuTexRefSetAddress2D(tex, &desc, dptr, pitch);
+}
+

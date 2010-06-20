@@ -5,6 +5,7 @@
 #ifndef C_STUBS_H
 #define C_STUBS_H
 
+#include <cuda.h>
 #include <cuda_runtime_api.h>
 
 #ifdef __cplusplus
@@ -16,6 +17,9 @@ cudaConfigureCallSimple(int gx, int gy, int bx, int by, int bz, size_t sharedMem
 
 const char*
 cudaGetErrorStringWrapper(cudaError_t error);
+
+CUresult
+cuTexRefSetAddress2DSimple(CUtexref tex, CUarray_format fmt, int chn, CUdeviceptr dptr, int width, int height, int pitch);
 
 #ifdef __cplusplus
 }

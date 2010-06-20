@@ -11,10 +11,10 @@
 
 module Foreign.CUDA.Driver.Texture
   (
-    Texture(..), AddressMode(..), FilterMode(..), Format,
-    create, destroy,
-    getPtr, getAddressMode, getFilterMode,
-    setPtr, setAddressMode, setFilterMode, setFormat,
+    Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
+    create, destroy, bind, bind2D,
+    getAddressMode, getFilterMode, getFormat,
+    setAddressMode, setFilterMode, setFormat, setReadMode,
 
     -- Internal
     peekTex
@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Texture
   where
 
 #include <cuda.h>
+#include "cbits/stubs.h"
 {# context lib="cuda" #}
 
 -- Friends
@@ -42,9 +43,9 @@ import Control.Monad
 
 -- |A texture reference
 --
-newtype Texture a = Texture { useTexture :: {# type CUtexref #}}
+newtype Texture = Texture { useTexture :: {# type CUtexref #}}
 
-instance Storable (Texture a) where
+instance Storable Texture where
   sizeOf _    = sizeOf    (undefined :: {# type CUtexref #})
   alignment _ = alignment (undefined :: {# type CUtexref #})
   peek p      = Texture `fmap` peek (castPtr p)
@@ -77,44 +78,16 @@ typedef enum CUtexture_flag_enum {
 
 -- |Texture data formats
 --
-{# enum CUarray_format as TextureFormat
-  { }
+{# enum CUarray_format as Format
+  { underscoreToCase
+  , UNSIGNED_INT8  as Word8
+  , UNSIGNED_INT16 as Word16
+  , UNSIGNED_INT32 as Word32
+  , SIGNED_INT8    as Int8
+  , SIGNED_INT16   as Int16
+  , SIGNED_INT32   as Int32 }
   with prefix="CU_AD_FORMAT" deriving (Eq, Show) #}
 
-
-class Format a where
-  tag      :: a -> Int
-  channels :: a -> Int
-  channels _ = 1
-
-instance Format Word   where tag _ = fromEnum UNSIGNED_INT32
-instance Format Word8  where tag _ = fromEnum UNSIGNED_INT8
-instance Format Word16 where tag _ = fromEnum UNSIGNED_INT16
-instance Format Word32 where tag _ = fromEnum UNSIGNED_INT32
-instance Format Word64  where
-  tag _      = fromEnum UNSIGNED_INT32
-  channels _ = 2
-
-instance Format Int    where tag _ = fromEnum SIGNED_INT32
-instance Format Int8   where tag _ = fromEnum SIGNED_INT8
-instance Format Int16  where tag _ = fromEnum SIGNED_INT16
-instance Format Int32  where tag _ = fromEnum SIGNED_INT32
-instance Format Int64  where
-  tag _      = fromEnum SIGNED_INT32
-  channels _ = 2
-
-instance Format Float  where tag _ = fromEnum FLOAT
-instance Format Double where
-  tag _      = fromEnum SIGNED_INT32
-  channels _ = 2
-  -- __hiloint2double()
-
--- FIXME:
---  * half (16-bit float)
---  * vector types
---  * A Int or Word on the GPU is 32-bits, but this may not be the same bitwidth
---    as Haskell-side computations.
---
 
 --------------------------------------------------------------------------------
 -- Texture management
@@ -125,60 +98,79 @@ instance Format Double where
 -- reference functions are used to specify the format and interpretation to be
 -- used when the memory is read through this reference.
 --
-create :: Format a => IO (Texture a)
-create = do
-  tex <- resultIfOk =<< cuTexRefCreate
-  setFormat tex
-  return tex
+create :: IO Texture
+create = resultIfOk =<< cuTexRefCreate
 
 {# fun unsafe cuTexRefCreate
-  { alloca- `Texture a' peekTex* } -> `Status' cToEnum #}
+  { alloca- `Texture' peekTex* } -> `Status' cToEnum #}
 
 
 -- |Destroy a texture reference
 --
-destroy :: Texture a -> IO ()
+destroy :: Texture -> IO ()
 destroy tex = nothingIfOk =<< cuTexRefDestroy tex
 
 {# fun unsafe cuTexRefDestroy
-  { useTexture `Texture a' } -> `Status' cToEnum #}
+  { useTexture `Texture' } -> `Status' cToEnum #}
 
 
--- |Get the address associated with a texture reference
+-- |Bind a linear array address of the given size (bytes) as a texture
+-- reference. Any previously bound references are unbound.
 --
-getPtr :: Texture a -> IO (DevicePtr a)
-getPtr tex = resultIfOk =<< cuTexRefGetAddress tex
+bind :: Texture -> DevicePtr a -> Int64 -> IO ()
+bind tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 
-{# fun unsafe cuTexRefGetAddress
-  { alloca-    `DevicePtr a' peekDevPtr*
-  , useTexture `Texture a'               } -> `Status' cToEnum #}
+{# fun unsafe cuTexRefSetAddress
+  { alloca-         `Int'
+  , useTexture      `Texture'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int64'       } -> `Status' cToEnum #}
+
+
+-- |Bind a linear address range to the given texture reference as a
+-- two-dimensional arena. Any previously bound reference is unbound. Note that
+-- calls to 'setFormat' can not follow a call to 'bind2D' for the same texture
+-- reference.
+--
+bind2D :: Texture -> Format -> Int -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
+bind2D tex fmt chn dptr (width,height) pitch =
+  nothingIfOk =<< cuTexRefSetAddress2DSimple tex fmt chn dptr width height pitch
+
+{# fun unsafe cuTexRefSetAddress2DSimple
+  { useTexture      `Texture'
+  , cFromEnum       `Format'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int64'       } -> `Status' cToEnum #}
 
 
 -- |Get the addressing mode used by a texture reference, corresponding to the
 -- given dimension (currently the only supported dimension values are 0 or 1).
 --
-getAddressMode :: Texture a -> Int -> IO AddressMode
+getAddressMode :: Texture -> Int -> IO AddressMode
 getAddressMode tex dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
 
 {# fun unsafe cuTexRefGetAddressMode
   { alloca-    `AddressMode' peekEnum*
-  , useTexture `Texture a'
-  ,            `Int'                  } -> `Status' cToEnum #}
+  , useTexture `Texture'
+  ,            `Int'                   } -> `Status' cToEnum #}
 
 
 -- |Get the filtering mode used by a texture reference
 --
-getFilterMode :: Texture a -> IO FilterMode
+getFilterMode :: Texture -> IO FilterMode
 getFilterMode tex = resultIfOk =<< cuTexRefGetFilterMode tex
 
 {# fun unsafe cuTexRefGetFilterMode
   { alloca-    `FilterMode' peekEnum*
-  , useTexture `Texture a'            } -> `Status' cToEnum #}
+  , useTexture `Texture'              } -> `Status' cToEnum #}
 
-{-
+
 -- |Get the data format and number of channel components of the bound texture
 --
-getFormat :: Texture a -> IO (Format, Int)
+getFormat :: Texture -> IO (Format, Int)
 getFormat tex = do
   (status,fmt,dim) <- cuTexRefGetFormat tex
   resultIfOk (status,(fmt,dim))
@@ -186,29 +178,16 @@ getFormat tex = do
 {# fun unsafe cuTexRefGetFormat
   { alloca-    `Format'    peekEnum*
   , alloca-    `Int'       peekIntConv*
-  , useTexture `Texture a'              } -> `Status' cToEnum #}
--}
-
--- |Bind a linear array address of the given size (bytes) as a texture
--- reference. Any previously bound references are unbound.
---
-setPtr :: Texture a -> DevicePtr a -> Int -> IO ()
-setPtr tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
-
-{# fun unsafe cuTexRefSetAddress
-  { alloca-         `Int'
-  , useTexture      `Texture a'
-  , useDeviceHandle `DevicePtr a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  , useTexture `Texture'                } -> `Status' cToEnum #}
 
 
 -- |Specify the addressing mode for the given dimension of a texture reference
 --
-setAddressMode :: Texture a -> Int -> AddressMode -> IO ()
+setAddressMode :: Texture -> Int -> AddressMode -> IO ()
 setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mode
 
 {# fun unsafe cuTexRefSetAddressMode
-  { useTexture `Texture a'
+  { useTexture `Texture'
   ,            `Int'
   , cFromEnum  `AddressMode' } -> `Status' cToEnum #}
 
@@ -216,32 +195,41 @@ setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mod
 -- |Specify the filtering mode to be used when reading memory through a texture
 -- reference
 --
-setFilterMode :: Texture a -> FilterMode -> IO ()
+setFilterMode :: Texture -> FilterMode -> IO ()
 setFilterMode tex mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
 
 {# fun unsafe cuTexRefSetFilterMode
-  { useTexture `Texture a'
+  { useTexture `Texture'
   , cFromEnum  `FilterMode' } -> `Status' cToEnum #}
 
 
--- |Specify the format of the data to be read by the texture reference
+-- |Specify additional characteristics for reading and indexing the texture
+-- reference
 --
-setFormat :: Format a => Texture a -> IO ()
-setFormat tex = doSet undefined tex
-  where
-    doSet :: Format b => b -> Texture b -> IO ()
-    doSet fmt _ = nothingIfOk =<< cuTexRefSetFormat tex (tag fmt) (channels fmt)
+setReadMode :: Texture -> ReadMode -> IO ()
+setReadMode tex mode = nothingIfOk =<< cuTexRefSetFlags tex mode
+
+{# fun unsafe cuTexRefSetFlags
+  { useTexture `Texture'
+  , cFromEnum  `ReadMode' } -> `Status' cToEnum #}
+
+
+-- |Specify the format of the data and number of packed components per element
+-- to be read by the texture reference
+--
+setFormat :: Texture -> Format -> Int -> IO ()
+setFormat tex fmt chn = nothingIfOk =<< cuTexRefSetFormat tex fmt chn
 
 {# fun unsafe cuTexRefSetFormat
-  { useTexture `Texture a'
-  ,            `Int'
-  ,            `Int'       } -> `Status' cToEnum #}
+  { useTexture `Texture'
+  , cFromEnum  `Format'
+  ,            `Int'     } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
 -- Internal
 --------------------------------------------------------------------------------
 
-peekTex :: Ptr {# type CUtexref #} -> IO (Texture a)
+peekTex :: Ptr {# type CUtexref #} -> IO Texture
 peekTex = liftM Texture . peek
 

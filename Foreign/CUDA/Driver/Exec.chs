@@ -69,9 +69,9 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 -- Kernel function parameters
 --
 data FunParam where
-  IArg :: Int   -> FunParam
-  FArg :: Float -> FunParam
-  TArg :: Texture a -> FunParam
+  IArg :: Int     -> FunParam
+  FArg :: Float   -> FunParam
+  TArg :: Texture -> FunParam
   VArg :: Storable a => a -> FunParam
 
 
@@ -201,5 +201,5 @@ setParams fn prs = do
 {# fun unsafe cuParamSetTexRef
   { useFun     `Fun'
   ,            `Int'    -- must be CU_PARAM_TR_DEFAULT (-1)
-  , useTexture `Texture a' } -> `Status' cToEnum #}
+  , useTexture `Texture' } -> `Status' cToEnum #}
 
