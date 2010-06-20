@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.1.5
+Version:                0.2
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -48,6 +48,7 @@ Library
                         Foreign.CUDA.Runtime.Exec
                         Foreign.CUDA.Runtime.Marshal
                         Foreign.CUDA.Runtime.Stream
+                        Foreign.CUDA.Runtime.Texture
                         Foreign.CUDA.Runtime.Thread
                         Foreign.CUDA.Runtime.Utils
 
