@@ -111,15 +111,15 @@ instance Storable Texture where
   peek p = do
     norm    <- cToBool     `fmap` {# get textureReference.normalized #} p
     fmt     <- cToEnum     `fmap` {# get textureReference.filterMode #} p
-    [x,y,z] <- map cToEnum `fmap` (peekArray 3 =<< {# get textureReference.addressMode #} p)
-    dsc     <- peekByteOff p devTexChannelDescOffset
+    [x,y,z] <- map cToEnum `fmap` (peekArray 3 (p `plusPtr` texRefAddressModeOffset :: Ptr CInt))
+    dsc     <- peekByteOff p texRefChannelDescOffset
     return $ Texture norm fmt (x,y,z) dsc
 
   poke p (Texture norm fmt (x,y,z) dsc) = do
     {# set textureReference.normalized #} p (cFromBool norm)
     {# set textureReference.filterMode #} p (cFromEnum fmt)
-    flip pokeArray (map cFromEnum [x,y,z]) =<< {# get textureReference.addressMode #} p
-    pokeByteOff p devTexChannelDescOffset dsc
+    pokeArray (p `plusPtr` texRefAddressModeOffset :: Ptr CInt) (map cFromEnum [x,y,z])
+    pokeByteOff p texRefChannelDescOffset dsc
 
 
 --------------------------------------------------------------------------------

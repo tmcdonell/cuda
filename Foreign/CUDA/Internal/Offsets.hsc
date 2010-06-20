@@ -25,8 +25,9 @@ devMaxTexture2DOffset = #{offset struct cudaDeviceProp, maxTexture2D}
 devMaxTexture3DOffset = #{offset struct cudaDeviceProp, maxTexture3D}
 #endif
 
-devTexChannelDescOffset :: Int
-devTexChannelDescOffset = #{offset struct textureReference, channelDesc}
+texRefAddressModeOffset, texRefChannelDescOffset :: Int
+texRefAddressModeOffset = #{offset struct textureReference, addressMode}
+texRefChannelDescOffset = #{offset struct textureReference, channelDesc}
 
 --------------------------------------------------------------------------------
 -- Driver API
