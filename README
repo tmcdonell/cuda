@@ -1,9 +1,15 @@
 Change Log
 ~~~~~~~~~~
 
+0.2.1
+ * Improved configuration phase
+ * Fixes for 3.1 release changes
+ * Additional CUDA 3.1 bindings
+
 0.2
  * Occupancy calculator
  * Textures
+ * Additional CUDA 3.0 bindings
 
 0.1
  * Initial release
