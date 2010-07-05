@@ -25,9 +25,11 @@ Category:               Foreign
 Cabal-version:          >=1.2
 
 Build-type:             Configure
-Extra-tmp-files:        cuda.buildinfo
+Extra-tmp-files:        cuda.buildinfo config.status config.log
 Extra-source-files:     configure
+                        configure.ac
                         cuda.buildinfo.in
+                        README
 
 Flag emu
   Description:  Use runtime device emulation (cuda >= 3.0)
