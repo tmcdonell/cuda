@@ -18,11 +18,14 @@ fi
 #   lambda-like closure expressions (blocks), the syntax for which confuses the
 #   c2hs preprocessor. We disable this by undefining the __BLOCKS__ macro.
 #
-AC_CHECK_FILE(/System/Library/CoreServices/SystemVersion.plist,
-  [if test "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
-     cuda_c2hsflags+="-C-U__BLOCKS__"
-   fi],
-  [])
+AC_MSG_CHECKING(for Apple Blocks extension)
+if test -r "/System/Library/CoreServices/SystemVersion.plist" \
+        -a "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
+    cuda_c2hsflags+="-C-U__BLOCKS__"
+    AC_MSG_RESULT(yes)
+else
+    AC_MSG_RESULT(no)
+fi
 
 # Make sure both the driver and runtime are found
 #

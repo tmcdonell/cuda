@@ -578,6 +578,7 @@ PACKAGE_VERSION='0.2.1'
 PACKAGE_STRING='Haskell CUDA bindings 0.2.1'
 PACKAGE_BUGREPORT='tmcdonell@cse.unsw.edu.au'
 
+ac_unique_file="Foreign/CUDA.hs"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -1693,6 +1694,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+
 ac_config_files="$ac_config_files cuda.buildinfo"
 
 ac_ext=cpp
@@ -2357,29 +2359,17 @@ fi
 #   lambda-like closure expressions (blocks), the syntax for which confuses the
 #   c2hs preprocessor. We disable this by undefining the __BLOCKS__ macro.
 #
-{ echo "$as_me:$LINENO: checking for /System/Library/CoreServices/SystemVersion.plist" >&5
-echo $ECHO_N "checking for /System/Library/CoreServices/SystemVersion.plist... $ECHO_C" >&6; }
-if test "${ac_cv_file__System_Library_CoreServices_SystemVersion_plist+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
+{ echo "$as_me:$LINENO: checking for Apple Blocks extension" >&5
+echo $ECHO_N "checking for Apple Blocks extension... $ECHO_C" >&6; }
+if test -r "/System/Library/CoreServices/SystemVersion.plist" \
+        -a "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
+    cuda_c2hsflags+="-C-U__BLOCKS__"
+    { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
 else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
-  ac_cv_file__System_Library_CoreServices_SystemVersion_plist=yes
-else
-  ac_cv_file__System_Library_CoreServices_SystemVersion_plist=no
+    { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
 fi
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_file__System_Library_CoreServices_SystemVersion_plist" >&5
-echo "${ECHO_T}$ac_cv_file__System_Library_CoreServices_SystemVersion_plist" >&6; }
-if test $ac_cv_file__System_Library_CoreServices_SystemVersion_plist = yes; then
-  if test "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
-     cuda_c2hsflags+="-C-U__BLOCKS__"
-   fi
-fi
-
 
 # Make sure both the driver and runtime are found
 #
