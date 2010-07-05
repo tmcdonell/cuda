@@ -10,11 +10,6 @@ Description:
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
-    Note that on Snow Leopard, the c2hs preprocessor is confused by the notation
-    for Apple's Blocks extension, so to work around this:
-    .
-    > cabal install --c2hs-option=-ccpp-4.0
-    .
 
 License:                BSD3
 License-file:           LICENSE
@@ -22,9 +17,9 @@ Copyright:              Copyright (c) [2009..2010]. Trevor L. McDonell <tmcdonel
 Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Category:               Foreign
-Cabal-version:          >=1.2
+Cabal-version:          >=1.6
 
-Build-type:             Configure
+Build-type:             Custom
 Extra-tmp-files:        cuda.buildinfo config.status config.log
 Extra-source-files:     configure
                         configure.ac
