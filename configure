@@ -2361,8 +2361,10 @@ fi
 #
 { echo "$as_me:$LINENO: checking for Apple Blocks extension" >&5
 echo $ECHO_N "checking for Apple Blocks extension... $ECHO_C" >&6; }
-if test -r "/System/Library/CoreServices/SystemVersion.plist" \
-        -a "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
+if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
+    SNOWLEOPARD=`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`
+fi
+if test "$SNOWLEOPARD" != ""; then
     cuda_c2hsflags+="-C-U__BLOCKS__"
     { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }

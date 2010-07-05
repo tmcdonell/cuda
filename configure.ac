@@ -19,8 +19,10 @@ fi
 #   c2hs preprocessor. We disable this by undefining the __BLOCKS__ macro.
 #
 AC_MSG_CHECKING(for Apple Blocks extension)
-if test -r "/System/Library/CoreServices/SystemVersion.plist" \
-        -a "`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`" != ""; then
+if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
+    SNOWLEOPARD=`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`
+fi
+if test "$SNOWLEOPARD" != ""; then
     cuda_c2hsflags+="-C-U__BLOCKS__"
     AC_MSG_RESULT(yes)
 else
