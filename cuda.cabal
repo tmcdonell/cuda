@@ -26,18 +26,12 @@ Extra-source-files:     configure
                         cuda.buildinfo.in
                         README
 
-Flag emu
-  Description:  Use runtime device emulation (cuda >= 3.0)
-  Default:      False
-
 Library
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
-
                         Foreign.CUDA.Analysis
                         Foreign.CUDA.Analysis.Device
                         Foreign.CUDA.Analysis.Occupancy
-
                         Foreign.CUDA.Runtime
                         Foreign.CUDA.Runtime.Device
                         Foreign.CUDA.Runtime.Error
@@ -48,7 +42,6 @@ Library
                         Foreign.CUDA.Runtime.Texture
                         Foreign.CUDA.Runtime.Thread
                         Foreign.CUDA.Runtime.Utils
-
                         Foreign.CUDA.Driver
                         Foreign.CUDA.Driver.Context
                         Foreign.CUDA.Driver.Device
@@ -71,10 +64,5 @@ Library
   Build-depends:        base >= 3 && < 5, haskell98, bytestring, extensible-exceptions
   Extensions:
   ghc-options:          -Wall
-  extra-libraries:      cuda
-
-  if flag(emu)
-    extra-libraries:    cudartemu
-  else
-    extra-libraries:    cudart
+  extra-libraries:      cuda cudart
 
