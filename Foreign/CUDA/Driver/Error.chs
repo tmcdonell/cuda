@@ -72,6 +72,11 @@ describe EccUncorrectable            = "uncorrectable ECC error detected"
 describe PointerIs64bit              = "attempt to retrieve a 64-bit pointer via a 32-bit API function"
 describe SizeIs64bit                 = "attempt to retrieve 64-bit size via a 32-bit API function"
 #endif
+#if CUDA_VERSION >= 3010
+describe UnsupportedLimit            = "limits not supported by device"
+describe SharedObjectSymbolNotFound  = "link to a shared object failed to resolve"
+describe SharedObjectInitFailed      = "shared object initialisation failed"
+#endif
 describe Unknown                     = "unknown error"
 
 

@@ -89,6 +89,9 @@ instance Storable DeviceProperties where
     ck <- cToBool      `fmap` {#get cudaDeviceProp.concurrentKernels#} p
     u1 <- cIntConv     `fmap` {#get cudaDeviceProp.maxTexture1D#} p
 #endif
+#if CUDART_VERSION >= 3010
+    ee <- cToBool      `fmap` {#get cudaDeviceProp.ECCEnabled#} p
+#endif
 
     --
     -- C->Haskell returns the wrong type when accessing static arrays in
@@ -123,10 +126,15 @@ instance Storable DeviceProperties where
         deviceOverlap            = ov,
 #if CUDART_VERSION >= 3000
         concurrentKernels        = ck,
-        eccEnabled               = False,       -- not visible from runtime API
         maxTextureDim1D          = u1,
         maxTextureDim2D          = (u21,u22),
         maxTextureDim3D          = (u31,u32,u33),
+#endif
+#if CUDART_VERSION >= 3010
+        eccEnabled               = ee,
+#endif
+#if CUDART_VERSION >= 3000 && CUDART_VERSION < 3010
+        eccEnabled               = False,       -- not visible from runtime API < 3.1
 #endif
         kernelExecTimeoutEnabled = ke,
         integrated               = tg,

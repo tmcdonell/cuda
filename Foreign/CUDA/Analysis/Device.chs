@@ -10,7 +10,8 @@
 
 module Foreign.CUDA.Analysis.Device
   (
-    ComputeMode(..), DeviceProperties(..), DeviceResources(..), Allocation(..),
+    Compute, ComputeMode(..),
+    DeviceProperties(..), DeviceResources(..), Allocation(..),
     resources
   )
   where
