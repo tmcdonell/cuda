@@ -21,7 +21,7 @@ module Foreign.CUDA.Runtime.Event
 
 -- Friends
 import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Runtime.Stream                      (Stream(..))
+import Foreign.CUDA.Runtime.Stream                      (Stream(..), defaultStream)
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -113,9 +113,7 @@ query ev =
 --
 record :: Event -> Maybe Stream -> IO ()
 record ev mst =
-  nothingIfOk =<< case mst of
-    Just st -> cudaEventRecord ev st
-    Nothing -> cudaEventRecord ev (Stream 0)
+  nothingIfOk =<< cudaEventRecord ev (maybe defaultStream id mst)
 
 {# fun unsafe cudaEventRecord
   { useEvent  `Event'

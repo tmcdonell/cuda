@@ -15,7 +15,7 @@ module Foreign.CUDA.Runtime.Stream
     Stream(..),
 
     -- ** Stream management
-    create, destroy, finished, block
+    create, destroy, finished, block, defaultStream
   )
   where
 
@@ -55,7 +55,6 @@ create = resultIfOk =<< cudaStreamCreate
 
 {# fun unsafe cudaStreamCreate
   { alloca- `Stream' peekStream* } -> `Status' cToEnum #}
-  where peekStream = liftM Stream . peekIntConv
 
 
 -- |
@@ -91,4 +90,27 @@ block s = nothingIfOk =<< cudaStreamSynchronize s
 
 {# fun unsafe cudaStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
+
+
+-- |
+-- The main execution stream (0)
+--
+defaultStream :: Stream
+#if CUDART_VERSION < 3010
+defaultStream = Stream 0
+#else
+defaultStream = Stream nullPtr
+#endif
+
+--------------------------------------------------------------------------------
+-- Internal
+--------------------------------------------------------------------------------
+
+peekStream :: Ptr {#type cudaStream_t#} -> IO Stream
+#if CUDART_VERSION < 3010
+peekStream = liftM Stream . peekIntConv
+#else
+peekStream = liftM Stream . peek
+#endif
+
 

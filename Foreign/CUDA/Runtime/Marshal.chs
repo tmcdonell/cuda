@@ -280,9 +280,7 @@ memcpyAsync dst src n kind mst = doMemcpy undefined dst
     doMemcpy :: Storable a' => a' -> Ptr a' -> IO ()
     doMemcpy x _ =
       let bytes = fromIntegral n * fromIntegral (sizeOf x) in
-      nothingIfOk =<< case mst of
-        Nothing -> cudaMemcpyAsync dst src bytes kind (Stream 0)
-        Just st -> cudaMemcpyAsync dst src bytes kind st
+      nothingIfOk =<< cudaMemcpyAsync dst src bytes kind (maybe defaultStream id mst)
 
 {# fun unsafe cudaMemcpyAsync
   { castPtr   `Ptr a'

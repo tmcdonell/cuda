@@ -1,5 +1,4 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs, ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Exec
@@ -129,9 +128,9 @@ setConfig :: (Int,Int)		-- ^ grid dimensions
 	  -> Maybe Stream	-- ^ associated processing stream
 	  -> IO ()
 setConfig (gx,gy) (bx,by,bz) sharedMem mst =
-  nothingIfOk =<< case mst of
-    Nothing -> cudaConfigureCallSimple gx gy bx by bz sharedMem (Stream 0)
-    Just st -> cudaConfigureCallSimple gx gy bx by bz sharedMem st
+  nothingIfOk =<<
+    cudaConfigureCallSimple gx gy bx by bz sharedMem (maybe defaultStream id mst)
+
 
 --
 -- The FFI does not support passing deferenced structures to C functions, as
