@@ -9,15 +9,21 @@
 --
 --------------------------------------------------------------------------------
 
+#include <cuda.h>
+{# context lib="cuda" #}
+
 module Foreign.CUDA.Driver.Context
   (
     Context, ContextFlag(..),
-    create, attach, detach, destroy, current, pop, push, sync
+#if CUDA_VERSION >= 3010
+    Limit(..),
+#endif
+    create, attach, detach, destroy, current, pop, push, sync,
+#if CUDA_VERSION >= 3010
+    getLimit, setLimit
+#endif
   )
   where
-
-#include <cuda.h>
-{# context lib="cuda" #}
 
 -- Friends
 import Foreign.CUDA.Driver.Device
@@ -47,6 +53,15 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
     { underscoreToCase }
     with prefix="CU_CTX" deriving (Eq, Show) #}
 
+
+#if CUDA_VERSION >= 3010
+-- |
+-- Device limits flags
+--
+{# enum CUlimit_enum as Limit
+    { underscoreToCase }
+    with prefix="CU_LIMIT" deriving (Eq, Show) #}
+#endif
 
 --------------------------------------------------------------------------------
 -- Context management
@@ -142,4 +157,27 @@ sync = nothingIfOk =<< cuCtxSynchronize
 
 {# fun unsafe cuCtxSynchronize
   { } -> `Status' cToEnum #}
+
+
+#if CUDA_VERSION >= 3010
+-- |
+-- Query compute 2.0 call stack limits
+--
+getLimit :: Limit -> IO Int
+getLimit l = resultIfOk =<< cuCtxGetLimit l
+
+-- |
+-- Specify the size of the call stack, for compute 2.0 devices
+--
+setLimit :: Limit -> Int -> IO ()
+setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
+
+{# fun unsafe cuCtxGetLimit
+  { alloca-   `Int' peekIntConv*
+  , cFromEnum `Limit'            } -> `Status' cToEnum #}
+
+{# fun unsafe cuCtxSetLimit
+  { cFromEnum `Limit'
+  , cIntConv  `Int'   } -> `Status' cToEnum #}
+#endif
 
