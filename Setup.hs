@@ -25,7 +25,7 @@ ppC2hs bi lbi
         platformIndependent = False,
         runPreProcessor = \(inBaseDir, inRelativeFile)
                            (outBaseDir, outRelativeFile) verbosity ->
-          rawSystemProgramConf verbosity c2hsProgram (withPrograms lbi) $
+          rawSystemProgramConf verbosity c2hsProgram (withPrograms lbi) . filter (not . null) $
             extra_flags
             ++ ["--include=" ++ outBaseDir]
             ++ ["--cppopts=" ++ opt | opt <- getCppOptions bi lbi]
