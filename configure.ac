@@ -45,7 +45,7 @@ AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find C
 # Populate the buildinfo, with the search paths and any target specific options
 #
 cuda_cppflags="$CPPFLAGS"
-cuda_ldflags="$LDFLAGS"
+cuda_ldflags="$LDFLAGS $LIBS"
 
 AC_SUBST([cuda_cppflags])
 AC_SUBST([cuda_ldflags])

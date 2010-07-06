@@ -4196,7 +4196,7 @@ fi
 # Populate the buildinfo, with the search paths and any target specific options
 #
 cuda_cppflags="$CPPFLAGS"
-cuda_ldflags="$LDFLAGS"
+cuda_ldflags="$LDFLAGS $LIBS"
 
 
 

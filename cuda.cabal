@@ -67,5 +67,4 @@ Library
   Build-depends:        base >= 3 && < 5, haskell98, bytestring, extensible-exceptions
   Extensions:
   ghc-options:          -Wall
-  extra-libraries:      cuda cudart
 
