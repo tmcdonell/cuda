@@ -23,6 +23,9 @@ Build-type:             Custom
 Extra-tmp-files:        cuda.buildinfo config.status config.log
 Extra-source-files:     configure
                         configure.ac
+                        config.guess
+                        config.sub
+                        install-sh
                         cuda.buildinfo.in
                         README
 

@@ -3,6 +3,10 @@ AC_CONFIG_SRCDIR([Foreign/CUDA.hs])
 AC_CONFIG_FILES([cuda.buildinfo])
 AC_PROG_CXX
 
+# Determine the target platform
+#
+AC_CANONICAL_TARGET
+
 # Search the user's PATH for the 'nvcc' compiler. If it is found, add this
 # prefix to the include and library search directories.
 #
@@ -10,13 +14,16 @@ AC_PATH_PROG(NVCC, nvcc)
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname $(dirname $NVCC))"
     CPPFLAGS+="-I${cuda_prefix}/include"
-    LDFLAGS+="-L${cuda_prefix}/lib"
+
+    case $target in
+    x86_64*) LDFLAGS+="-L${cuda_prefix}/lib64" ;;
+    *)       LDFLAGS+="-L${cuda_prefix}/lib"   ;;
+    esac
 fi
 
-# Target specific options
-# - Snow Leopard (Mac OS X 10.6) provides a C extension for creating
-#   lambda-like closure expressions (blocks), the syntax for which confuses the
-#   c2hs preprocessor. We disable this by undefining the __BLOCKS__ macro.
+# Snow Leopard (Mac OS X 10.6) provides a C extension for creating lambda-like
+# closure expressions (blocks), the syntax for which confuses the c2hs
+# preprocessor. We disable this by undefining the __BLOCKS__ macro.
 #
 AC_MSG_CHECKING(for Apple Blocks extension)
 if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
