@@ -30,7 +30,7 @@ module Foreign.CUDA.Driver.Marshal
     memset, getDevicePtr,
 
     -- Internal
-    useDeviceHandle, peekDevPtr
+    peekHandle
   )
   where
 
@@ -38,14 +38,13 @@ module Foreign.CUDA.Driver.Marshal
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Ptr
+import Foreign.CUDA.Driver.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
 import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Unsafe.Coerce
-import Control.Applicative
 import Control.Exception.Extensible
 
 import Foreign.C
@@ -125,7 +124,7 @@ mallocArray = doMalloc undefined
     doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
-  { alloca'- `DevicePtr a' peekDevPtr*
+  { alloca'- `DevicePtr a' peekHandle*
   ,          `Int'                     } -> `Status' cToEnum #}
   where
     alloca'  = F.alloca
@@ -151,7 +150,7 @@ free :: DevicePtr a -> IO ()
 free dp = nothingIfOk =<< cuMemFree dp
 
 {# fun unsafe cuMemFree
-  { useDeviceHandle `DevicePtr a' } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a' } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
@@ -169,9 +168,9 @@ peekArray n dptr hptr = doPeek undefined dptr
     doPeek x _ = nothingIfOk =<< cuMemcpyDtoH hptr dptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyDtoH
-  { castPtr         `Ptr a'
-  , useDeviceHandle `DevicePtr a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { castPtr      `Ptr a'
+  , useDevicePtr `DevicePtr a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -188,10 +187,10 @@ peekArrayAsync n dptr hptr mst = doPeek undefined dptr
         Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyDtoHAsync
-  { useHP           `HostPtr a'
-  , useDeviceHandle `DevicePtr a'
-  ,                 `Int'
-  , useStream       `Stream'      } -> `Status' cToEnum #}
+  { useHP        `HostPtr a'
+  , useDevicePtr `DevicePtr a'
+  ,              `Int'
+  , useStream    `Stream'      } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
 
@@ -218,9 +217,9 @@ pokeArray n hptr dptr = doPoke undefined dptr
     doPoke x _ = nothingIfOk =<< cuMemcpyHtoD dptr hptr (n * sizeOf x)
 
 {# fun unsafe cuMemcpyHtoD
-  { useDeviceHandle `DevicePtr a'
-  , castPtr         `Ptr a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , castPtr      `Ptr a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -237,10 +236,10 @@ pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
         Just st -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) st
 
 {# fun unsafe cuMemcpyHtoDAsync
-  { useDeviceHandle `DevicePtr a'
-  , useHP           `HostPtr a'
-  ,                 `Int'
-  , useStream       `Stream'      } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , useHP        `HostPtr a'
+  ,              `Int'
+  , useStream    `Stream'      } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
 
@@ -267,9 +266,9 @@ copyArrayAsync n = docopy undefined
     docopy x src dst = nothingIfOk =<< cuMemcpyDtoD dst src (n * sizeOf x)
 
 {# fun unsafe cuMemcpyDtoD
-  { useDeviceHandle `DevicePtr a'
-  , useDeviceHandle `DevicePtr a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , useDevicePtr `DevicePtr a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
@@ -345,19 +344,19 @@ memset dptr n val = case sizeOf val of
 -- into the integer type required by the setting functions.
 --
 {# fun unsafe cuMemsetD8
-  { useDeviceHandle `DevicePtr a'
-  , unsafeCoerce    `a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , unsafeCoerce `a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 {# fun unsafe cuMemsetD16
-  { useDeviceHandle `DevicePtr a'
-  , unsafeCoerce    `a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , unsafeCoerce `a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 {# fun unsafe cuMemsetD32
-  { useDeviceHandle `DevicePtr a'
-  , unsafeCoerce    `a'
-  ,                 `Int'         } -> `Status' cToEnum #}
+  { useDevicePtr `DevicePtr a'
+  , unsafeCoerce `a'
+  ,              `Int'         } -> `Status' cToEnum #}
 
 
 -- |
@@ -370,7 +369,7 @@ getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
 getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 
 {# fun unsafe cuMemHostGetDevicePointer
-  { alloca'-        `DevicePtr a' peekDevPtr*
+  { alloca'-        `DevicePtr a' peekHandle*
   , useHP           `HostPtr a'
   , combineBitMasks `[AllocFlag]'             } -> `Status' cToEnum #}
   where
@@ -384,11 +383,6 @@ getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 
 -- Lift an opaque handle to a typed DevicePtr representation
 --
-peekDevPtr :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
-peekDevPtr p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
-
--- Use a device pointer as an opaque handle type
---
-useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
-useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
+peekHandle :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
+peekHandle p = DevicePtr `fmap` peekIntConv p
 
