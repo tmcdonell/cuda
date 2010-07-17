@@ -30,7 +30,7 @@ module Foreign.CUDA.Driver.Marshal
     memset, getDevicePtr,
 
     -- Internal
-    useDeviceHandle, peekDevPtr
+    useDeviceHandle, peekDeviceHandle
   )
   where
 
@@ -125,8 +125,8 @@ mallocArray = doMalloc undefined
     doMalloc x n = resultIfOk =<< cuMemAlloc (n * sizeOf x)
 
 {# fun unsafe cuMemAlloc
-  { alloca'- `DevicePtr a' peekDevPtr*
-  ,          `Int'                     } -> `Status' cToEnum #}
+  { alloca'- `DevicePtr a' peekDeviceHandle*
+  ,          `Int'                           } -> `Status' cToEnum #}
   where
     alloca'  = F.alloca
 
@@ -370,9 +370,9 @@ getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
 getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 
 {# fun unsafe cuMemHostGetDevicePointer
-  { alloca'-        `DevicePtr a' peekDevPtr*
+  { alloca'-        `DevicePtr a' peekDeviceHandle*
   , useHP           `HostPtr a'
-  , combineBitMasks `[AllocFlag]'             } -> `Status' cToEnum #}
+  , combineBitMasks `[AllocFlag]'                   } -> `Status' cToEnum #}
   where
     alloca'  = F.alloca
     useHP    = castPtr . useHostPtr
@@ -382,10 +382,24 @@ getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
 -- Internal
 --------------------------------------------------------------------------------
 
--- Lift an opaque handle to a typed DevicePtr representation
+-- Lift an opaque handle to a typed DevicePtr representation. The driver
+-- interface requires this special type for 'mallocArray' and the like, which is
+-- a 32-bit value on all platforms.
 --
-peekDevPtr :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
-peekDevPtr p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
+-- Tesla architecture products (compute 1.x) support only a 32-bit address space
+-- and expect pointers passed to kernels of this width, while the Fermi
+-- architecture (compute 2.x) supports 64-bit wide pointers.
+--
+-- When interface with the driver functions, we require this special 32-bit
+-- opaque type. When passing pointers to kernel functions, we must use the
+-- native host pointer type. On 32-bit platforms, this distinction is
+-- irrelevant. For Tesla devices executing on 64-bit host platforms, the runtime
+-- will automatically squash pointers to 32-bits. Fermi architectures however
+-- may use the entire bitwidth, so the 32-bit CUdeviceptr must be converted to
+-- a 64-bit pointer by the application before passing to the kernel.
+--
+peekDeviceHandle :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
+peekDeviceHandle p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 -- Use a device pointer as an opaque handle type
 --
