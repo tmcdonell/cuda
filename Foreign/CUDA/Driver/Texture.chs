@@ -26,8 +26,9 @@ module Foreign.CUDA.Driver.Texture
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Driver.Ptr
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Marshal
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -120,10 +121,10 @@ bind :: Texture -> DevicePtr a -> Int64 -> IO ()
 bind tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 
 {# fun unsafe cuTexRefSetAddress
-  { alloca-      `Int'
-  , useTexture   `Texture'
-  , useDevicePtr `DevicePtr a'
-  ,              `Int64'       } -> `Status' cToEnum #}
+  { alloca-         `Int'
+  , useTexture      `Texture'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int64'       } -> `Status' cToEnum #}
 
 
 -- |Bind a linear address range to the given texture reference as a
@@ -136,13 +137,13 @@ bind2D tex fmt chn dptr (width,height) pitch =
   nothingIfOk =<< cuTexRefSetAddress2DSimple tex fmt chn dptr width height pitch
 
 {# fun unsafe cuTexRefSetAddress2DSimple
-  { useTexture   `Texture'
-  , cFromEnum    `Format'
-  ,              `Int'
-  , useDevicePtr `DevicePtr a'
-  ,              `Int'
-  ,              `Int'
-  ,              `Int64'       } -> `Status' cToEnum #}
+  { useTexture      `Texture'
+  , cFromEnum       `Format'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int64'       } -> `Status' cToEnum #}
 
 
 -- |Get the addressing mode used by a texture reference, corresponding to the

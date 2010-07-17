@@ -22,10 +22,10 @@ module Foreign.CUDA.Driver.Module
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Driver.Ptr
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Marshal              (peekHandle)
+import Foreign.CUDA.Driver.Marshal              (peekDevPtr)
 import Foreign.CUDA.Driver.Texture
 import Foreign.CUDA.Internal.C2HS
 
@@ -111,7 +111,7 @@ getPtr mdl name = do
   resultIfOk (status,(dptr,bytes))
 
 {# fun unsafe cuModuleGetGlobal
-  { alloca-      `DevicePtr a' peekHandle*
+  { alloca-      `DevicePtr a' peekDevPtr*
   , alloca-      `Int'         peekIntConv*
   , useModule    `Module'
   , withCString* `String'                   } -> `Status' cToEnum #}

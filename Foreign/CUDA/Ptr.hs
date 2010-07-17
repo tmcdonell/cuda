@@ -1,20 +1,22 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Driver.Ptr
+-- Module    : Foreign.CUDA.Ptr
 -- Copyright : (c) [2009..2010] Trevor L. McDonell
 -- License   : BSD
 --
+-- A common interface for host and device pointers. While it is possible mix the
+-- Driver and Runtime environments with CUDA versions >= 3.0, it is still a good
+-- idea to pick one interface and stick to it.
+--
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Ptr
+module Foreign.CUDA.Ptr
   where
 
 -- System
 import Foreign.Ptr
 import Foreign.Storable
-import Foreign.C.Types
 
-#include <cuda.h>
 
 --------------------------------------------------------------------------------
 -- Device Pointer
@@ -23,25 +25,8 @@ import Foreign.C.Types
 -- |
 -- A reference to data stored on the device
 --
-data DevicePtr a = DevicePtr { useDevicePtr :: {#type CUdeviceptr#} }
+data DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
   deriving (Eq,Ord)
---
--- The driver interface requires this special device pointer type. Specifically,
--- 'mallocArray' and the like operate on objects of type CUdeviceptr, which is a
--- 32-bit value on all platforms.
---
--- Tesla architecture products (compute 1.x) support only a 32-bit address space
--- and expect pointers passed to kernels to be of this width, while the Fermi
--- architecture supports a 64-bit address space and associated pointer width.
---
--- When interfacing with the driver functions, we require this 32-bit opaque
--- type. When passing pointers to kernel functions, we require the native host
--- pointer type. On 32-bit platforms, this distinction is irrelevant. For Tesla
--- devices executing on 64-bit host platforms, the runtime will automatically
--- squash pointers to 32-bits. Fermi architectures however may use the entire
--- bitwidth, so the 32-bit CUdeviceptr must be converted to a 64-bit pointer by
--- the application before passing to the kernel.
---
 
 instance Show (DevicePtr a) where
   showsPrec n (DevicePtr p) = showsPrec n p
@@ -49,8 +34,8 @@ instance Show (DevicePtr a) where
 instance Storable (DevicePtr a) where
   sizeOf _    = sizeOf    (undefined :: Ptr a)
   alignment _ = alignment (undefined :: Ptr a)
-  peek p      = ptrToDevPtr `fmap` peek (castPtr p)
-  poke p v    = poke (castPtr p) (devPtrToPtr v)
+  peek p      = DevicePtr `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useDevicePtr v)
 
 
 -- |
@@ -59,61 +44,45 @@ instance Storable (DevicePtr a) where
 -- to return the pointer from the action.
 --
 withDevicePtr :: DevicePtr a -> (Ptr a -> IO b) -> IO b
-withDevicePtr p f = f (devPtrToPtr p)
-
--- |
--- Return a type pointer representation of the opaque device pointer
---
-devPtrToPtr :: DevicePtr a -> Ptr a
-devPtrToPtr = wordPtrToPtr . devPtrToWordPtr
-
--- |
--- Convert a type pointer to device pointer
---
-ptrToDevPtr :: Ptr a -> DevicePtr a
-ptrToDevPtr = wordPtrToDevPtr . ptrToWordPtr
+withDevicePtr p f = f (useDevicePtr p)
 
 -- |
 -- Return a unique handle associated with the given device pointer
 --
 devPtrToWordPtr :: DevicePtr a -> WordPtr
-devPtrToWordPtr = fromIntegral . useDevicePtr
+devPtrToWordPtr = ptrToWordPtr . useDevicePtr
 
 -- |
 -- Return a device pointer from the given handle
 --
 wordPtrToDevPtr :: WordPtr -> DevicePtr a
-wordPtrToDevPtr = DevicePtr . fromIntegral
+wordPtrToDevPtr = DevicePtr . wordPtrToPtr
 
 -- |
 -- The constant 'nullDevPtr' contains the distinguished memory location that is
 -- not associated with a valid memory location
 --
 nullDevPtr :: DevicePtr a
-nullDevPtr =  DevicePtr 0
+nullDevPtr =  DevicePtr nullPtr
 
 -- |
 -- Cast a device pointer from one type to another
 --
 castDevPtr :: DevicePtr a -> DevicePtr b
-castDevPtr = DevicePtr . useDevicePtr
+castDevPtr (DevicePtr p) = DevicePtr (castPtr p)
 
 -- |
 -- Advance the pointer address by the given offset in bytes.
 --
 plusDevPtr :: DevicePtr a -> Int -> DevicePtr a
-plusDevPtr (DevicePtr p) d = DevicePtr (p + fromIntegral d)
+plusDevPtr (DevicePtr p) d = DevicePtr (p `plusPtr` d)
 
 -- |
 -- Given an alignment constraint, align the device pointer to the next highest
 -- address satisfying the constraint
 --
 alignDevPtr :: DevicePtr a -> Int -> DevicePtr a
-alignDevPtr addr@(DevicePtr a) i =
-  let x = fromIntegral i
-  in case a `rem` x of
-       0 -> addr
-       n -> DevicePtr (a + (x-n))
+alignDevPtr (DevicePtr p) i = DevicePtr (p `alignPtr` i)
 
 -- |
 -- Compute the difference between the second and first argument. This fulfils
@@ -122,7 +91,7 @@ alignDevPtr addr@(DevicePtr a) i =
 -- > p2 == p1 `plusDevPtr` (p2 `minusDevPtr` p1)
 --
 minusDevPtr :: DevicePtr a -> DevicePtr a -> Int
-minusDevPtr (DevicePtr a) (DevicePtr b) = fromIntegral (a - b)
+minusDevPtr (DevicePtr a) (DevicePtr b) = a `minusPtr` b
 
 -- |
 -- Advance a pointer into a device array by the given number of elements
