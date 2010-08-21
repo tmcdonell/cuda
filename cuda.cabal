@@ -18,6 +18,7 @@ Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Category:               Foreign
 Cabal-version:          >=1.6
+Tested-with:            GHC >= 6.12
 
 Build-type:             Custom
 Extra-tmp-files:        cuda.buildinfo config.status config.log
