@@ -10,6 +10,26 @@ Description:
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
+    /New in 0.2.1:/
+    .
+    * Improved cabal configuration phase
+    .
+    * Fixes for SDK 3.1 release changes
+    .
+    * Additional CUDA 3.1 bindings
+    .
+    /New in 0.2:/
+    .
+    * Occupancy calculator
+    .
+    * Textures
+    .
+    * Additional CUDA 3.0 bindings
+    .
+    /New in 0.1:/
+    .
+    * Initial release
+    .
 
 License:                BSD3
 License-file:           LICENSE
@@ -28,7 +48,6 @@ Extra-source-files:     configure
                         config.sub
                         install-sh
                         cuda.buildinfo.in
-                        README
 
 Library
   Exposed-Modules:      Foreign.CUDA
