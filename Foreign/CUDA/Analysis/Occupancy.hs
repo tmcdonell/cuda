@@ -48,7 +48,8 @@
 module Foreign.CUDA.Analysis.Occupancy
   (
     Occupancy(..),
-    occupancy, optimalBlockSize, maxResidentBlocks
+    occupancy, optimalBlockSize, optimalBlockSizeBy, maxResidentBlocks,
+    incPow2, incWarp
   )
   where
 
@@ -115,20 +116,52 @@ occupancy dev thds regs smem
 
 -- |
 -- Optimise multiprocessor occupancy as a function of thread block size and
--- resource usage. This returns the smallest satisfying block size.
+-- resource usage. This returns the smallest satisfying block size in increments
+-- of a single warp.
 --
 optimalBlockSize
     :: DeviceProperties         -- ^ Architecture to optimise for
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
     -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-optimalBlockSize dev freg fsmem
+optimalBlockSize = flip optimalBlockSizeBy incWarp
+
+
+-- |
+-- As 'optimalBlockSize', but with a generator that produces the specific thread
+-- block sizes that should be tested. The generated list can produce values in
+-- any order, but should be monotonically decreasing to return the smallest
+-- satisfying block size (and vice-versa).
+--
+optimalBlockSizeBy
+    :: DeviceProperties
+    -> (DeviceProperties -> [Int])
+    -> (Int -> Int)
+    -> (Int -> Int)
+    -> (Int, Occupancy)
+optimalBlockSizeBy dev fblk freg fsmem
   = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
   where
     residency = map (\t -> occupancy dev t (freg t) (fsmem t)) threads
-    threads   = let det = warpSize dev
-                    mts = maxThreadsPerBlock dev
-                in  enumFromThenTo mts (mts - det) det
+    threads   = fblk dev
+
+
+-- | Increments in powers-of-two (decreasing order)
+--
+incPow2 :: DeviceProperties -> [Int]
+incPow2 dev = map ((2::Int)^) $ enumFromThenTo ub (ub-1) lb
+  where
+    round' = round :: Double -> Int
+    lb     = round' . logBase 2 . fromIntegral $ warpSize dev
+    ub     = round' . logBase 2 . fromIntegral $ maxThreadsPerBlock dev
+
+-- | Increments in the warp size of the device (decreasing order)
+--
+incWarp :: DeviceProperties -> [Int]
+incWarp dev = enumFromThenTo mts (mts - det) det
+  where
+    det = warpSize dev
+    mts = maxThreadsPerBlock dev
 
 
 -- |
