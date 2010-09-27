@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.2.1
+Version:                0.2.2
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -86,5 +86,5 @@ Library
   Build-tools:          c2hs >= 0.16, hsc2hs
   Build-depends:        base >= 3 && < 5, haskell98, bytestring, extensible-exceptions
   Extensions:
-  ghc-options:          -Wall
+  ghc-options:          -Wall -O2
 
