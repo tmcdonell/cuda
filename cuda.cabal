@@ -10,6 +10,10 @@ Description:
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
+    /New in 0.2.2:/
+    .
+    * Foreign.CUDA.Analysis.optimalBlockSizeBy
+    .
     /New in 0.2.1:/
     .
     * Improved cabal configuration phase

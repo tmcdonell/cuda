@@ -146,7 +146,8 @@ optimalBlockSizeBy dev fblk freg fsmem
     threads   = fblk dev
 
 
--- | Increments in powers-of-two (decreasing order)
+-- | Decrements in powers-of-two, over the range of supported thread block sizes
+-- for the given device.
 --
 incPow2 :: DeviceProperties -> [Int]
 incPow2 dev = map ((2::Int)^) $ enumFromThenTo ub (ub-1) lb
@@ -155,7 +156,8 @@ incPow2 dev = map ((2::Int)^) $ enumFromThenTo ub (ub-1) lb
     lb     = round' . logBase 2 . fromIntegral $ warpSize dev
     ub     = round' . logBase 2 . fromIntegral $ maxThreadsPerBlock dev
 
--- | Increments in the warp size of the device (decreasing order)
+-- | Decrements in the warp size of the device, over the range of supported
+-- thread block sizes.
 --
 incWarp :: DeviceProperties -> [Int]
 incWarp dev = enumFromThenTo mts (mts - det) det
