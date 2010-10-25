@@ -35,6 +35,7 @@ import Foreign.C
 import Unsafe.Coerce
 
 import Control.Monad                            (liftM)
+import Control.Exception.Extensible             (throwIO)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8 as B
 
@@ -93,7 +94,7 @@ data JITResult = JITResult
 -- Returns a function handle
 --
 getFun :: Module -> String -> IO Fun
-getFun mdl fn = resultIfOk =<< cuModuleGetFunction mdl fn
+getFun mdl fn = resultIfFound "function" fn =<< cuModuleGetFunction mdl fn
 
 {# fun unsafe cuModuleGetFunction
   { alloca-      `Fun'    peekFun*
@@ -108,7 +109,7 @@ getFun mdl fn = resultIfOk =<< cuModuleGetFunction mdl fn
 getPtr :: Module -> String -> IO (DevicePtr a, Int)
 getPtr mdl name = do
   (status,dptr,bytes) <- cuModuleGetGlobal mdl name
-  resultIfOk (status,(dptr,bytes))
+  resultIfFound "global" name (status,(dptr,bytes))
 
 {# fun unsafe cuModuleGetGlobal
   { alloca-      `DevicePtr a' peekDeviceHandle*
@@ -121,7 +122,7 @@ getPtr mdl name = do
 -- Return a handle to a texture reference
 --
 getTex :: Module -> String -> IO Texture
-getTex mdl name = resultIfOk =<< cuModuleGetTexRef mdl name
+getTex mdl name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
 
 {# fun unsafe cuModuleGetTexRef
   { alloca-      `Texture' peekTex*
@@ -208,6 +209,13 @@ unload m = nothingIfOk =<< cuModuleUnload m
 --------------------------------------------------------------------------------
 -- Internal
 --------------------------------------------------------------------------------
+
+resultIfFound :: String -> String -> (Status, a) -> IO a
+resultIfFound kind name (status,result) =
+  case status of
+       Success  -> return result
+       NotFound -> cudaError (kind ++ ' ' : describe status ++ ": " ++ name)
+       _        -> throwIO (ExitCode status)
 
 peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
