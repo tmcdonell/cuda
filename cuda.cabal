@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.2.2
+Version:                0.2.3
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -10,30 +10,22 @@ Description:
     .
     <http://developer.nvidia.com/object/cuda.html>
     .
-    /New in 0.2.2:/
-    .
-    * Foreign.CUDA.Analysis.optimalBlockSizeBy
-    .
-    /New in 0.2.1:/
-    .
-    * Improved cabal configuration phase
-    .
-    * Fixes for SDK 3.1 release changes
-    .
-    * Additional CUDA 3.1 bindings
-    .
-    /New in 0.2:/
-    .
-    * Occupancy calculator
-    .
-    * Textures
-    .
-    * Additional CUDA 3.0 bindings
-    .
-    /New in 0.1:/
-    .
-    * Initial release
-    .
+    > CHANGE LOG
+    >   0.2.2
+    >    - Foreign.CUDA.Analysis.optimalBlockSizeBy
+    >
+    >   0.2.1
+    >    - Improved cabal configuration phase
+    >    - Fixes for SDK 3.1 release changes
+    >    - Additional CUDA 3.1 bindings
+    >
+    >   0.2
+    >    - Occupancy calculator
+    >    - Textures
+    >    - Additional CUDA 3.0 bindings
+    >
+    >   0.1
+    >    - Initial release
 
 License:                BSD3
 License-file:           LICENSE
