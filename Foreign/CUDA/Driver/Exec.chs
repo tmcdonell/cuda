@@ -71,7 +71,7 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 data FunParam where
   IArg :: Int     -> FunParam
   FArg :: Float   -> FunParam
-  TArg :: Texture -> FunParam
+  TArg :: Texture -> FunParam           -- deprecated
   VArg :: Storable a => a -> FunParam
 
 
@@ -173,7 +173,11 @@ setParams fn prs = do
 
     set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
     set f o (FArg v) = nothingIfOk =<< cuParamSetf f o v
+#if CUDA_VERSION < 3020
     set f _ (TArg v) = nothingIfOk =<< cuParamSetTexRef f (-1) v
+#else
+    set _ _ (TArg _) = return ()
+#endif
     set f o (VArg v) = with v $ \p -> (nothingIfOk =<< cuParamSetv f o p (sizeOf v))
 
 
@@ -198,8 +202,10 @@ setParams fn prs = do
   , castPtr `Ptr a'
   ,         `Int'   } -> `Status' cToEnum #}
 
+#if CUDA_VERSION < 3020
 {# fun unsafe cuParamSetTexRef
   { useFun     `Fun'
   ,            `Int'    -- must be CU_PARAM_TR_DEFAULT (-1)
   , useTexture `Texture' } -> `Status' cToEnum #}
+#endif
 

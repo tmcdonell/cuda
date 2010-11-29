@@ -19,6 +19,7 @@ module Foreign.CUDA.Driver.Module
   where
 
 #include <cuda.h>
+#include "cbits/stubs.h"
 {# context lib="cuda" #}
 
 -- Friends
