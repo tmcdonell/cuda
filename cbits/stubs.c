@@ -61,6 +61,16 @@ CUresult CUDAAPI cuMemFree(CUdeviceptr dptr)
     return cuMemFree_v2(dptr);
 }
 
+CUresult CUDAAPI cuMemGetInfo(size_t *free, size_t *total)
+{
+    return cuMemGetInfo_v2(free, total);
+}
+
+CUresult CUDAAPI cuMemGetAddressRange(CUdeviceptr *pbase, size_t *psize, CUdeviceptr dptr)
+{
+    return cuMemGetAddressRange_v2(pbase, psize, dptr);
+}
+
 CUresult CUDAAPI cuMemHostGetDevicePointer(CUdeviceptr *pdptr, void *p, unsigned int Flags)
 {
     return cuMemHostGetDevicePointer_v2(pdptr, p, Flags);

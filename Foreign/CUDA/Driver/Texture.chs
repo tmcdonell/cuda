@@ -9,10 +9,17 @@
 --
 --------------------------------------------------------------------------------
 
+#include <cuda.h>
+#include "cbits/stubs.h"
+{# context lib="cuda" #}
+
 module Foreign.CUDA.Driver.Texture
   (
     Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
-    create, destroy, bind, bind2D,
+#if CUDA_VERSION < 3020
+    create, destroy,
+#endif
+    bind, bind2D,
     getAddressMode, getFilterMode, getFormat,
     setAddressMode, setFilterMode, setFormat, setReadMode,
 
@@ -20,10 +27,6 @@ module Foreign.CUDA.Driver.Texture
     peekTex
   )
   where
-
-#include <cuda.h>
-#include "cbits/stubs.h"
-{# context lib="cuda" #}
 
 -- Friends
 import Foreign.CUDA.Ptr
@@ -93,6 +96,7 @@ typedef enum CUtexture_flag_enum {
 -- Texture management
 --------------------------------------------------------------------------------
 
+#if CUDA_VERSION < 3020
 -- |Create a new texture reference. Once created, the application must call
 -- 'setPtr' to associate the reference with allocated memory. Other texture
 -- reference functions are used to specify the format and interpretation to be
@@ -112,7 +116,7 @@ destroy tex = nothingIfOk =<< cuTexRefDestroy tex
 
 {# fun unsafe cuTexRefDestroy
   { useTexture `Texture' } -> `Status' cToEnum #}
-
+#endif
 
 -- |Bind a linear array address of the given size (bytes) as a texture
 -- reference. Any previously bound references are unbound.

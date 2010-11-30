@@ -20,7 +20,7 @@ module Foreign.CUDA.Driver.Exec
 #endif
     requires, setBlockShape, setSharedSize, setParams,
 #if CUDA_VERSION >= 3000
-    setCacheConfig,
+    setCacheConfigFun,
 #endif
     launch
   )
@@ -126,8 +126,8 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 -- Switching between configuration modes may insert a device-side
 -- synchronisation point for streamed kernel launches.
 --
-setCacheConfig :: Fun -> CacheConfig -> IO ()
-setCacheConfig fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
+setCacheConfigFun :: Fun -> CacheConfig -> IO ()
+setCacheConfigFun fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 
 {# fun unsafe cuFuncSetCacheConfig
   { useFun    `Fun'

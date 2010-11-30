@@ -27,7 +27,7 @@ module Foreign.CUDA.Driver.Marshal
     withListArray, withListArrayLen,
 
     -- * Utility
-    memset, getDevicePtr,
+    memset, getDevicePtr, getBasePtr, getMemInfo,
 
     -- Internal
     useDeviceHandle, peekDeviceHandle
@@ -45,6 +45,7 @@ import Foreign.CUDA.Driver.Stream               (Stream(..))
 import Foreign.CUDA.Internal.C2HS
 
 -- System
+import Data.Int
 import Unsafe.Coerce
 import Control.Applicative
 import Control.Exception.Extensible
@@ -377,6 +378,38 @@ getDevicePtr flags hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
   where
     alloca'  = F.alloca
     useHP    = castPtr . useHostPtr
+
+-- |
+-- Return the base address and allocation size of the given device pointer
+--
+getBasePtr :: DevicePtr a -> IO (DevicePtr a, Int64)
+getBasePtr dptr = do
+  (status,base,size) <- cuMemGetAddressRange dptr
+  resultIfOk (status, (base,size))
+
+{# fun unsafe cuMemGetAddressRange
+  { alloca'-        `DevicePtr a' peekDeviceHandle*
+  , alloca'-        `Int64'       peekIntConv*
+  , useDeviceHandle `DevicePtr a'                   } -> `Status' cToEnum #}
+  where
+    alloca' :: Storable a => (Ptr a -> IO b) -> IO b
+    alloca' = F.alloca
+
+
+-- |
+-- Return the amount of free and total memory respectively available to the
+-- current context (bytes)
+--
+getMemInfo :: IO (Int64, Int64)
+getMemInfo = do
+  (status,f,t) <- cuMemGetInfo
+  resultIfOk (status,(f,t))
+
+{# fun unsafe cuMemGetInfo
+  { alloca'- `Int64' peekIntConv*
+  , alloca'- `Int64' peekIntConv* } -> `Status' cToEnum #}
+  where
+    alloca' = F.alloca
 
 
 --------------------------------------------------------------------------------

@@ -19,9 +19,15 @@ module Foreign.CUDA.Driver.Context
 #if CUDA_VERSION >= 3010
     Limit(..),
 #endif
+#if CUDA_VERSION >= 3020
+    Cache(..),
+#endif
     create, attach, detach, destroy, current, pop, push, sync,
 #if CUDA_VERSION >= 3010
     getLimit, setLimit
+#endif
+#if CUDA_VERSION >= 3020
+    , setCacheConfig
 #endif
   )
   where
@@ -62,6 +68,14 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
 {# enum CUlimit_enum as Limit
     { underscoreToCase }
     with prefix="CU_LIMIT" deriving (Eq, Show) #}
+#endif
+#if CUDA_VERSION >= 3020
+-- |
+-- Device cache configuration flags
+--
+{# enum CUfunc_cache_enum as Cache
+    { underscoreToCase }
+    with prefix="CU_FUNC_CACHE" deriving (Eq, Show) #}
 #endif
 
 --------------------------------------------------------------------------------
@@ -160,6 +174,10 @@ sync = nothingIfOk =<< cuCtxSynchronize
   { } -> `Status' cToEnum #}
 
 
+--------------------------------------------------------------------------------
+-- Cache configuration
+--------------------------------------------------------------------------------
+
 #if CUDA_VERSION >= 3010
 -- |
 -- Query compute 2.0 call stack limits
@@ -180,5 +198,17 @@ setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
 {# fun unsafe cuCtxSetLimit
   { cFromEnum `Limit'
   , cIntConv  `Int'   } -> `Status' cToEnum #}
+#endif
+#if CUDA_VERSION >= 3020
+-- |
+-- On devices where the L1 cache and shared memory use the same hardware
+-- resources, this sets the preferred cache configuration for the current
+-- context. This is only a preference.
+--
+setCacheConfig :: Cache -> IO ()
+setCacheConfig c = nothingIfOk =<< cuCtxSetCacheConfig c
+
+{# fun unsafe cuCtxSetCacheConfig
+  { cFromEnum `Cache' } -> `Status' cToEnum #}
 #endif
 

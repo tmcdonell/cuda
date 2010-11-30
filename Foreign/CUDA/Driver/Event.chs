@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
@@ -9,15 +9,21 @@
 --
 --------------------------------------------------------------------------------
 
+#include <cuda.h>
+{# context lib="cuda" #}
+
 module Foreign.CUDA.Driver.Event
   (
     Event, EventFlag(..),
+#if CUDA_VERSION >= 3020
+    WaitFlag,
+#endif
     create, destroy, elapsedTime, query, record, block
+#if CUDA_VERSION >= 3020
+    , wait
+#endif
   )
   where
-
-#include <cuda.h>
-{# context lib="cuda" #}
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
@@ -46,6 +52,13 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 {# enum CUevent_flags as EventFlag
     { underscoreToCase }
     with prefix="CU_EVENT" deriving (Eq, Show) #}
+
+
+-- |
+-- Possible option flags for waiting for events
+--
+data WaitFlag
+instance Enum WaitFlag where
 
 
 --------------------------------------------------------------------------------
@@ -115,6 +128,23 @@ record ev mst =
   { useEvent  `Event'
   , useStream `Stream' } -> `Status' cToEnum #}
 
+
+#if CUDA_VERSION >= 3020
+-- |
+-- Marks all future work submitted to the (optional) stream wait until the given
+-- event reports completion before beginning execution.
+--
+wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
+wait ev mst flags =
+  nothingIfOk =<< case mst of
+    Just st -> cuStreamWaitEvent st ev flags
+    Nothing -> cuStreamWaitEvent (Stream nullPtr) ev flags
+
+{# fun unsafe cuStreamWaitEvent
+  { useStream       `Stream'
+  , useEvent        `Event'
+  , combineBitMasks `[WaitFlag]' } -> `Status' cToEnum #}
+#endif
 
 -- |
 -- Wait until the event has been recorded

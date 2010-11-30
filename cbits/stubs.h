@@ -72,11 +72,11 @@ cuTexRefSetAddress2DSimple(CUtexref tex, CUarray_format fmt, int chn, CUdevicept
 CUresult CUDAAPI cuDeviceTotalMem(size_t *bytes, CUdevice dev);
 CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
 CUresult CUDAAPI cuModuleGetGlobal(CUdeviceptr *dptr, size_t *bytes, CUmodule hmod, const char *name);
-// CUresult CUDAAPI cuMemGetInfo(unsigned int *free, unsigned int *total);
+CUresult CUDAAPI cuMemGetInfo(size_t *free, size_t *total);
 CUresult CUDAAPI cuMemAlloc(CUdeviceptr *dptr, unsigned int bytesize);
 // CUresult CUDAAPI cuMemAllocPitch(CUdeviceptr *dptr, unsigned int *pPitch, unsigned int WidthInBytes, unsigned int Height, unsigned int ElementSizeBytes);
 CUresult CUDAAPI cuMemFree(CUdeviceptr dptr);
-// CUresult CUDAAPI cuMemGetAddressRange(CUdeviceptr *pbase, unsigned int *psize, CUdeviceptr dptr);
+CUresult CUDAAPI cuMemGetAddressRange(CUdeviceptr *pbase, size_t *psize, CUdeviceptr dptr);
 // CUresult CUDAAPI cuMemAllocHost(void **pp, unsigned int bytesize);
 CUresult CUDAAPI cuMemHostGetDevicePointer(CUdeviceptr *pdptr, void *p, unsigned int Flags);
 CUresult CUDAAPI cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, unsigned int ByteCount);
