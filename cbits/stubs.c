@@ -51,7 +51,7 @@ CUresult CUDAAPI cuModuleGetGlobal(CUdeviceptr *dptr, size_t *bytes, CUmodule hm
     return cuModuleGetGlobal_v2(dptr, bytes, hmod, name);
 }
 
-CUresult CUDAAPI cuMemAlloc(CUdeviceptr *dptr, unsigned int bytesize)
+CUresult CUDAAPI cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 {
     return cuMemAlloc_v2(dptr, bytesize);
 }
@@ -76,42 +76,42 @@ CUresult CUDAAPI cuMemHostGetDevicePointer(CUdeviceptr *pdptr, void *p, unsigned
     return cuMemHostGetDevicePointer_v2(pdptr, p, Flags);
 }
 
-CUresult CUDAAPI cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, unsigned int ByteCount)
+CUresult CUDAAPI cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount)
 {
     return cuMemcpyHtoD_v2(dstDevice, srcHost, ByteCount);
 }
 
-CUresult CUDAAPI cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount)
+CUresult CUDAAPI cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 {
     return cuMemcpyDtoH_v2(dstHost, srcDevice, ByteCount);
 }
 
-CUresult CUDAAPI cuMemcpyDtoD(CUdeviceptr dstDevice, CUdeviceptr srcDevice, unsigned int ByteCount)
+CUresult CUDAAPI cuMemcpyDtoD(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount)
 {
     return cuMemcpyDtoD_v2(dstDevice, srcDevice, ByteCount);
 }
 
-CUresult CUDAAPI cuMemcpyHtoDAsync(CUdeviceptr dstDevice, const void *srcHost, unsigned int ByteCount, CUstream hStream)
+CUresult CUDAAPI cuMemcpyHtoDAsync(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream)
 {
     return cuMemcpyHtoDAsync_v2(dstDevice, srcHost, ByteCount, hStream);
 }
 
-CUresult CUDAAPI cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream)
+CUresult CUDAAPI cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream)
 {
     return cuMemcpyDtoHAsync_v2(dstHost, srcDevice, ByteCount, hStream);
 }
 
-CUresult CUDAAPI cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, unsigned int N)
+CUresult CUDAAPI cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, size_t N)
 {
     return cuMemsetD8_v2(dstDevice, uc, N);
 }
 
-CUresult CUDAAPI cuMemsetD16(CUdeviceptr dstDevice, unsigned short us, unsigned int N)
+CUresult CUDAAPI cuMemsetD16(CUdeviceptr dstDevice, unsigned short us, size_t N)
 {
     return cuMemsetD16_v2(dstDevice, us, N);
 }
 
-CUresult CUDAAPI cuMemsetD32(CUdeviceptr dstDevice, unsigned int ui, unsigned int N)
+CUresult CUDAAPI cuMemsetD32(CUdeviceptr dstDevice, unsigned int ui, size_t N)
 {
     return cuMemsetD32_v2(dstDevice, ui, N);
 }

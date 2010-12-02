@@ -416,27 +416,17 @@ getMemInfo = do
 -- Internal
 --------------------------------------------------------------------------------
 
--- Lift an opaque handle to a typed DevicePtr representation. The driver
--- interface requires this special type for 'mallocArray' and the like, which is
--- a 32-bit value on all platforms.
+type DeviceHandle = {# type CUdeviceptr #}
+
+-- Lift an opaque handle to a typed DevicePtr representation. This occasions
+-- arcane distinctions for the different driver versions and Tesla (compute 1.x)
+-- and Fermi (compute 2.x) class architectures on 32- and 64-bit hosts.
 --
--- Tesla architecture products (compute 1.x) support only a 32-bit address space
--- and expect pointers passed to kernels of this width, while the Fermi
--- architecture (compute 2.x) supports 64-bit wide pointers.
---
--- When interface with the driver functions, we require this special 32-bit
--- opaque type. When passing pointers to kernel functions, we must use the
--- native host pointer type. On 32-bit platforms, this distinction is
--- irrelevant. For Tesla devices executing on 64-bit host platforms, the runtime
--- will automatically squash pointers to 32-bits. Fermi architectures however
--- may use the entire bitwidth, so the 32-bit CUdeviceptr must be converted to
--- a 64-bit pointer by the application before passing to the kernel.
---
-peekDeviceHandle :: Ptr {# type CUdeviceptr #} -> IO (DevicePtr a)
+peekDeviceHandle :: Ptr DeviceHandle -> IO (DevicePtr a)
 peekDeviceHandle p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
 
 -- Use a device pointer as an opaque handle type
 --
-useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
+useDeviceHandle :: DevicePtr a -> DeviceHandle
 useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 
