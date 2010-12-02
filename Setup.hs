@@ -23,20 +23,16 @@ ppC2hs :: BuildInfo -> LocalBuildInfo -> PreProcessor
 ppC2hs bi lbi
     = PreProcessor {
         platformIndependent = False,
-        runPreProcessor = \(inBaseDir, inRelativeFile)
-                           (outBaseDir, outRelativeFile) verbosity ->
+        runPreProcessor     = \(inBaseDir, inRelativeFile)
+                               (outBaseDir, outRelativeFile) verbosity ->
           rawSystemProgramConf verbosity c2hsProgram (withPrograms lbi) . filter (not . null) $
-            extra_flags
+            maybe [] words (lookup "x-extra-c2hs-options" (customFieldsBI bi))
             ++ ["--include=" ++ outBaseDir]
             ++ ["--cppopts=" ++ opt | opt <- getCppOptions bi lbi]
             ++ ["--output-dir=" ++ outBaseDir,
                 "--output=" ++ outRelativeFile,
                 inBaseDir </> inRelativeFile]
       }
-  where
-    extra_flags = case lookup "x-extra-c2hs-options" (customFieldsBI bi) of
-                       Nothing -> []
-                       Just s  -> [s]
 
 getCppOptions :: BuildInfo -> LocalBuildInfo -> [String]
 getCppOptions bi lbi

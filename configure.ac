@@ -1,4 +1,4 @@
-AC_INIT([Haskell CUDA bindings], [0.2.1], [tmcdonell@cse.unsw.edu.au], [cuda])
+AC_INIT([Haskell CUDA bindings], [0.3.2], [tmcdonell@cse.unsw.edu.au], [cuda])
 AC_CONFIG_SRCDIR([Foreign/CUDA.hs])
 AC_CONFIG_FILES([cuda.buildinfo])
 AC_PROG_CXX
@@ -8,16 +8,19 @@ AC_PROG_CXX
 AC_CANONICAL_TARGET
 
 # Search the user's PATH for the 'nvcc' compiler. If it is found, add this
-# prefix to the include and library search directories.
+# prefix to the include and library search directories. Additionally, set nvcc
+# as the C preprocessor for c2hs (only, or it won't try to link cudart)
 #
 AC_PATH_PROG(NVCC, nvcc)
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname $(dirname $NVCC))"
-    CPPFLAGS+="-I${cuda_prefix}/include"
+    cuda_c2hsflags+="--cpp=$NVCC "
+    CPPFLAGS+="-I${cuda_prefix}/include "
+#    CC=${NVCC}
 
     case $target in
-    x86_64*) LDFLAGS+="-L${cuda_prefix}/lib64" ;;
-    *)       LDFLAGS+="-L${cuda_prefix}/lib"   ;;
+    x86_64*) LDFLAGS+="-L${cuda_prefix}/lib64 " ;;
+    *)       LDFLAGS+="-L${cuda_prefix}/lib "   ;;
     esac
 fi
 
@@ -30,7 +33,7 @@ if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
     SNOWLEOPARD=`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`
 fi
 if test "$SNOWLEOPARD" != ""; then
-    cuda_c2hsflags+="-C-U__BLOCKS__"
+    cuda_c2hsflags+="--cppopts=-U__BLOCKS__ "
     AC_MSG_RESULT(yes)
 else
     AC_MSG_RESULT(no)
