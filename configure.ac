@@ -14,7 +14,7 @@ AC_CANONICAL_TARGET
 AC_PATH_PROG(NVCC, nvcc)
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname $(dirname $NVCC))"
-    cuda_c2hsflags+="--cpp=$NVCC "
+    cuda_c2hsflags+="--cpp=$NVCC --cppopts=-E "
     CPPFLAGS+="-I${cuda_prefix}/include "
 #    CC=${NVCC}
 
