@@ -61,9 +61,8 @@ import Foreign
        hiding       (Word)
 		    -- Should also hide the Foreign.Marshal.Pool exports in
 		    -- compilers that export them
-import CForeign
-
-import Monad        (liftM)
+import Foreign.C
+import Control.Monad        (liftM)
 
 
 -- Composite marshalling functions

@@ -86,7 +86,7 @@ Library
   C-sources:            cbits/stubs.c
 
   Build-tools:          c2hs >= 0.16, hsc2hs
-  Build-depends:        base >= 3 && < 5, haskell98, bytestring, extensible-exceptions
+  Build-depends:        base >= 3 && < 5, bytestring, extensible-exceptions
   Extensions:
   ghc-options:          -Wall -O2
 
