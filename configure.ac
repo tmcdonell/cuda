@@ -41,9 +41,22 @@ fi
 
 # Make sure both the driver and runtime are found
 #
-AC_CHECK_HEADERS([cuda.h cuda_runtime_api.h], [], [AC_MSG_ERROR(could not find CUDA headers)])
-AC_SEARCH_LIBS(cuDriverGetVersion,    cuda,   [], [AC_MSG_ERROR(could not find CUDA driver library)])
-AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find CUDA runtime library)])
+longerror='
+********************************************************************************
+
+The configuration process failed to locate your CUDA installation. Ensure that
+you have installed the driver and developer toolkit, available from:
+
+  http://developer.nvidia.com/object/cuda.html
+
+Then make sure that "nvcc" is available in your PATH, or set the appropriate
+directories with --extra-include-dirs and --extra-lib-dirs.
+
+********************************************************************************'
+
+AC_CHECK_HEADERS([cuda.h cuda_runtime_api.h], [], [AC_MSG_ERROR(could not find CUDA headers${longerror})])
+AC_SEARCH_LIBS(cuDriverGetVersion,    cuda,   [], [AC_MSG_ERROR(could not find CUDA driver library${longerror})])
+AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find CUDA runtime library${longerror})])
 
 # Populate the buildinfo, with the search paths and any target specific options
 #
