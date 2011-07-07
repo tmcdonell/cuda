@@ -1,7 +1,7 @@
 AC_INIT([Haskell CUDA bindings], [0.3.2], [tmcdonell@cse.unsw.edu.au], [cuda])
 AC_CONFIG_SRCDIR([Foreign/CUDA.hs])
 AC_CONFIG_FILES([cuda.buildinfo])
-AC_PROG_CXX
+AC_PROG_CC
 
 # Determine the target platform
 #
@@ -14,7 +14,7 @@ AC_CANONICAL_TARGET
 AC_PATH_PROG(NVCC, nvcc)
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname $(dirname $NVCC))"
-    cuda_c2hsflags+="--cpp=$NVCC --cppopts=-E "
+    cuda_c2hsflags="--cpp=$NVCC --cppopts=-E "
     CPPFLAGS+=" -I${cuda_prefix}/include "
 #    CC=${NVCC}
 
