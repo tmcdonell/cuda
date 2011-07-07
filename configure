@@ -2529,12 +2529,12 @@ fi
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname $(dirname $NVCC))"
     cuda_c2hsflags+="--cpp=$NVCC --cppopts=-E "
-    CPPFLAGS+="-I${cuda_prefix}/include "
+    CPPFLAGS+=" -I${cuda_prefix}/include "
 #    CC=${NVCC}
 
     case $target in
-    x86_64*) LDFLAGS+="-L${cuda_prefix}/lib64 " ;;
-    *)       LDFLAGS+="-L${cuda_prefix}/lib "   ;;
+    x86_64*) LDFLAGS+=" -L${cuda_prefix}/lib64 " ;;
+    *)       LDFLAGS+=" -L${cuda_prefix}/lib "   ;;
     esac
 fi
 
