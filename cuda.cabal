@@ -50,6 +50,7 @@ Extra-source-files:     configure
                         config.sub
                         install-sh
                         cuda.buildinfo.in
+                        cbits/stubs.h
 
 Library
   Exposed-Modules:      Foreign.CUDA
@@ -89,4 +90,9 @@ Library
   Build-depends:        base >= 3 && < 5, bytestring, extensible-exceptions
   Extensions:
   ghc-options:          -Wall -O2
+
+
+source-repository head
+    type:               git
+    location:           https://github.com/tmcdonell/cuda
 
