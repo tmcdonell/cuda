@@ -17,6 +17,7 @@ module Foreign.CUDA.Driver.Stream
   where
 
 #include <cuda.h>
+#include "cbits/stubs.h"
 {# context lib="cuda" #}
 
 -- Friends

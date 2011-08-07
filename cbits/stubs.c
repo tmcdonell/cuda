@@ -122,4 +122,30 @@ CUresult CUDAAPI cuTexRefSetAddress(size_t *ByteOffset, CUtexref hTexRef, CUdevi
 }
 
 #endif
+#if CUDA_VERSION >= 4000
+CUresult CUDAAPI cuCtxDestroy(CUcontext ctx)
+{
+    return cuCtxDestroy_v2(ctx);
+}
 
+CUresult CUDAAPI cuCtxPopCurrent(CUcontext *pctx)
+{
+    return cuCtxPopCurrent_v2(pctx);
+}
+
+CUresult CUDAAPI cuCtxPushCurrent(CUcontext ctx)
+{
+    return cuCtxPushCurrent_v2(ctx);
+}
+
+CUresult CUDAAPI cuStreamDestroy(CUstream hStream)
+{
+    return cuStreamDestroy_v2(hStream);
+}
+
+CUresult CUDAAPI cuEventDestroy(CUevent hEvent)
+{
+    return cuEventDestroy_v2(hEvent);
+}
+
+#endif

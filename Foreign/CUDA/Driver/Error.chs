@@ -82,6 +82,17 @@ describe SharedObjectInitFailed      = "shared object initialisation failed"
 #if CUDA_VERSION >= 3020
 describe OperatingSystem             = "operating system call failed"
 #endif
+#if CUDA_VERSION >= 4000
+describe ProfilerDisabled            = "profiling APIs disabled: application running with visual profiler"
+describe ProfilerNotInitialized      = "profiler not initialised"
+describe ProfilerAlreadyStarted      = "profiler already started"
+describe ProfilerAlreadyStopped      = "profiler already stopped"
+describe ContextAlreadyInUse         = "context is already bound to a thread and in use"
+describe PeerAccessAlreadyEnabled    = "peer access already enabled"
+describe PeerAccessNotEnabled        = "peer access has not been enabled"
+describe PrimaryContextActive        = "primary context for this device has already been initialised"
+describe ContextIsDestroyed          = "context already destroyed"
+#endif
 describe Unknown                     = "unknown error"
 
 

@@ -113,6 +113,20 @@ CUresult CUDAAPI cuTexRefSetAddress(size_t *ByteOffset, CUtexref hTexRef, CUdevi
 // CUresult CUDAAPI cuGraphicsResourceGetMappedPointer(CUdeviceptr *pDevPtr, unsigned int *pSize, CUgraphicsResource resource);
 #endif
 
+#if CUDA_VERSION >= 4000
+#undef cuCtxDestroy
+#undef cuCtxPopCurrent
+#undef cuCtxPushCurrent
+#undef cuStreamDestroy
+#undef cuEventDestroy
+
+CUresult CUDAAPI cuCtxDestroy(CUcontext ctx);
+CUresult CUDAAPI cuCtxPopCurrent(CUcontext *pctx);
+CUresult CUDAAPI cuCtxPushCurrent(CUcontext ctx);
+CUresult CUDAAPI cuStreamDestroy(CUstream hStream);
+CUresult CUDAAPI cuEventDestroy(CUevent hEvent);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

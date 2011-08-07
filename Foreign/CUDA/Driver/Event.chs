@@ -10,6 +10,7 @@
 --------------------------------------------------------------------------------
 
 #include <cuda.h>
+#include "cbits/stubs.h"
 {# context lib="cuda" #}
 
 module Foreign.CUDA.Driver.Event
