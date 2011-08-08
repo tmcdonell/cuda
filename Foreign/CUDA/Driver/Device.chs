@@ -229,35 +229,57 @@ props d = do
   u32 <- attribute d MaximumTexture3dHeight
   u33 <- attribute d MaximumTexture3dDepth
 #endif
+#if CUDA_VERSION >= 4000
+  ae  <- attribute d AsyncEngineCount
+  l2  <- attribute d L2CacheSize
+  tm  <- attribute d MaxThreadsPerMultiprocessor
+  mw  <- attribute d GlobalMemoryBusWidth
+  mc  <- attribute d MemoryClockRate
+  pb  <- attribute d PciBusId
+  pd  <- attribute d PciDeviceId
+  pm  <- attribute d PciDomainId
+  ua  <- toBool `fmap` attribute d UnifiedAddressing
+  tcc <- toBool `fmap` attribute d TccDriver
+#endif
 
   return DeviceProperties
     {
-      deviceName               = n,
-      computeCapability        = cc,
-      totalGlobalMem           = gm,
-      totalConstMem            = cuTotalConstMem p,
-      sharedMemPerBlock        = cuSharedMemPerBlock p,
-      regsPerBlock             = cuRegsPerBlock p,
-      warpSize                 = cuWarpSize p,
-      maxThreadsPerBlock       = cuMaxThreadsPerBlock p,
-      maxBlockSize             = cuMaxBlockSize p,
-      maxGridSize              = cuMaxGridSize p,
-      clockRate                = cuClockRate p,
-      multiProcessorCount      = pc,
-      memPitch                 = cuMemPitch p,
-      textureAlignment         = cuTextureAlignment p,
-      computeMode              = md,
-      deviceOverlap            = ov,
+      deviceName                        = n,
+      computeCapability                 = cc,
+      totalGlobalMem                    = gm,
+      totalConstMem                     = cuTotalConstMem p,
+      sharedMemPerBlock                 = cuSharedMemPerBlock p,
+      regsPerBlock                      = cuRegsPerBlock p,
+      warpSize                          = cuWarpSize p,
+      maxThreadsPerBlock                = cuMaxThreadsPerBlock p,
+      maxBlockSize                      = cuMaxBlockSize p,
+      maxGridSize                       = cuMaxGridSize p,
+      clockRate                         = cuClockRate p,
+      multiProcessorCount               = pc,
+      memPitch                          = cuMemPitch p,
+      textureAlignment                  = cuTextureAlignment p,
+      computeMode                       = md,
+      deviceOverlap                     = ov,
 #if CUDA_VERSION >= 3000
-      concurrentKernels        = ck,
-      eccEnabled               = ee,
-      maxTextureDim1D          = u1,
-      maxTextureDim2D          = (u21,u22),
-      maxTextureDim3D          = (u31,u32,u33),
+      concurrentKernels                 = ck,
+      eccEnabled                        = ee,
+      maxTextureDim1D                   = u1,
+      maxTextureDim2D                   = (u21,u22),
+      maxTextureDim3D                   = (u31,u32,u33),
 #endif
-      kernelExecTimeoutEnabled = ke,
-      integrated               = tg,
-      canMapHostMemory         = hm
+#if CUDA_VERSION >= 4000
+      asyncEngineCount                  = ae,
+      cacheMemL2                        = l2,
+      maxThreadsPerMultiProcessor       = tm,
+      memBusWidth                       = mw,
+      memClockRate                      = mc,
+      pciInfo                           = PCI pb pd pm,
+      tccDriverEnabled                  = tcc,
+      unifiedAddressing                 = ua,
+#endif
+      kernelExecTimeoutEnabled          = ke,
+      integrated                        = tg,
+      canMapHostMemory                  = hm
     }
 
 

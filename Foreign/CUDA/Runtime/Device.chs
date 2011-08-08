@@ -92,6 +92,18 @@ instance Storable DeviceProperties where
 #if CUDART_VERSION >= 3010
     ee <- cToBool      `fmap` {#get cudaDeviceProp.ECCEnabled#} p
 #endif
+#if CUDART_VERSION >= 4000
+    ae <- cIntConv     `fmap` {#get cudaDeviceProp.asyncEngineCount#} p
+    l2 <- cIntConv     `fmap` {#get cudaDeviceProp.l2CacheSize#} p
+    tm <- cIntConv     `fmap` {#get cudaDeviceProp.maxThreadsPerMultiProcessor#} p
+    mw <- cIntConv     `fmap` {#get cudaDeviceProp.memoryBusWidth#} p
+    mc <- cIntConv     `fmap` {#get cudaDeviceProp.memoryClockRate#} p
+    pb <- cIntConv     `fmap` {#get cudaDeviceProp.pciBusID#} p
+    pd <- cIntConv     `fmap` {#get cudaDeviceProp.pciDeviceID#} p
+    pm <- cIntConv     `fmap` {#get cudaDeviceProp.pciDomainID#} p
+    tc <- cToBool      `fmap` {#get cudaDeviceProp.tccDriver#} p
+    ua <- cToBool      `fmap` {#get cudaDeviceProp.unifiedAddressing#} p
+#endif
 
     --
     -- C->Haskell returns the wrong type when accessing static arrays in
@@ -108,37 +120,49 @@ instance Storable DeviceProperties where
 
     return DeviceProperties
       {
-        deviceName               = n,
-        computeCapability        = v1 + v2 / max 10 (10^ ((ceiling . logBase 10) v2 :: Int)),
-        totalGlobalMem           = gm,
-        totalConstMem            = cm,
-        sharedMemPerBlock        = sm,
-        regsPerBlock             = rb,
-        warpSize                 = ws,
-        maxThreadsPerBlock       = tb,
-        maxBlockSize             = (t1,t2,t3),
-        maxGridSize              = (g1,g2,g3),
-        clockRate                = cl,
-        multiProcessorCount      = pc,
-        memPitch                 = mp,
-        textureAlignment         = ta,
-        computeMode              = md,
-        deviceOverlap            = ov,
+        deviceName                      = n,
+        computeCapability               =
+          v1 + v2 / max 10 (10^ ((ceiling . logBase 10) v2 :: Int)),
+        totalGlobalMem                  = gm,
+        totalConstMem                   = cm,
+        sharedMemPerBlock               = sm,
+        regsPerBlock                    = rb,
+        warpSize                        = ws,
+        maxThreadsPerBlock              = tb,
+        maxBlockSize                    = (t1,t2,t3),
+        maxGridSize                     = (g1,g2,g3),
+        clockRate                       = cl,
+        multiProcessorCount             = pc,
+        memPitch                        = mp,
+        textureAlignment                = ta,
+        computeMode                     = md,
+        deviceOverlap                   = ov,
 #if CUDART_VERSION >= 3000
-        concurrentKernels        = ck,
-        maxTextureDim1D          = u1,
-        maxTextureDim2D          = (u21,u22),
-        maxTextureDim3D          = (u31,u32,u33),
+        concurrentKernels               = ck,
+        maxTextureDim1D                 = u1,
+        maxTextureDim2D                 = (u21,u22),
+        maxTextureDim3D                 = (u31,u32,u33),
 #endif
 #if CUDART_VERSION >= 3010
-        eccEnabled               = ee,
+        eccEnabled                      = ee,
 #endif
 #if CUDART_VERSION >= 3000 && CUDART_VERSION < 3010
-        eccEnabled               = False,       -- not visible from runtime API < 3.1
+        -- not visible from runtime API < 3.1
+        eccEnabled                      = False,
 #endif
-        kernelExecTimeoutEnabled = ke,
-        integrated               = tg,
-        canMapHostMemory         = hm
+#if CUDART_VERSION >= 4000
+        asyncEngineCount                = ae,
+        cacheMemL2                      = l2,
+        maxThreadsPerMultiProcessor     = tm,
+        memBusWidth                     = mw,
+        memClockRate                    = mc,
+        tccDriverEnabled                = tc,
+        unifiedAddressing               = ua,
+        pciInfo                         = PCI pb pd pm,
+#endif
+        kernelExecTimeoutEnabled        = ke,
+        integrated                      = tg,
+        canMapHostMemory                = hm
       }
 
 

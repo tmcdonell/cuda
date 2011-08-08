@@ -11,7 +11,7 @@
 module Foreign.CUDA.Analysis.Device
   (
     Compute, ComputeMode(..),
-    DeviceProperties(..), DeviceResources(..), Allocation(..),
+    DeviceProperties(..), DeviceResources(..), Allocation(..), PCI(..),
     resources
   )
   where
@@ -39,34 +39,61 @@ type Compute = Double
 --
 data DeviceProperties = DeviceProperties
   {
-    deviceName               :: String,         -- ^ Identifier
-    computeCapability        :: Compute,        -- ^ Supported compute capability
-    totalGlobalMem           :: Int64,          -- ^ Available global memory on the device in bytes
-    totalConstMem            :: Int64,          -- ^ Available constant memory on the device in bytes
-    sharedMemPerBlock        :: Int64,          -- ^ Available shared memory per block in bytes
-    regsPerBlock             :: Int,            -- ^ 32-bit registers per block
-    warpSize                 :: Int,            -- ^ Warp size in threads (SIMD width)
-    maxThreadsPerBlock       :: Int,            -- ^ Max number of threads per block
-    maxBlockSize             :: (Int,Int,Int),  -- ^ Max size of each dimension of a block
-    maxGridSize              :: (Int,Int,Int),  -- ^ Max size of each dimension of a grid
-#if CUDA_VERSION >= 3000
-    maxTextureDim1D          :: Int,            -- ^ Maximum texture dimensions
-    maxTextureDim2D          :: (Int,Int),
-    maxTextureDim3D          :: (Int,Int,Int),
+    deviceName                  :: String,              -- ^ Identifier
+    computeCapability           :: Compute,             -- ^ Supported compute capability
+    totalGlobalMem              :: Int64,               -- ^ Available global memory on the device in bytes
+    totalConstMem               :: Int64,               -- ^ Available constant memory on the device in bytes
+    sharedMemPerBlock           :: Int64,               -- ^ Available shared memory per block in bytes
+    regsPerBlock                :: Int,                 -- ^ 32-bit registers per block
+    warpSize                    :: Int,                 -- ^ Warp size in threads (SIMD width)
+    maxThreadsPerBlock          :: Int,                 -- ^ Max number of threads per block
+#if CUDA_VERSION >= 4000
+    maxThreadsPerMultiProcessor :: Int,                 -- ^ Max number of threads per multiprocessor
 #endif
-    clockRate                :: Int,            -- ^ Clock frequency in kilohertz
-    multiProcessorCount      :: Int,            -- ^ Number of multiprocessors on the device
-    memPitch                 :: Int64,          -- ^ Max pitch in bytes allowed by memory copies
-    textureAlignment         :: Int64,          -- ^ Alignment requirement for textures
-    computeMode              :: ComputeMode,
-    deviceOverlap            :: Bool,           -- ^ Device can concurrently copy memory and execute a kernel
+    maxBlockSize                :: (Int,Int,Int),       -- ^ Max size of each dimension of a block
+    maxGridSize                 :: (Int,Int,Int),       -- ^ Max size of each dimension of a grid
 #if CUDA_VERSION >= 3000
-    concurrentKernels        :: Bool,           -- ^ Device can possibly execute multiple kernels concurrently
-    eccEnabled               :: Bool,           -- ^ Device supports and has enabled error correction
+    maxTextureDim1D             :: Int,                 -- ^ Maximum texture dimensions
+    maxTextureDim2D             :: (Int,Int),
+    maxTextureDim3D             :: (Int,Int,Int),
 #endif
-    kernelExecTimeoutEnabled :: Bool,           -- ^ Whether there is a runtime limit on kernels
-    integrated               :: Bool,           -- ^ As opposed to discrete
-    canMapHostMemory         :: Bool            -- ^ Device can use pinned memory
+    clockRate                   :: Int,                 -- ^ Clock frequency in kilohertz
+    multiProcessorCount         :: Int,                 -- ^ Number of multiprocessors on the device
+    memPitch                    :: Int64,               -- ^ Max pitch in bytes allowed by memory copies
+#if CUDA_VERSION >= 4000
+    memBusWidth                 :: Int,                 -- ^ Global memory bus width in bits
+    memClockRate                :: Int,                 -- ^ Peak memory clock frequency in kilohertz
+#endif
+    textureAlignment            :: Int64,               -- ^ Alignment requirement for textures
+    computeMode                 :: ComputeMode,
+    deviceOverlap               :: Bool,                -- ^ Device can concurrently copy memory and execute a kernel
+#if CUDA_VERSION >= 3000
+    concurrentKernels           :: Bool,                -- ^ Device can possibly execute multiple kernels concurrently
+    eccEnabled                  :: Bool,                -- ^ Device supports and has enabled error correction
+#endif
+#if CUDA_VERSION >= 4000
+    asyncEngineCount            :: Int,                 -- ^ Number of asynchronous engines
+    cacheMemL2                  :: Int,                 -- ^ Size of the L2 cache in bytes
+    tccDriverEnabled            :: Bool,                -- ^ Whether this is a Tesla device using the TCC driver
+    pciInfo                     :: PCI,                 -- ^ PCI device information for the device
+#endif
+    kernelExecTimeoutEnabled    :: Bool,                -- ^ Whether there is a runtime limit on kernels
+    integrated                  :: Bool,                -- ^ As opposed to discrete
+#if CUDA_VERSION >= 4000
+    canMapHostMemory            :: Bool,                -- ^ Device can use pinned memory
+    unifiedAddressing           :: Bool                 -- ^ Device shares a unified address space with the host
+#else
+    canMapHostMemory            :: Bool                 -- ^ Device can use pinned memory
+#endif
+  }
+  deriving (Show)
+
+
+data PCI = PCI
+  {
+    busID       :: Int,         -- ^ PCI bus ID of the device
+    deviceID    :: Int,         -- ^ PCI device ID
+    domainID    :: Int          -- ^ PCI domain ID
   }
   deriving (Show)
 
