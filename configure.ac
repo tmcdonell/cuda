@@ -47,7 +47,7 @@ longerror='
 The configuration process failed to locate your CUDA installation. Ensure that
 you have installed the driver and developer toolkit, available from:
 
-  http://developer.nvidia.com/object/cuda.html
+  http://developer.nvidia.com/cuda-downloads
 
 Then make sure that "nvcc" is available in your PATH, or set the appropriate
 directories with --extra-include-dirs and --extra-lib-dirs.
