@@ -117,15 +117,15 @@ data DeviceResources = DeviceResources
 
 
 -- |
--- Extract some additional hardware resource limitations for a given device
--- TLM: default to highest compute capability, when no specific data available?
+-- Extract some additional hardware resource limitations for a given device. If
+-- an exact match is not found, choose a sensible default.
 --
 resources :: DeviceProperties -> DeviceResources
-resources dev = fromMaybe err (lookup compute gpuData)
+resources dev = fromMaybe def (lookup compute gpuData)
   where
-    compute = computeCapability dev
-    err     = error $  "No data for device: "
-                    ++ shows (deviceName dev) " (compute " ++ shows compute ")"
+    compute             = computeCapability dev
+    def | compute < 1.0 = snd $ head gpuData
+        | otherwise     = snd $ last gpuData
 
     gpuData =
       [(1.0, DeviceResources 32  768 8 24 16384 512  8192 256 2 Block)
@@ -133,6 +133,5 @@ resources dev = fromMaybe err (lookup compute gpuData)
       ,(1.2, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
       ,(1.3, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
       ,(2.0, DeviceResources 32 1536 8 48 49152 128 32768  64 1 Warp)
-      ,(2.1, DeviceResources 32 1536 8 48 49152 128 32768  64 1 Warp)
       ]
 
