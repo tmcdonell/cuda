@@ -1,4 +1,4 @@
-AC_INIT([Haskell CUDA bindings], [0.3.2], [tmcdonell@cse.unsw.edu.au], [cuda])
+AC_INIT([Haskell CUDA bindings], [0.4.0.0], [tmcdonell@cse.unsw.edu.au], [cuda])
 AC_CONFIG_SRCDIR([Foreign/CUDA.hs])
 AC_CONFIG_FILES([cuda.buildinfo])
 AC_PROG_CC
@@ -24,15 +24,16 @@ if test "$NVCC" != ""; then
     esac
 fi
 
-# Snow Leopard (Mac OS X 10.6) provides a C extension for creating lambda-like
-# closure expressions (blocks), the syntax for which confuses the c2hs
-# preprocessor. We disable this by undefining the __BLOCKS__ macro.
+# Recent versions of Mac OS X (10.6 and later) provides a C extension for
+# creating lambda-like closure expressions (blocks), the syntax for which
+# confuses the c2hs preprocessor. We disable this by undefining the __BLOCKS__
+# macro.
 #
 AC_MSG_CHECKING(for Apple Blocks extension)
-if test -r "/System/Library/CoreServices/SystemVersion.plist"; then
-    SNOWLEOPARD=`grep '<string>10.6' /System/Library/CoreServices/SystemVersion.plist`
+if test -r "/usr/include/stdlib.h"; then
+    BLOCKS=`grep __BLOCKS__ /usr/include/stdlib.h`
 fi
-if test "$SNOWLEOPARD" != ""; then
+if test "$BLOCKS" != ""; then
     cuda_c2hsflags+="--cppopts=-U__BLOCKS__ "
     AC_MSG_RESULT(yes)
 else
