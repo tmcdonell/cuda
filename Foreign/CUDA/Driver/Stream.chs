@@ -9,12 +9,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Stream
-  (
-    Stream(..), StreamFlag,
-    create, destroy, finished, block
-  )
-  where
+module Foreign.CUDA.Driver.Stream (
+
+  -- * Stream Management
+  Stream(..), StreamFlag,
+  create, destroy, finished, block
+
+) where
 
 #include <cuda.h>
 #include "cbits/stubs.h"

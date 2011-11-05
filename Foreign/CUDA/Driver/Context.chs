@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context
@@ -9,31 +9,25 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Driver.Context (
+
+  -- * Context Management
+  Context(..), ContextFlag(..),
+  create, attach, detach, destroy, device, pop, push, sync, get, set,
+
+  -- * Peer Access
+  PeerFlag,
+  accessible, add, remove,
+
+  -- * Cache Configuration
+  Cache(..), Limit(..),
+  getLimit, setLimit, setCacheConfig
+
+) where
+
 #include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
-
-module Foreign.CUDA.Driver.Context
-  (
-    Context(..), ContextFlag(..),
-#if CUDA_VERSION >= 3010
-    Limit(..),
-#endif
-#if CUDA_VERSION >= 3020
-    Cache(..),
-#endif
-    create, attach, detach, destroy, device, pop, push, sync,
-#if CUDA_VERSION >= 4000
-    get, set,
-#endif
-#if CUDA_VERSION >= 3010
-    getLimit, setLimit
-#endif
-#if CUDA_VERSION >= 3020
-    , setCacheConfig
-#endif
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Driver.Device       (Device(..))
@@ -63,23 +57,34 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
     { underscoreToCase }
     with prefix="CU_CTX" deriving (Eq, Show) #}
 
-
-#if CUDA_VERSION >= 3010
 -- |
 -- Device limits flags
 --
+#if CUDA_VERSION < 3010
+data Limit
+#else
 {# enum CUlimit_enum as Limit
     { underscoreToCase }
     with prefix="CU_LIMIT" deriving (Eq, Show) #}
 #endif
-#if CUDA_VERSION >= 3020
+
 -- |
 -- Device cache configuration flags
 --
+#if CUDA_VERSION < 3020
+data Cache
+#else
 {# enum CUfunc_cache_enum as Cache
     { underscoreToCase }
     with prefix="CU_FUNC_CACHE" deriving (Eq, Show) #}
 #endif
+
+-- |
+-- Possible option values for direct peer memory access
+--
+data PeerFlag
+instance Enum PeerFlag where
+
 
 #if CUDA_VERSION >= 4000
 {-# DEPRECATED attach, detach "deprecated as of CUDA-4.0" #-}
@@ -137,22 +142,29 @@ destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
 {# fun unsafe cuCtxDestroy
   { useContext `Context' } -> `Status' cToEnum #}
 
-#if CUDA_VERSION >= 4000
+
 -- |
--- Return the context bound to the calling CPU thread
+-- Return the context bound to the calling CPU thread. Requires cuda-4.0.
 --
 get :: IO Context
+#if CUDA_VERSION < 4000
+get = requireSDK 4.0 "get"
+#else
 get = resultIfOk =<< cuCtxGetCurrent
 
 {# fun unsafe cuCtxGetCurrent
   { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
   where peekCtx = liftM Context . peek
+#endif
 
 
 -- |
--- Bind the specified context to the calling thread
+-- Bind the specified context to the calling thread. Requires cuda-4.0.
 --
 set :: Context -> IO ()
+#if CUDA_VERSION < 4000
+set _   = requireSDK 4.0 "set"
+#else
 set ctx = nothingIfOk =<< cuCtxSetCurrent ctx
 
 {# fun unsafe cuCtxSetCurrent
@@ -172,8 +184,8 @@ device = resultIfOk =<< cuCtxGetDevice
 
 -- |
 -- Pop the current CUDA context from the CPU thread. The context must have a
--- single usage count (matching calls to attach/detach). If successful, the new
--- context is returned, and the old may be attached to a different CPU.
+-- single usage count (matching calls to 'attach' and 'detach'). If successful,
+-- the new context is returned, and the old may be attached to a different CPU.
 --
 pop :: IO Context
 pop = resultIfOk =<< cuCtxPopCurrent
@@ -185,7 +197,7 @@ pop = resultIfOk =<< cuCtxPopCurrent
 
 -- |
 -- Push the given context onto the CPU's thread stack of current contexts. The
--- context must be floating (via `pop'), i.e. not attached to any thread.
+-- context must be floating (via 'pop'), i.e. not attached to any thread.
 --
 push :: Context -> IO ()
 push ctx = nothingIfOk =<< cuCtxPushCurrent ctx
@@ -205,37 +217,101 @@ sync = nothingIfOk =<< cuCtxSynchronize
 
 
 --------------------------------------------------------------------------------
+-- Peer access
+--------------------------------------------------------------------------------
+
+-- |
+-- Queries if the first device can directly access the memory of the second. If
+-- direct access is possible, it can then be enabled with 'add'. Requires
+-- cuda-4.0.
+--
+accessible :: Device -> Device -> IO Bool
+#if CUDA_VERSION < 4000
+accessible _   _    = requireSDK 4.0 "accessible"
+#else
+accessible dev peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
+
+{# fun unsafe cuDeviceCanAccessPeer
+  { alloca-   `Bool'   peekBool*
+  , useDevice `Device'
+  , useDevice `Device'           } -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- If the devices of both the current and supplied contexts support unified
+-- addressing, then enable allocations in the supplied context to be accessible
+-- by the current context. Requires cuda-4.0.
+--
+add :: Context -> [PeerFlag] -> IO ()
+#if CUDA_VERSION < 4000
+add _   _     = requireSDK 4.0 "add"
+#else
+add ctx flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
+
+{# fun unsafe cuCtxEnablePeerAccess
+  { useContext      `Context'
+  , combineBitMasks `[PeerFlag]' } -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- Disable direct memory access from the current context to the supplied
+-- context. Requires cuda-4.0.
+--
+remove :: Context -> IO ()
+#if CUDA_VERSION < 4000
+remove _   = requireSDK 4.0 "remove"
+#else
+remove ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
+
+{# fun unsafe cuCtxDisablePeerAccess
+  { useContext `Context' } -> `Status' cToEnum #}
+#endif
+
+
+--------------------------------------------------------------------------------
 -- Cache configuration
 --------------------------------------------------------------------------------
 
-#if CUDA_VERSION >= 3010
 -- |
--- Query compute 2.0 call stack limits
+-- Query compute 2.0 call stack limits. Requires cuda-3.1.
 --
 getLimit :: Limit -> IO Int
+#if CUDA_VERSION < 3010
+getLimit _ = requireSDK 3.1 "getLimit"
+#else
 getLimit l = resultIfOk =<< cuCtxGetLimit l
-
--- |
--- Specify the size of the call stack, for compute 2.0 devices
---
-setLimit :: Limit -> Int -> IO ()
-setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
 
 {# fun unsafe cuCtxGetLimit
   { alloca-   `Int' peekIntConv*
   , cFromEnum `Limit'            } -> `Status' cToEnum #}
+#endif
+
+-- |
+-- Specify the size of the call stack, for compute 2.0 devices. Requires
+-- cuda-3.1.
+--
+setLimit :: Limit -> Int -> IO ()
+#if CUDA_VERSION < 3010
+setLimit _ _ = requireSDK 3.1 "setLimit"
+#else
+setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
 
 {# fun unsafe cuCtxSetLimit
   { cFromEnum `Limit'
   , cIntConv  `Int'   } -> `Status' cToEnum #}
 #endif
-#if CUDA_VERSION >= 3020
+
 -- |
 -- On devices where the L1 cache and shared memory use the same hardware
 -- resources, this sets the preferred cache configuration for the current
--- context. This is only a preference.
+-- context. This is only a preference. Requires cuda-3.2.
 --
 setCacheConfig :: Cache -> IO ()
+#if CUDA_VERSION < 3020
+setCacheConfig _ = requireSDK 3.2 "setCacheConfig"
+#else
 setCacheConfig c = nothingIfOk =<< cuCtxSetCacheConfig c
 
 {# fun unsafe cuCtxSetCacheConfig

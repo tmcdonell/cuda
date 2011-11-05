@@ -9,15 +9,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Utils
-  (
-    driverVersion
-  )
+module Foreign.CUDA.Driver.Utils (driverVersion)
   where
 
 #include <cuda.h>
 {# context lib="cuda" #}
-
 
 -- Friends
 import Foreign.CUDA.Driver.Error

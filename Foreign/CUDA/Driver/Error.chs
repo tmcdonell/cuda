@@ -118,17 +118,12 @@ instance Show CUDAException where
 cudaError :: String -> IO a
 cudaError s = throwIO (UserError s)
 
-
 -- |
--- Run a CUDA computation
+-- A specially formatted error message
 --
-{-
-runCUDA f = runEMT $ do
-  f `catchWithSrcLoc` \l e -> lift (handle l e)
-  where
-    handle :: CallTrace -> CUDAException -> IO ()
-    handle l e = putStrLn $ showExceptionWithTrace l e
--}
+requireSDK :: Double -> String -> IO a
+requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
+
 
 --------------------------------------------------------------------------------
 -- Helper Functions

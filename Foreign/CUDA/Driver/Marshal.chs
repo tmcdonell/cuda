@@ -1,4 +1,5 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface #-}
+{-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Marshal
@@ -9,51 +10,43 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Driver.Marshal (
+
+  -- * Host Allocation
+  AllocFlag(..),
+  mallocHostArray, freeHost, registerArray, unregisterArray,
+
+  -- * Device Allocation
+  mallocArray, allocaArray, free,
+
+  -- * Marshalling
+  peekArray, peekArrayAsync, peekListArray,
+  pokeArray, pokeArrayAsync, pokeListArray,
+  copyArrayAsync,
+  copyArrayPeer, copyArrayPeerAsync,
+
+  -- * Combined Allocation and Marshalling
+  newListArray,  newListArrayLen,
+  withListArray, withListArrayLen,
+
+  -- * Utility
+  memset, memsetAsync,
+  getDevicePtr, getBasePtr, getMemInfo,
+
+  -- Internal
+  useDeviceHandle, peekDeviceHandle
+
+) where
+
 #include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
-
-module Foreign.CUDA.Driver.Marshal
-  (
-    -- * Host Allocation
-    AllocFlag(..), mallocHostArray, freeHost,
-#if CUDA_VERSION >= 4000
-    registerArray, unregisterArray,
-#endif
-
-    -- * Device Allocation
-    mallocArray, allocaArray, free,
-
-    -- * Marshalling
-    peekArray, peekArrayAsync, peekListArray,
-    pokeArray, pokeArrayAsync, pokeListArray,
-               copyArrayAsync,
-#if CUDA_VERSION >= 4000
-    copyArrayPeer, copyArrayPeerAsync,
-#endif
-
-    -- * Combined Allocation and Marshalling
-    newListArray,  newListArrayLen,
-    withListArray, withListArrayLen,
-
-    -- * Utility
-    memset,
-#if CUDA_VERSION >= 3020
-    memsetAsync,
-#endif
-    getDevicePtr, getBasePtr, getMemInfo,
-
-    -- Internal
-    useDeviceHandle, peekDeviceHandle
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
 import Foreign.CUDA.Driver.Context              (Context(..))
-
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -66,7 +59,7 @@ import Control.Exception.Extensible
 import Foreign.C
 import Foreign.Ptr
 import Foreign.Storable
-import qualified Foreign.Marshal as F
+import qualified Foreign.Marshal                as F
 
 #c
 typedef enum CUmemhostalloc_option_enum {
@@ -124,7 +117,6 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
     useHP = castPtr . useHostPtr
 
 
-#if CUDA_VERSION >= 4000
 -- |
 -- Page-locks the specified array (on the host) and maps it for the device(s) as
 -- specified by the given allocation flags. Subsequently, the memory is accessed
@@ -137,9 +129,12 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
 -- performance, since it reduces the amount of pageable memory available. This
 -- is best used sparingly to allocate staging areas for data exchange.
 --
--- This function is not yet implemented on Mac OS X.
+-- This function is not yet implemented on Mac OS X. Requires cuda-4.0.
 --
 registerArray :: Storable a => [AllocFlag] -> Int -> Ptr a -> IO (HostPtr a)
+#if CUDA_VERSION < 4000
+registerArray _     _ = requireSDK 4.0 "registerArray"
+#else
 registerArray flags n = go undefined
   where
     go :: Storable b => b -> Ptr b -> IO (HostPtr b)
@@ -151,14 +146,18 @@ registerArray flags n = go undefined
   { castPtr         `Ptr a'
   ,                 `Int'
   , combineBitMasks `[AllocFlag]' } -> `Status' cToEnum #}
+#endif
 
 
 -- |
 -- Unmaps the memory from the given pointer, and makes it pageable again.
 --
--- This function is not yet implemented on Mac OS X.
+-- This function is not yet implemented on Mac OS X. Requires cuda-4.0.
 --
 unregisterArray :: HostPtr a -> IO (Ptr a)
+#if CUDA_VERSION < 4000
+unregisterArray _           = requireSDK 4.0 "unregisterArray"
+#else
 unregisterArray (HostPtr p) = do
   status <- cuMemHostUnregister p
   resultIfOk (status,p)
@@ -325,7 +324,6 @@ copyArrayAsync n = docopy undefined
   ,                 `Int'         } -> `Status' cToEnum #}
 
 
-#if CUDA_VERSION >= 4000
 -- |
 -- Copies an array from device memory in one context to device memory in another
 -- context. Note that this function is asynchronous with respect to the host,
@@ -338,6 +336,9 @@ copyArrayPeer :: Storable a
               -> DevicePtr a -> Context         -- ^ source array and context
               -> DevicePtr a -> Context         -- ^ destination array and context
               -> IO ()
+#if CUDA_VERSION < 4000
+copyArrayPeer _ _   _      _   _      = requireSDK 4.0 "copyArrayPeer"
+#else
 copyArrayPeer n src srcCtx dst dstCtx = go undefined src dst
   where
     go :: Storable b => b -> DevicePtr b -> DevicePtr b -> IO ()
@@ -349,6 +350,7 @@ copyArrayPeer n src srcCtx dst dstCtx = go undefined src dst
   , useDeviceHandle `DevicePtr a'
   , useContext      `Context'
   ,                 `Int'         } -> `Status' cToEnum #}
+#endif
 
 
 -- |
@@ -362,6 +364,9 @@ copyArrayPeerAsync :: Storable a
                    -> DevicePtr a -> Context    -- ^ destination array and device context
                    -> Maybe Stream              -- ^ stream to associate with
                    -> IO ()
+#if CUDA_VERSION < 4000
+copyArrayPeerAsync _ _   _      _   _      _  = requireSDK 4.0 "copyArrayPeerAsync"
+#else
 copyArrayPeerAsync n src srcCtx dst dstCtx st = go undefined src dst
   where
     go :: Storable b => b -> DevicePtr b -> DevicePtr b -> IO ()
@@ -466,12 +471,15 @@ memset dptr n val = case sizeOf val of
   ,                 `Int'         } -> `Status' cToEnum #}
 
 
-#if CUDA_VERSION >= 3020
 -- |
 -- Set the number of data elements to the specified value, which may be either
 -- 8-, 16-, or 32-bits wide. The operation is asynchronous and may optionally be
--- associated with a stream.
+-- associated with a stream. Requires cuda-3.2.
+--
 memsetAsync :: Storable a => DevicePtr a -> Int -> a -> Maybe Stream -> IO ()
+#if CUDA_VERSION < 3020
+memsetAsync _    _ _   _   = requireSDK 3.2 "memsetAsync"
+#else
 memsetAsync dptr n val mst = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8Async  dptr val n stream
     2 -> nothingIfOk =<< cuMemsetD16Async dptr val n stream

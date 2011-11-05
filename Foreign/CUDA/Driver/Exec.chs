@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs, CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
@@ -9,25 +9,17 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Driver.Exec (
+
+  -- * Kernel Execution
+  Fun(Fun), FunParam(..), FunAttribute(..), CacheConfig(..),
+  requires, setBlockShape, setSharedSize, setParams, setCacheConfigFun,
+  launch, launchKernel
+
+) where
+
 #include <cuda.h>
 {# context lib="cuda" #}
-
-module Foreign.CUDA.Driver.Exec
-  (
-    Fun(Fun), FunParam(..), FunAttribute(..),
-#if CUDA_VERSION >= 3000
-    CacheConfig(..),
-#endif
-    requires, setBlockShape, setSharedSize, setParams,
-#if CUDA_VERSION >= 3000
-    setCacheConfigFun,
-#endif
-    launch
-#if CUDA_VERSION >= 4000
-    , launchKernel
-#endif
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
@@ -69,10 +61,12 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
     , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock }
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
 
-#if CUDA_VERSION >= 3000
 -- |
 -- Cache configuration preference
 --
+#if CUDA_VERSION < 3000
+data CacheConfig
+#else
 {# enum CUfunc_cache_enum as CacheConfig
     { underscoreToCase }
     with prefix="CU_FUNC_CACHE_PREFER" deriving (Eq, Show) #}
@@ -105,8 +99,8 @@ requires fn att = resultIfOk =<< cuFuncGetAttribute att fn
 
 
 -- |
--- Specify the (x,y,z) dimensions of the thread blocks that are created when the
--- given kernel function is lanched
+-- Specify the @(x,y,z)@ dimensions of the thread blocks that are created when
+-- the given kernel function is launched.
 --
 setBlockShape :: Fun -> (Int,Int,Int) -> IO ()
 setBlockShape fn (x,y,z) = nothingIfOk =<< cuFuncSetBlockShape fn x y z
@@ -129,7 +123,7 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
   { useFun   `Fun'
   , cIntConv `Integer' } -> `Status' cToEnum #}
 
-#if CUDA_VERSION >= 3000
+
 -- |
 -- On devices where the L1 cache and shared memory use the same hardware
 -- resources, this sets the preferred cache configuration for the given device
@@ -140,6 +134,9 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 -- synchronisation point for streamed kernel launches.
 --
 setCacheConfigFun :: Fun -> CacheConfig -> IO ()
+#if CUDA_VERSION < 3000
+setCacheConfigFun _  _    = requireSDK 3.0 "setCacheConfigFun"
+#else
 setCacheConfigFun fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 
 {# fun unsafe cuFuncSetCacheConfig
@@ -148,9 +145,9 @@ setCacheConfigFun fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 #endif
 
 -- |
--- Invoke the kernel on a size (w,h) grid of blocks. Each block contains the
--- number of threads specified by a previous call to `setBlockShape'. The launch
--- may also be associated with a specific `Stream'.
+-- Invoke the kernel on a size @(w,h)@ grid of blocks. Each block contains the
+-- number of threads specified by a previous call to 'setBlockShape'. The launch
+-- may also be associated with a specific 'Stream'.
 --
 launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
 launch fn (w,h) mst =
@@ -165,7 +162,11 @@ launch fn (w,h) mst =
   , useStream `Stream' } -> `Status' cToEnum #}
 
 
-#if CUDA_VERSION >= 4000
+-- |
+-- Invoke a kernel on a @(gx * gy * gz)@ grid of blocks, where each block
+-- contains @(tx * ty * tz)@ threads and has access to a given number of bytes
+-- of shared memory. The launch may also be associated with a specific 'Stream'.
+--
 launchKernel
     :: Fun                      -- ^ function to execute
     -> (Int,Int,Int)            -- ^ block grid dimension
@@ -174,10 +175,11 @@ launchKernel
     -> Maybe Stream             -- ^ (optional) stream to execute in
     -> [FunParam]               -- ^ list of function parameters
     -> IO ()
-launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst as
+#if CUDA_VERSION >= 4000
+launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst args
   = (=<<) nothingIfOk
-  $ withMany withFP as
-  $ \ps -> withArray ps
+  $ withMany withFP args
+  $ \pa -> withArray pa
   $ \pp -> cuLaunchKernel fn gx gy gz tx ty tz sm st pp nullPtr
   where
     st = fromMaybe (Stream nullPtr) mst
@@ -198,6 +200,13 @@ launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst as
   , useStream `Stream'
   , castPtr   `Ptr (Ptr FunParam)'
   , castPtr   `Ptr (Ptr ())'       } -> `Status' cToEnum #}
+
+#else
+launchKernel fn (gx,gy,_) (tx,ty,tz) sm mst args = do
+  setParams     fn args
+  setSharedSize fn (toInteger sm)
+  setBlockShape fn (tx,ty,tz)
+  launch        fn (gx,gy) mst
 #endif
 
 

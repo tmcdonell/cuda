@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Texture
@@ -9,22 +10,23 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Driver.Texture (
+
+  -- * Texture Reference Management
+  Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
+  create, destroy,
+  bind, bind2D,
+  getAddressMode, getFilterMode, getFormat,
+  setAddressMode, setFilterMode, setFormat, setReadMode,
+
+  -- Internal
+  peekTex
+
+) where
+
 #include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
-
-module Foreign.CUDA.Driver.Texture
-  (
-    Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
-    create, destroy,
-    bind, bind2D,
-    getAddressMode, getFilterMode, getFormat,
-    setAddressMode, setFilterMode, setFormat, setReadMode,
-
-    -- Internal
-    peekTex
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Ptr
@@ -46,7 +48,8 @@ import Control.Monad
 -- Data Types
 --------------------------------------------------------------------------------
 
--- |A texture reference
+-- |
+-- A texture reference
 --
 newtype Texture = Texture { useTexture :: {# type CUtexref #}}
 
@@ -56,19 +59,22 @@ instance Storable Texture where
   peek p      = Texture `fmap` peek (castPtr p)
   poke p t    = poke (castPtr p) (useTexture t)
 
--- |Texture reference addressing modes
+-- |
+-- Texture reference addressing modes
 --
 {# enum CUaddress_mode as AddressMode
   { underscoreToCase }
   with prefix="CU_TR_ADDRESS_MODE" deriving (Eq, Show) #}
 
--- |Texture reference filtering mode
+-- |
+-- Texture reference filtering mode
 --
 {# enum CUfilter_mode as FilterMode
   { underscoreToCase }
   with prefix="CU_TR_FILTER_MODE" deriving (Eq, Show) #}
 
--- |Texture read mode options
+-- |
+-- Texture read mode options
 --
 #c
 typedef enum CUtexture_flag_enum {
@@ -81,7 +87,8 @@ typedef enum CUtexture_flag_enum {
   { underscoreToCase }
   with prefix="CU_TEXTURE_FLAG" deriving (Eq, Show) #}
 
--- |Texture data formats
+-- |
+-- Texture data formats
 --
 {# enum CUarray_format as Format
   { underscoreToCase
@@ -98,7 +105,8 @@ typedef enum CUtexture_flag_enum {
 -- Texture management
 --------------------------------------------------------------------------------
 
--- |Create a new texture reference. Once created, the application must call
+-- |
+-- Create a new texture reference. Once created, the application must call
 -- 'setPtr' to associate the reference with allocated memory. Other texture
 -- reference functions are used to specify the format and interpretation to be
 -- used when the memory is read through this reference.
@@ -110,7 +118,8 @@ create = resultIfOk =<< cuTexRefCreate
   { alloca- `Texture' peekTex* } -> `Status' cToEnum #}
 
 
--- |Destroy a texture reference
+-- |
+-- Destroy a texture reference
 --
 destroy :: Texture -> IO ()
 destroy tex = nothingIfOk =<< cuTexRefDestroy tex
@@ -119,7 +128,8 @@ destroy tex = nothingIfOk =<< cuTexRefDestroy tex
   { useTexture `Texture' } -> `Status' cToEnum #}
 
 
--- |Bind a linear array address of the given size (bytes) as a texture
+-- |
+-- Bind a linear array address of the given size (bytes) as a texture
 -- reference. Any previously bound references are unbound.
 --
 bind :: Texture -> DevicePtr a -> Int64 -> IO ()
@@ -132,7 +142,8 @@ bind tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
   ,                 `Int64'       } -> `Status' cToEnum #}
 
 
--- |Bind a linear address range to the given texture reference as a
+-- |
+-- Bind a linear address range to the given texture reference as a
 -- two-dimensional arena. Any previously bound reference is unbound. Note that
 -- calls to 'setFormat' can not follow a call to 'bind2D' for the same texture
 -- reference.
@@ -151,7 +162,8 @@ bind2D tex fmt chn dptr (width,height) pitch =
   ,                 `Int64'       } -> `Status' cToEnum #}
 
 
--- |Get the addressing mode used by a texture reference, corresponding to the
+-- |
+-- Get the addressing mode used by a texture reference, corresponding to the
 -- given dimension (currently the only supported dimension values are 0 or 1).
 --
 getAddressMode :: Texture -> Int -> IO AddressMode
@@ -163,7 +175,8 @@ getAddressMode tex dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
   ,            `Int'                   } -> `Status' cToEnum #}
 
 
--- |Get the filtering mode used by a texture reference
+-- |
+-- Get the filtering mode used by a texture reference
 --
 getFilterMode :: Texture -> IO FilterMode
 getFilterMode tex = resultIfOk =<< cuTexRefGetFilterMode tex
@@ -173,7 +186,8 @@ getFilterMode tex = resultIfOk =<< cuTexRefGetFilterMode tex
   , useTexture `Texture'              } -> `Status' cToEnum #}
 
 
--- |Get the data format and number of channel components of the bound texture
+-- |
+-- Get the data format and number of channel components of the bound texture
 --
 getFormat :: Texture -> IO (Format, Int)
 getFormat tex = do
@@ -186,7 +200,8 @@ getFormat tex = do
   , useTexture `Texture'                } -> `Status' cToEnum #}
 
 
--- |Specify the addressing mode for the given dimension of a texture reference
+-- |
+-- Specify the addressing mode for the given dimension of a texture reference
 --
 setAddressMode :: Texture -> Int -> AddressMode -> IO ()
 setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mode
@@ -197,7 +212,8 @@ setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mod
   , cFromEnum  `AddressMode' } -> `Status' cToEnum #}
 
 
--- |Specify the filtering mode to be used when reading memory through a texture
+-- |
+-- Specify the filtering mode to be used when reading memory through a texture
 -- reference
 --
 setFilterMode :: Texture -> FilterMode -> IO ()
@@ -208,7 +224,8 @@ setFilterMode tex mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
   , cFromEnum  `FilterMode' } -> `Status' cToEnum #}
 
 
--- |Specify additional characteristics for reading and indexing the texture
+-- |
+-- Specify additional characteristics for reading and indexing the texture
 -- reference
 --
 setReadMode :: Texture -> ReadMode -> IO ()
@@ -219,8 +236,9 @@ setReadMode tex mode = nothingIfOk =<< cuTexRefSetFlags tex mode
   , cFromEnum  `ReadMode' } -> `Status' cToEnum #}
 
 
--- |Specify the format of the data and number of packed components per element
--- to be read by the texture reference
+-- |
+-- Specify the format of the data and number of packed components per element to
+-- be read by the texture reference
 --
 setFormat :: Texture -> Format -> Int -> IO ()
 setFormat tex fmt chn = nothingIfOk =<< cuTexRefSetFormat tex fmt chn

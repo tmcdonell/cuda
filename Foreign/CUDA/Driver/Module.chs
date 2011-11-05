@@ -9,14 +9,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Module
-  (
-    Module,
-    JITOption(..), JITTarget(..), JITResult(..),
-    getFun, getPtr, getTex,
-    loadFile, loadData, loadDataEx, unload
-  )
-  where
+module Foreign.CUDA.Driver.Module (
+
+  -- * Module Management
+  Module, JITOption(..), JITTarget(..), JITResult(..),
+  getFun, getPtr, getTex, loadFile, loadData, loadDataEx, unload
+
+) where
 
 #include <cuda.h>
 #include "cbits/stubs.h"

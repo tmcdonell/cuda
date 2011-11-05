@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
@@ -9,22 +9,17 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Driver.Event (
+
+  -- * Event Management
+  Event, EventFlag(..), WaitFlag,
+  create, destroy, elapsedTime, query, record, wait, block
+
+) where
+
 #include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
-
-module Foreign.CUDA.Driver.Event
-  (
-    Event, EventFlag(..),
-#if CUDA_VERSION >= 3020
-    WaitFlag,
-#endif
-    create, destroy, elapsedTime, query, record, block
-#if CUDA_VERSION >= 3020
-    , wait
-#endif
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
@@ -46,14 +41,12 @@ import Control.Monad                            (liftM)
 --
 newtype Event = Event { useEvent :: {# type CUevent #}}
 
-
 -- |
 -- Event creation flags
 --
 {# enum CUevent_flags as EventFlag
     { underscoreToCase }
     with prefix="CU_EVENT" deriving (Eq, Show) #}
-
 
 -- |
 -- Possible option flags for waiting for events
@@ -130,12 +123,14 @@ record ev mst =
   , useStream `Stream' } -> `Status' cToEnum #}
 
 
-#if CUDA_VERSION >= 3020
 -- |
--- Marks all future work submitted to the (optional) stream wait until the given
--- event reports completion before beginning execution.
+-- Makes all future work submitted to the (optional) stream wait until the given
+-- event reports completion before beginning execution. Requires cuda-3.2.
 --
 wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
+#if CUDA_VERSION < 3020
+wait _  _   _     = requireSDK 3.2 "wait"
+#else
 wait ev mst flags =
   nothingIfOk =<< case mst of
     Just st -> cuStreamWaitEvent st ev flags

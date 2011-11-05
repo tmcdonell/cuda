@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Device
@@ -9,14 +9,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Device
-  (
-    Device(..), -- should be exported abstractly
-    DeviceProperties(..), DeviceAttribute(..), ComputeMode(..), InitFlag,
+module Foreign.CUDA.Driver.Device (
 
-    initialise, capability, device, attribute, count, name, props, totalMem
-  )
-  where
+  -- * Device Management
+  Device(..), -- should be exported abstractly
+  DeviceProperties(..), DeviceAttribute(..), ComputeMode(..), InitFlag,
+  initialise, capability, device, attribute, count, name, props, totalMem
+
+) where
 
 #include <cuda.h>
 #include "cbits/stubs.h"
@@ -108,7 +108,6 @@ instance Storable CUDevProp where
 -- exports actual option values.
 --
 data InitFlag
-
 instance Enum InitFlag where
 
 
