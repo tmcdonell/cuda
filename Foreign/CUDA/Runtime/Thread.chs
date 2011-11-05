@@ -1,4 +1,3 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Thread
@@ -9,32 +8,19 @@
 --
 --------------------------------------------------------------------------------
 
-#include <cuda_runtime_api.h>
-{# context lib="cudart" #}
-
 module Foreign.CUDA.Runtime.Thread
-  (
-#if CUDART_VERSION >= 3010
-    Limit(..), getLimit, setLimit,
-#endif
-    sync, exit
-  )
-  where
+  {-# DEPRECATED "superseded by functions in Device module" #-} (
 
--- Friends
-import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Internal.C2HS
+  -- * Cache configuration
+  D.Limit(..),
+  getLimit, setLimit,
 
--- System
-import Foreign
-import Foreign.C
+  -- * Thread management
+  sync, exit
 
+) where
 
-#if CUDART_VERSION >= 3010
-{# enum cudaLimit as Limit
-    { underscoreToCase }
-    with prefix="cudaLimit" deriving (Eq, Show) #}
-#endif
+import qualified Foreign.CUDA.Runtime.Device      as D
 
 --------------------------------------------------------------------------------
 -- Thread management
@@ -45,10 +31,10 @@ import Foreign.C
 -- an error if one of the tasks fails.
 --
 sync :: IO ()
-sync =  nothingIfOk =<< cudaThreadSynchronize
-
-{# fun unsafe cudaThreadSynchronize
-  { } -> `Status' cToEnum #}
+sync = D.sync
+#if CUDART_VERSION >= 4000
+{-# DEPRECATED exit "use 'Foreign.CUDA.Runtime.Device.sync' instead" #-}
+#endif
 
 
 -- |
@@ -57,31 +43,28 @@ sync =  nothingIfOk =<< cudaThreadSynchronize
 -- Implicitly called on thread exit.
 --
 exit :: IO ()
-exit =  nothingIfOk =<< cudaThreadExit
+exit = D.reset
+#if CUDART_VERSION >= 4000
+{-# DEPRECATED exit "use 'Foreign.CUDA.Runtime.Device.reset' instead" #-}
+#endif
 
-{# fun unsafe cudaThreadExit
-  { } -> `Status' cToEnum #}
-
-
-#if CUDART_VERSION >= 3010
--- |
--- Query compute 2.0 call stack limits
---
-getLimit :: Limit -> IO Int
-getLimit l = resultIfOk =<< cudaThreadGetLimit l
 
 -- |
--- Set compute 2.0 call stack limits
+-- Query compute 2.0 call stack limits. Requires cuda-3.1.
 --
-setLimit :: Limit -> Int -> IO ()
-setLimit l n = nothingIfOk =<< cudaThreadSetLimit l n
+getLimit :: D.Limit -> IO Int
+getLimit = D.getLimit
+#if CUDART_VERSION >= 4000
+{-# DEPRECATED exit "use 'Foreign.CUDA.Runtime.Device.getLimit' instead" #-}
+#endif
 
-{# fun unsafe cudaThreadGetLimit
-  { alloca-   `Int' peekIntConv*
-  , cFromEnum `Limit'            } -> `Status' cToEnum #}
 
-{# fun unsafe cudaThreadSetLimit
-  { cFromEnum `Limit'
-  , cIntConv  `Int'   } -> `Status' cToEnum #}
+-- |
+-- Set compute 2.0 call stack limits. Requires cuda-3.1.
+--
+setLimit :: D.Limit -> Int -> IO ()
+setLimit = D.setLimit
+#if CUDART_VERSION >= 4000
+{-# DEPRECATED exit "use 'Foreign.CUDA.Runtime.Device.setLimit' instead" #-}
 #endif
 

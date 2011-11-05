@@ -9,15 +9,13 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Runtime.Stream (
 
-module Foreign.CUDA.Runtime.Stream
-  (
-    Stream(..),
+  -- * Stream Management
+  Stream(..),
+  create, destroy, finished, block, defaultStream
 
-    -- ** Stream management
-    create, destroy, finished, block, defaultStream
-  )
-  where
+) where
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}

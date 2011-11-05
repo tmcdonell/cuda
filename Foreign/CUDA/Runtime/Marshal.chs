@@ -9,28 +9,28 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Marshal
-  (
-    -- * Host Allocation
-    AllocFlag(..),
-    mallocHostArray, freeHost,
+module Foreign.CUDA.Runtime.Marshal (
 
-    -- * Device Allocation
-    mallocArray, allocaArray, free,
+  -- * Host Allocation
+  AllocFlag(..),
+  mallocHostArray, freeHost,
 
-    -- * Marshalling
-    peekArray, peekArrayAsync, peekListArray,
-    pokeArray, pokeArrayAsync, pokeListArray,
-    copyArray, copyArrayAsync,
+  -- * Device Allocation
+  mallocArray, allocaArray, free,
 
-    -- * Combined Allocation and Marshalling
-    newListArray,  newListArrayLen,
-    withListArray, withListArrayLen,
+  -- * Marshalling
+  peekArray, peekArrayAsync, peekListArray,
+  pokeArray, pokeArrayAsync, pokeListArray,
+  copyArray, copyArrayAsync,
 
-    -- * Utility
-    memset
-  )
-  where
+  -- * Combined Allocation and Marshalling
+  newListArray,  newListArrayLen,
+  withListArray, withListArrayLen,
+
+  -- * Utility
+  memset
+
+) where
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}

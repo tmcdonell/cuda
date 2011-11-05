@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Device
@@ -9,14 +9,21 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Device
-  (
-    ComputeMode(..), DeviceFlag(..), DeviceProperties(..),
+module Foreign.CUDA.Runtime.Device (
 
-    -- ** Device management
-    choose, get, count, props, set, setFlags, setOrder
-  )
-  where
+  -- * Device Management
+  ComputeMode(..), Device, DeviceFlag(..), DeviceProperties(..),
+  choose, get, count, props, set, setFlags, setOrder, reset, sync,
+
+  -- * Peer Access
+  PeerFlag,
+  accessible, add, remove,
+
+  -- * Cache Configuration
+  Limit(..),
+  getLimit, setLimit
+
+) where
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
@@ -52,8 +59,12 @@ typedef enum
 -- Data Types
 --------------------------------------------------------------------------------
 
-{# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
+-- |
+-- A device identifier
+--
+type Device = Int
 
+{# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 
 -- |
 -- Device execution flags
@@ -167,14 +178,14 @@ instance Storable DeviceProperties where
 
 
 --------------------------------------------------------------------------------
--- Functions
+-- Device Management
 --------------------------------------------------------------------------------
 
 -- |
 -- Select the compute device which best matches the given criteria
 --
-choose     :: DeviceProperties -> IO Int
-choose dev =  resultIfOk =<< cudaChooseDevice dev
+choose :: DeviceProperties -> IO Device
+choose dev = resultIfOk =<< cudaChooseDevice dev
 
 {# fun unsafe cudaChooseDevice
   { alloca-      `Int'              peekIntConv*
@@ -186,8 +197,8 @@ choose dev =  resultIfOk =<< cudaChooseDevice dev
 -- |
 -- Returns which device is currently being used
 --
-get :: IO Int
-get =  resultIfOk =<< cudaGetDevice
+get :: IO Device
+get = resultIfOk =<< cudaGetDevice
 
 {# fun unsafe cudaGetDevice
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
@@ -198,7 +209,7 @@ get =  resultIfOk =<< cudaGetDevice
 -- capability >= 1.0
 --
 count :: IO Int
-count =  resultIfOk =<< cudaGetDeviceCount
+count = resultIfOk =<< cudaGetDeviceCount
 
 {# fun unsafe cudaGetDeviceCount
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
@@ -207,8 +218,8 @@ count =  resultIfOk =<< cudaGetDeviceCount
 -- |
 -- Return information about the selected compute device
 --
-props   :: Int -> IO DeviceProperties
-props n =  resultIfOk =<< cudaGetDeviceProperties n
+props :: Device -> IO DeviceProperties
+props n = resultIfOk =<< cudaGetDeviceProperties n
 
 {# fun unsafe cudaGetDeviceProperties
   { alloca- `DeviceProperties' peek*
@@ -218,8 +229,8 @@ props n =  resultIfOk =<< cudaGetDeviceProperties n
 -- |
 -- Set device to be used for GPU execution
 --
-set   :: Int -> IO ()
-set n =  nothingIfOk =<< cudaSetDevice n
+set :: Device -> IO ()
+set n = nothingIfOk =<< cudaSetDevice n
 
 {# fun unsafe cudaSetDevice
   { `Int' } -> `Status' cToEnum #}
@@ -228,8 +239,8 @@ set n =  nothingIfOk =<< cudaSetDevice n
 -- |
 -- Set flags to be used for device executions
 --
-setFlags   :: [DeviceFlag] -> IO ()
-setFlags f =  nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
+setFlags :: [DeviceFlag] -> IO ()
+setFlags f = nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
 
 {# fun unsafe cudaSetDeviceFlags
   { `Int' } -> `Status' cToEnum #}
@@ -238,12 +249,160 @@ setFlags f =  nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
 -- |
 -- Set list of devices for CUDA execution in priority order
 --
-setOrder   :: [Int] -> IO ()
-setOrder l =  nothingIfOk =<< cudaSetValidDevices l (length l)
+setOrder :: [Device] -> IO ()
+setOrder l = nothingIfOk =<< cudaSetValidDevices l (length l)
 
 {# fun unsafe cudaSetValidDevices
   { withArrayIntConv* `[Int]'
   ,                   `Int'   } -> `Status' cToEnum #}
   where
       withArrayIntConv = withArray . map cIntConv
+
+-- |
+-- Block until the device has completed all preceding requested tasks. Returns
+-- an error if one of the tasks fails.
+--
+sync :: IO ()
+#if CUDART_VERSION < 4000
+sync = nothingIfOk =<< cudaThreadSynchronize
+{# fun unsafe cudaThreadSynchronize { } -> `Status' cToEnum #}
+#else
+sync = nothingIfOk =<< cudaDeviceSynchronize
+{# fun unsafe cudaDeviceSynchronize { } -> `Status' cToEnum #}
+#endif
+
+-- |
+-- Explicitly destroys and cleans up all runtime resources associated with the
+-- current device in the current process. Any subsequent API call will
+-- reinitialise the device.
+--
+-- Note that this function will reset the device immediately. It is the caller’s
+-- responsibility to ensure that the device is not being accessed by any other
+-- host threads from the process when this function is called.
+--
+reset :: IO ()
+#if CUDART_VERSION >= 4000
+reset = nothingIfOk =<< cudaDeviceReset
+{# fun unsafe cudaDeviceReset { } -> `Status' cToEnum #}
+#else
+reset = nothingIfOk =<< cudaThreadExit
+{# fun unsafe cudaThreadExit  { } -> `Status' cToEnum #}
+#endif
+
+
+--------------------------------------------------------------------------------
+-- Peer Access
+--------------------------------------------------------------------------------
+
+-- |
+-- Possible option values for direct peer memory access
+--
+data PeerFlag
+instance Enum PeerFlag where
+
+-- |
+-- Queries if the first device can directly access the memory of the second. If
+-- direct access is possible, it can then be enabled with 'add'. Requires
+-- cuda-4.0.
+--
+accessible :: Device -> Device -> IO Bool
+#if CUDART_VERSION < 4000
+accessible _   _    = requireSDK 4.0 "accessible"
+#else
+accessible dev peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
+
+{# fun unsafe cudaDeviceCanAccessPeer
+  { alloca-  `Bool'   peekBool*
+  , cIntConv `Device'
+  , cIntConv `Device'           } -> `Status' cToEnum #}
+#endif
+
+-- |
+-- If the devices of both the current and supplied contexts support unified
+-- addressing, then enable allocations in the supplied context to be accessible
+-- by the current context. Requires cuda-4.0.
+--
+add :: Device -> [PeerFlag] -> IO ()
+#if CUDART_VERSION < 4000
+add _   _     = requireSDK 4.0 "add"
+#else
+add dev flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
+
+{# fun unsafe cudaDeviceEnablePeerAccess
+  { cIntConv        `Device'
+  , combineBitMasks `[PeerFlag]' } -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- Disable direct memory access from the current context to the supplied
+-- context. Requires cuda-4.0.
+--
+remove :: Device -> IO ()
+#if CUDART_VERSION < 4000
+remove _   = requireSDK 4.0 "remove"
+#else
+remove dev = nothingIfOk =<< cudaDeviceDisablePeerAccess dev
+
+{# fun unsafe cudaDeviceDisablePeerAccess
+  { cIntConv `Device' } -> `Status' cToEnum #}
+#endif
+
+
+--------------------------------------------------------------------------------
+-- Cache Configuration
+--------------------------------------------------------------------------------
+
+-- |
+-- Device limit flags
+--
+#if CUDART_VERSION < 3010
+data Limit
+#else
+{# enum cudaLimit as Limit
+    { underscoreToCase }
+    with prefix="cudaLimit" deriving (Eq, Show) #}
+#endif
+
+
+-- |
+-- Query compute 2.0 call stack limits. Requires cuda-3.1.
+--
+getLimit :: Limit -> IO Int
+#if   CUDART_VERSION < 3010
+getLimit _ = requireSDK 3.1 "getLimit"
+#elif CUDART_VERSION < 4000
+getLimit l = resultIfOk =<< cudaThreadGetLimit l
+
+{# fun unsafe cudaThreadGetLimit
+  { alloca-   `Int' peekIntConv*
+  , cFromEnum `Limit'            } -> `Status' cToEnum #}
+#else
+getLimit l = resultIfOk =<< cudaDeviceGetLimit l
+
+{# fun unsafe cudaDeviceGetLimit
+  { alloca-   `Int' peekIntConv*
+  , cFromEnum `Limit'            } -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- Set compute 2.0 call stack limits. Requires cuda-3.1.
+--
+setLimit :: Limit -> Int -> IO ()
+#if   CUDART_VERSION < 3010
+setLimit _ _ = requireSDK 3.1 "setLimit"
+#elif CUDART_VERSION < 4000
+setLimit l n = nothingIfOk =<< cudaThreadSetLimit l n
+
+{# fun unsafe cudaThreadSetLimit
+  { cFromEnum `Limit'
+  , cIntConv  `Int'   } -> `Status' cToEnum #}
+#else
+setLimit l n = nothingIfOk =<< cudaDeviceSetLimit l n
+
+{# fun unsafe cudaDeviceSetLimit
+  { cFromEnum `Limit'
+  , cIntConv  `Int'   } -> `Status' cToEnum #}
+#endif
 

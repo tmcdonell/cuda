@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
@@ -9,25 +9,27 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Event
-  (
-    Event, EventFlag(..),
-    create, destroy, elapsedTime, query, record, block
-  )
-  where
+module Foreign.CUDA.Runtime.Event (
+
+  -- * Event Management
+  Event, EventFlag(..), WaitFlag,
+  create, destroy, elapsedTime, query, record, wait, block
+
+) where
 
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
 
 -- Friends
 import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Runtime.Stream                      (Stream(..), defaultStream)
+import Foreign.CUDA.Runtime.Stream                      ( Stream(..), defaultStream )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                                    (liftM)
+import Control.Monad                                    ( liftM )
+import Data.Maybe                                       ( fromMaybe )
 
 
 #c
@@ -52,6 +54,12 @@ newtype Event = Event { useEvent :: {# type cudaEvent_t #}}
 {# enum cudaEvent_option_enum as EventFlag
     { underscoreToCase }
     with prefix="CUDA_EVENT_OPTION" deriving (Eq,Show) #}
+
+-- |
+-- Possible option flags for waiting for events
+--
+data WaitFlag
+instance Enum WaitFlag where
 
 
 --------------------------------------------------------------------------------
@@ -119,6 +127,24 @@ record ev mst =
   { useEvent  `Event'
   , useStream `Stream' } -> `Status' cToEnum #}
 
+
+-- |
+-- Makes all future work submitted to the (optional) stream wait until the given
+-- event reports completion before beginning execution. Requires cuda-3.2.
+--
+wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
+#if CUDART_VERSION < 3020
+wait _  _   _     = requireSDK 3.2 "wait"
+#else
+wait ev mst flags =
+  let st = fromMaybe defaultStream mst
+  in  nothingIfOk =<< cudaStreamWaitEvent st ev flags
+
+{# fun unsafe cudaStreamWaitEvent
+  { useStream       `Stream'
+  , useEvent        `Event'
+  , combineBitMasks `[WaitFlag]' } -> `Status' cToEnum #}
+#endif
 
 -- |
 -- Wait until the event has been recorded

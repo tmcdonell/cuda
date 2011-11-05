@@ -9,13 +9,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Error
-  (
-    Status(..), CUDAException(..),
-    cudaError, describe,
-    resultIfOk, nothingIfOk
-  )
-  where
+module Foreign.CUDA.Runtime.Error (
+
+  Status(..), CUDAException(..),
+
+  cudaError, describe, requireSDK,
+  resultIfOk, nothingIfOk
+
+) where
 
 
 -- Friends
@@ -64,6 +65,12 @@ instance Show CUDAException where
 --
 cudaError :: String -> IO a
 cudaError s = throwIO (UserError s)
+
+-- |
+-- A specially formatted error message
+--
+requireSDK :: Double -> String -> IO a
+requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
 
 
 --------------------------------------------------------------------------------

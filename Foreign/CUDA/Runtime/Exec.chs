@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs, CPP, ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Exec
@@ -9,23 +9,17 @@
 --
 --------------------------------------------------------------------------------
 
+module Foreign.CUDA.Runtime.Exec (
+
+  -- * Kernel Execution
+  FunAttributes(..), FunParam(..), CacheConfig(..),
+  attributes, setConfig, setParams, setCacheConfig, launch
+
+) where
+
 #include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
 {# context lib="cudart" #}
-
-module Foreign.CUDA.Runtime.Exec
-  (
-    FunAttributes(..), FunParam(..),
-#if CUDART_VERSION >= 3000
-    CacheConfig(..),
-#endif
-    attributes, setConfig, setParams,
-#if CUDART_VERSION >= 3000
-    setCacheConfig,
-#endif
-    launch
-  )
-  where
 
 -- Friends
 import Foreign.CUDA.Runtime.Stream
@@ -81,7 +75,9 @@ instance Storable FunAttributes where
         numRegs                  = nr
       }
 
-#if CUDART_VERSION >= 3000
+#if CUDART_VERSION < 3000
+data CacheConfig
+#else
 -- |
 -- Cache configuration preference
 --
@@ -184,7 +180,6 @@ setParams = foldM_ k 0
     peek'     = peek . castPtr
 
 
-#if CUDART_VERSION >= 3000
 -- |
 -- On devices where the L1 cache and shared memory use the same hardware
 -- resources, this sets the preferred cache configuration for the given device
@@ -195,6 +190,9 @@ setParams = foldM_ k 0
 -- synchronisation point for streamed kernel launches
 --
 setCacheConfig :: String -> CacheConfig -> IO ()
+#if CUDART_VERSION < 3000
+setCacheConfig _  _    = requireSDK 3.0 "setCacheConfig"
+#else
 setCacheConfig fn pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 
 {# fun unsafe cudaFuncSetCacheConfig

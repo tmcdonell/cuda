@@ -9,10 +9,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Utils
-  (
-    runtimeVersion, driverVersion
-  )
+module Foreign.CUDA.Runtime.Utils (runtimeVersion, driverVersion)
   where
 
 #include <cuda_runtime_api.h>

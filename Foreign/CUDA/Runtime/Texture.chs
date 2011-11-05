@@ -9,12 +9,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Texture
-  (
-    Texture(..), FormatKind(..), AddressMode(..), FilterMode(..), FormatDesc(..),
-    bind, bind2D
-  )
-  where
+module Foreign.CUDA.Runtime.Texture (
+
+  -- * Texture Reference Management
+  Texture(..), FormatKind(..), AddressMode(..), FilterMode(..), FormatDesc(..),
+  bind, bind2D
+
+) where
 
 -- Friends
 import Foreign.CUDA.Ptr
