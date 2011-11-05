@@ -23,6 +23,9 @@ module Foreign.CUDA.Driver.Exec
     setCacheConfigFun,
 #endif
     launch
+#if CUDA_VERSION >= 4000
+    , launchKernel
+#endif
   )
   where
 
@@ -35,7 +38,17 @@ import Foreign.CUDA.Driver.Texture              (Texture(..))
 -- System
 import Foreign
 import Foreign.C
+import Data.Maybe
 import Control.Monad                            (zipWithM_)
+
+
+#if CUDA_VERSION >= 3020
+{-# DEPRECATED TArg "as of CUDA version 3.2" #-}
+#endif
+#if CUDA_VERSION >= 4000
+{-# DEPRECATED setBlockShape, setSharedSize, setParams, launch
+      "use launchKernel instead" #-}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -69,9 +82,9 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 -- Kernel function parameters
 --
 data FunParam where
-  IArg :: Int     -> FunParam
-  FArg :: Float   -> FunParam
-  TArg :: Texture -> FunParam           -- deprecated
+  IArg :: Int             -> FunParam
+  FArg :: Float           -> FunParam
+  TArg :: Texture         -> FunParam
   VArg :: Storable a => a -> FunParam
 
 
@@ -152,6 +165,42 @@ launch fn (w,h) mst =
   , useStream `Stream' } -> `Status' cToEnum #}
 
 
+#if CUDA_VERSION >= 4000
+launchKernel
+    :: Fun                      -- ^ function to execute
+    -> (Int,Int,Int)            -- ^ block grid dimension
+    -> (Int,Int,Int)            -- ^ thread block shape
+    -> Int                      -- ^ shared memory (bytes)
+    -> Maybe Stream             -- ^ (optional) stream to execute in
+    -> [FunParam]               -- ^ list of function parameters
+    -> IO ()
+launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst as
+  = (=<<) nothingIfOk
+  $ withMany withFP as
+  $ \ps -> withArray ps
+  $ \pp -> cuLaunchKernel fn gx gy gz tx ty tz sm st pp nullPtr
+  where
+    st = fromMaybe (Stream nullPtr) mst
+
+    withFP :: FunParam -> (Ptr FunParam -> IO b) -> IO b
+    withFP p f = case p of
+      IArg v -> with v (f . castPtr)
+      FArg v -> with v (f . castPtr)
+      VArg v -> with v (f . castPtr)
+      TArg _ -> error "launchKernel: TArg is deprecated"
+
+
+{# fun unsafe cuLaunchKernel
+  { useFun    `Fun'
+  ,           `Int', `Int', `Int'
+  ,           `Int', `Int', `Int'
+  ,           `Int'
+  , useStream `Stream'
+  , castPtr   `Ptr (Ptr FunParam)'
+  , castPtr   `Ptr (Ptr ())'       } -> `Status' cToEnum #}
+#endif
+
+
 --------------------------------------------------------------------------------
 -- Kernel function parameters
 --------------------------------------------------------------------------------
@@ -173,11 +222,7 @@ setParams fn prs = do
 
     set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
     set f o (FArg v) = nothingIfOk =<< cuParamSetf f o v
-#if CUDA_VERSION < 3020
     set f _ (TArg v) = nothingIfOk =<< cuParamSetTexRef f (-1) v
-#else
-    set _ _ (TArg _) = return ()
-#endif
     set f o (VArg v) = with v $ \p -> (nothingIfOk =<< cuParamSetv f o p (sizeOf v))
 
 
@@ -202,10 +247,8 @@ setParams fn prs = do
   , castPtr `Ptr a'
   ,         `Int'   } -> `Status' cToEnum #}
 
-#if CUDA_VERSION < 3020
 {# fun unsafe cuParamSetTexRef
   { useFun     `Fun'
   ,            `Int'    -- must be CU_PARAM_TR_DEFAULT (-1)
   , useTexture `Texture' } -> `Status' cToEnum #}
-#endif
 

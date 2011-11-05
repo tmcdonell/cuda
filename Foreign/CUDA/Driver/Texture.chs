@@ -16,9 +16,7 @@
 module Foreign.CUDA.Driver.Texture
   (
     Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
-#if CUDA_VERSION < 3020
     create, destroy,
-#endif
     bind, bind2D,
     getAddressMode, getFilterMode, getFormat,
     setAddressMode, setFilterMode, setFormat, setReadMode,
@@ -38,6 +36,10 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign
 import Foreign.C
 import Control.Monad
+
+#if CUDA_VERSION >= 3020
+{-# DEPRECATED create, destroy "as of CUDA version 3.2" #-}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -96,7 +98,6 @@ typedef enum CUtexture_flag_enum {
 -- Texture management
 --------------------------------------------------------------------------------
 
-#if CUDA_VERSION < 3020
 -- |Create a new texture reference. Once created, the application must call
 -- 'setPtr' to associate the reference with allocated memory. Other texture
 -- reference functions are used to specify the format and interpretation to be
@@ -116,7 +117,7 @@ destroy tex = nothingIfOk =<< cuTexRefDestroy tex
 
 {# fun unsafe cuTexRefDestroy
   { useTexture `Texture' } -> `Status' cToEnum #}
-#endif
+
 
 -- |Bind a linear array address of the given size (bytes) as a texture
 -- reference. Any previously bound references are unbound.

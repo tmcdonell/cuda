@@ -8,25 +8,16 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver
-  (
-    module Foreign.CUDA.Ptr,
-    module Foreign.CUDA.Driver.Context,
-    module Foreign.CUDA.Driver.Device,
-    module Foreign.CUDA.Driver.Error,
-    module Foreign.CUDA.Driver.Exec,
-    module Foreign.CUDA.Driver.Marshal,
-    module Foreign.CUDA.Driver.Module,
-    module Foreign.CUDA.Driver.Utils
-  )
+module Foreign.CUDA.Driver (module Driver)
   where
 
-import Foreign.CUDA.Ptr
-import Foreign.CUDA.Driver.Context
-import Foreign.CUDA.Driver.Device
-import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Marshal      hiding (useDeviceHandle, peekDeviceHandle)
-import Foreign.CUDA.Driver.Module
-import Foreign.CUDA.Driver.Utils
+import Foreign.CUDA.Ptr                 as Driver
+import Foreign.CUDA.Driver.Context      as Driver hiding (device, useContext)
+import Foreign.CUDA.Driver.Device       as Driver
+import Foreign.CUDA.Driver.Error        as Driver
+import Foreign.CUDA.Driver.Exec         as Driver
+import Foreign.CUDA.Driver.Marshal      as Driver hiding (useDeviceHandle, peekDeviceHandle)
+import Foreign.CUDA.Driver.Module       as Driver
+import Foreign.CUDA.Driver.Peer         as Driver
+import Foreign.CUDA.Driver.Utils        as Driver
 

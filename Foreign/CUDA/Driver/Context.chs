@@ -15,14 +15,17 @@
 
 module Foreign.CUDA.Driver.Context
   (
-    Context, ContextFlag(..),
+    Context(..), ContextFlag(..),
 #if CUDA_VERSION >= 3010
     Limit(..),
 #endif
 #if CUDA_VERSION >= 3020
     Cache(..),
 #endif
-    create, attach, detach, destroy, current, pop, push, sync,
+    create, attach, detach, destroy, device, pop, push, sync,
+#if CUDA_VERSION >= 4000
+    get, set,
+#endif
 #if CUDA_VERSION >= 3010
     getLimit, setLimit
 #endif
@@ -33,7 +36,7 @@ module Foreign.CUDA.Driver.Context
   where
 
 -- Friends
-import Foreign.CUDA.Driver.Device
+import Foreign.CUDA.Driver.Device       (Device(..))
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
@@ -77,6 +80,12 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
     { underscoreToCase }
     with prefix="CU_FUNC_CACHE" deriving (Eq, Show) #}
 #endif
+
+#if CUDA_VERSION >= 4000
+{-# DEPRECATED attach, detach "deprecated as of CUDA-4.0" #-}
+{-# DEPRECATED BlockingSync "use SchedBlockingSync instead" #-}
+#endif
+
 
 --------------------------------------------------------------------------------
 -- Context management
@@ -128,12 +137,33 @@ destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
 {# fun unsafe cuCtxDestroy
   { useContext `Context' } -> `Status' cToEnum #}
 
+#if CUDA_VERSION >= 4000
+-- |
+-- Return the context bound to the calling CPU thread
+--
+get :: IO Context
+get = resultIfOk =<< cuCtxGetCurrent
+
+{# fun unsafe cuCtxGetCurrent
+  { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
+  where peekCtx = liftM Context . peek
+
+
+-- |
+-- Bind the specified context to the calling thread
+--
+set :: Context -> IO ()
+set ctx = nothingIfOk =<< cuCtxSetCurrent ctx
+
+{# fun unsafe cuCtxSetCurrent
+  { useContext `Context' } -> `Status' cToEnum #}
+#endif
 
 -- |
 -- Return the device of the currently active context
 --
-current :: IO Device
-current = resultIfOk =<< cuCtxGetDevice
+device :: IO Device
+device = resultIfOk =<< cuCtxGetDevice
 
 {# fun unsafe cuCtxGetDevice
   { alloca- `Device' dev* } -> `Status' cToEnum #}

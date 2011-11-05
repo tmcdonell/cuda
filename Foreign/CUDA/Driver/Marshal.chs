@@ -9,10 +9,17 @@
 --
 --------------------------------------------------------------------------------
 
+#include <cuda.h>
+#include "cbits/stubs.h"
+{# context lib="cuda" #}
+
 module Foreign.CUDA.Driver.Marshal
   (
     -- * Host Allocation
     AllocFlag(..), mallocHostArray, freeHost,
+#if CUDA_VERSION >= 4000
+    registerArray, unregisterArray,
+#endif
 
     -- * Device Allocation
     mallocArray, allocaArray, free,
@@ -21,31 +28,37 @@ module Foreign.CUDA.Driver.Marshal
     peekArray, peekArrayAsync, peekListArray,
     pokeArray, pokeArrayAsync, pokeListArray,
                copyArrayAsync,
+#if CUDA_VERSION >= 4000
+    copyArrayPeer, copyArrayPeerAsync,
+#endif
 
     -- * Combined Allocation and Marshalling
     newListArray,  newListArrayLen,
     withListArray, withListArrayLen,
 
     -- * Utility
-    memset, getDevicePtr, getBasePtr, getMemInfo,
+    memset,
+#if CUDA_VERSION >= 3020
+    memsetAsync,
+#endif
+    getDevicePtr, getBasePtr, getMemInfo,
 
     -- Internal
     useDeviceHandle, peekDeviceHandle
   )
   where
 
-#include <cuda.h>
-#include "cbits/stubs.h"
-{# context lib="cuda" #}
-
 -- Friends
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
+import Foreign.CUDA.Driver.Context              (Context(..))
+
 import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Data.Int
+import Data.Maybe
 import Unsafe.Coerce
 import Control.Applicative
 import Control.Exception.Extensible
@@ -109,6 +122,50 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
   { useHP `HostPtr a' } -> `Status' cToEnum #}
   where
     useHP = castPtr . useHostPtr
+
+
+#if CUDA_VERSION >= 4000
+-- |
+-- Page-locks the specified array (on the host) and maps it for the device(s) as
+-- specified by the given allocation flags. Subsequently, the memory is accessed
+-- directly by the device so can be read and written with much higher bandwidth
+-- than pageable memory that has not been registered. The memory range is added
+-- to the same tracking mechanism as 'mallocHostArray' to automatically
+-- accelerate calls to functions such as 'pokeArray'.
+--
+-- Note that page-locking excessive amounts of memory may degrade system
+-- performance, since it reduces the amount of pageable memory available. This
+-- is best used sparingly to allocate staging areas for data exchange.
+--
+-- This function is not yet implemented on Mac OS X.
+--
+registerArray :: Storable a => [AllocFlag] -> Int -> Ptr a -> IO (HostPtr a)
+registerArray flags n = go undefined
+  where
+    go :: Storable b => b -> Ptr b -> IO (HostPtr b)
+    go x p = do
+      status <- cuMemHostRegister p (n * sizeOf x) flags
+      resultIfOk (status,HostPtr p)
+
+{# fun unsafe cuMemHostRegister
+  { castPtr         `Ptr a'
+  ,                 `Int'
+  , combineBitMasks `[AllocFlag]' } -> `Status' cToEnum #}
+
+
+-- |
+-- Unmaps the memory from the given pointer, and makes it pageable again.
+--
+-- This function is not yet implemented on Mac OS X.
+--
+unregisterArray :: HostPtr a -> IO (Ptr a)
+unregisterArray (HostPtr p) = do
+  status <- cuMemHostUnregister p
+  resultIfOk (status,p)
+
+{# fun unsafe cuMemHostUnregister
+  { castPtr `Ptr a' } -> `Status' cToEnum #}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -184,10 +241,7 @@ peekArrayAsync :: Storable a => Int -> DevicePtr a -> HostPtr a -> Maybe Stream 
 peekArrayAsync n dptr hptr mst = doPeek undefined dptr
   where
     doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
-    doPeek x _ =
-      nothingIfOk =<< case mst of
-        Nothing -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (Stream nullPtr)
-        Just st -> cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) st
+    doPeek x _ = nothingIfOk =<< cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
 
 {# fun unsafe cuMemcpyDtoHAsync
   { useHP           `HostPtr a'
@@ -233,10 +287,7 @@ pokeArrayAsync :: Storable a => Int -> HostPtr a -> DevicePtr a -> Maybe Stream 
 pokeArrayAsync n hptr dptr mst = dopoke undefined dptr
   where
     dopoke :: Storable a' => a' -> DevicePtr a' -> IO ()
-    dopoke x _ =
-      nothingIfOk =<< case mst of
-        Nothing -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (Stream nullPtr)
-        Just st -> cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) st
+    dopoke x _ = nothingIfOk =<< cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
 
 {# fun unsafe cuMemcpyHtoDAsync
   { useDeviceHandle `DevicePtr a'
@@ -272,6 +323,59 @@ copyArrayAsync n = docopy undefined
   { useDeviceHandle `DevicePtr a'
   , useDeviceHandle `DevicePtr a'
   ,                 `Int'         } -> `Status' cToEnum #}
+
+
+#if CUDA_VERSION >= 4000
+-- |
+-- Copies an array from device memory in one context to device memory in another
+-- context. Note that this function is asynchronous with respect to the host,
+-- but serialised with respect to all pending and future asynchronous work in
+-- the source and destination contexts. To avoid this synchronisation, use
+-- 'copyArrayPeerAsync' instead.
+--
+copyArrayPeer :: Storable a
+              => Int                            -- ^ number of array elements
+              -> DevicePtr a -> Context         -- ^ source array and context
+              -> DevicePtr a -> Context         -- ^ destination array and context
+              -> IO ()
+copyArrayPeer n src srcCtx dst dstCtx = go undefined src dst
+  where
+    go :: Storable b => b -> DevicePtr b -> DevicePtr b -> IO ()
+    go x _ _ = nothingIfOk =<< cuMemcpyPeer dst dstCtx src srcCtx (n * sizeOf x)
+
+{# fun unsafe cuMemcpyPeer
+  { useDeviceHandle `DevicePtr a'
+  , useContext      `Context'
+  , useDeviceHandle `DevicePtr a'
+  , useContext      `Context'
+  ,                 `Int'         } -> `Status' cToEnum #}
+
+
+-- |
+-- Copies from device memory in one context to device memory in another context.
+-- Note that this function is asynchronous with respect to the host and all work
+-- in other streams and devices.
+--
+copyArrayPeerAsync :: Storable a
+                   => Int                       -- ^ number of array elements
+                   -> DevicePtr a -> Context    -- ^ source array and context
+                   -> DevicePtr a -> Context    -- ^ destination array and device context
+                   -> Maybe Stream              -- ^ stream to associate with
+                   -> IO ()
+copyArrayPeerAsync n src srcCtx dst dstCtx st = go undefined src dst
+  where
+    go :: Storable b => b -> DevicePtr b -> DevicePtr b -> IO ()
+    go x _ _ = nothingIfOk =<< cuMemcpyPeerAsync dst dstCtx src srcCtx (n * sizeOf x) stream
+    stream   = fromMaybe (Stream nullPtr) st
+
+{# fun unsafe cuMemcpyPeerAsync
+  { useDeviceHandle `DevicePtr a'
+  , useContext      `Context'
+  , useDeviceHandle `DevicePtr a'
+  , useContext      `Context'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -362,6 +466,40 @@ memset dptr n val = case sizeOf val of
   ,                 `Int'         } -> `Status' cToEnum #}
 
 
+#if CUDA_VERSION >= 3020
+-- |
+-- Set the number of data elements to the specified value, which may be either
+-- 8-, 16-, or 32-bits wide. The operation is asynchronous and may optionally be
+-- associated with a stream.
+memsetAsync :: Storable a => DevicePtr a -> Int -> a -> Maybe Stream -> IO ()
+memsetAsync dptr n val mst = case sizeOf val of
+    1 -> nothingIfOk =<< cuMemsetD8Async  dptr val n stream
+    2 -> nothingIfOk =<< cuMemsetD16Async dptr val n stream
+    4 -> nothingIfOk =<< cuMemsetD32Async dptr val n stream
+    _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
+    where
+      stream = fromMaybe (Stream nullPtr) mst
+
+{# fun unsafe cuMemsetD8Async
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
+
+{# fun unsafe cuMemsetD16Async
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
+
+{# fun unsafe cuMemsetD32Async
+  { useDeviceHandle `DevicePtr a'
+  , unsafeCoerce    `a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
+#endif
+
+
 -- |
 -- Return the device pointer associated with a mapped, pinned host buffer, which
 -- was allocated with the 'DeviceMapped' option by 'mallocHostArray'.
@@ -394,7 +532,6 @@ getBasePtr dptr = do
   where
     alloca' :: Storable a => (Ptr a -> IO b) -> IO b
     alloca' = F.alloca
-
 
 -- |
 -- Return the amount of free and total memory respectively available to the
