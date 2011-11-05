@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Analysis.Occupancy
--- Copyright : (c) [2009..2010] Trevor L. McDonell
+-- Copyright : (c) [2009..2011] Trevor L. McDonell
 -- License   : BSD
 --
 -- Occupancy calculations for CUDA kernels

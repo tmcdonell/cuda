@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Stream
--- Copyright : (c) [2009..2010] Trevor L. McDonell
+-- Copyright : (c) [2009..2011] Trevor L. McDonell
 -- License   : BSD
 --
 -- Stream management for low-level driver interface

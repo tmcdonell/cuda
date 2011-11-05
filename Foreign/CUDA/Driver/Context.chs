@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context
--- Copyright : (c) [2009..2010] Trevor L. McDonell
+-- Copyright : (c) [2009..2011] Trevor L. McDonell
 -- License   : BSD
 --
 -- Context management for low-level driver interface
