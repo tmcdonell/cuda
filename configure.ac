@@ -40,6 +40,14 @@ else
     AC_MSG_RESULT(no)
 fi
 
+# If we are running on Mac OS add the CUDA library path to the search list. This
+# option allows applications to run without requiring to set [DY]LD_LIBRARY_PATH
+#
+case $build in
+    *darwin* ) LDFLAGS+=" -Xlinker -rpath ${cuda_prefix}/lib " ;;
+    * ) ;;
+esac
+
 # Make sure both the driver and runtime are found
 #
 longerror='
