@@ -133,7 +133,7 @@ freeHost p = nothingIfOk =<< cuMemFreeHost p
 --
 registerArray :: Storable a => [AllocFlag] -> Int -> Ptr a -> IO (HostPtr a)
 #if CUDA_VERSION < 4000
-registerArray _     _ = requireSDK 4.0 "registerArray"
+registerArray _ _ _   = requireSDK 4.0 "registerArray"
 #else
 registerArray flags n = go undefined
   where
