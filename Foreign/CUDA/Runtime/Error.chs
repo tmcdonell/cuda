@@ -23,10 +23,11 @@ module Foreign.CUDA.Runtime.Error (
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Foreign
+import Foreign                                  hiding ( unsafePerformIO )
 import Foreign.C
 import Data.Typeable
 import Control.Exception.Extensible
+import System.IO.Unsafe
 
 #include "cbits/stubs.h"
 #include <cuda_runtime_api.h>
