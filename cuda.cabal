@@ -48,7 +48,6 @@ Library
                         Foreign.CUDA.Runtime.Marshal
                         Foreign.CUDA.Runtime.Stream
                         Foreign.CUDA.Runtime.Texture
-                        Foreign.CUDA.Runtime.Thread
                         Foreign.CUDA.Runtime.Utils
                         Foreign.CUDA.Driver
                         Foreign.CUDA.Driver.Context
