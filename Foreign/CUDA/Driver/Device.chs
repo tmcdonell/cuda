@@ -137,6 +137,7 @@ capability :: Device -> IO Double
 capability dev =
   (\(s,a,b) -> resultIfOk (s,cap a b)) =<< cuDeviceComputeCapability dev
   where
+    cap a 0 = fromIntegral a
     cap a b = let a' = fromIntegral a in
               let b' = fromIntegral b in
               a' + b' / max 10 (10^ ((ceiling . logBase 10) b' :: Int))

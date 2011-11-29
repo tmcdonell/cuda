@@ -129,11 +129,13 @@ instance Storable DeviceProperties where
     (u31:u32:u33:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxTexture3DOffset :: Ptr CInt)
 #endif
 
+    let cap a 0 = a
+        cap a b = a + b / max 10 (10^ ((ceiling . logBase 10) b :: Int))
+
     return DeviceProperties
       {
         deviceName                      = n,
-        computeCapability               =
-          v1 + v2 / max 10 (10^ ((ceiling . logBase 10) v2 :: Int)),
+        computeCapability               = cap v1 v2,
         totalGlobalMem                  = gm,
         totalConstMem                   = cm,
         sharedMemPerBlock               = sm,
