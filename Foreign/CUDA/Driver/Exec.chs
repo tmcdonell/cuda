@@ -14,7 +14,7 @@ module Foreign.CUDA.Driver.Exec (
   -- * Kernel Execution
   Fun(Fun), FunParam(..), FunAttribute(..), CacheConfig(..),
   requires, setBlockShape, setSharedSize, setParams, setCacheConfigFun,
-  launch, launchKernel
+  launch, launchKernel, launchKernel'
 
 ) where
 
@@ -80,6 +80,22 @@ data FunParam where
   FArg :: Float           -> FunParam
   TArg :: Texture         -> FunParam
   VArg :: Storable a => a -> FunParam
+
+instance Storable FunParam where
+  sizeOf (IArg _)       = sizeOf (undefined :: CUInt)
+  sizeOf (FArg _)       = sizeOf (undefined :: CFloat)
+  sizeOf (VArg v)       = sizeOf v
+  sizeOf (TArg _)       = 0
+
+  alignment (IArg _)    = alignment (undefined :: CUInt)
+  alignment (FArg _)    = alignment (undefined :: CFloat)
+  alignment (VArg v)    = alignment v
+  alignment (TArg _)    = 0
+
+  poke p (IArg i)       = poke (castPtr p) i
+  poke p (FArg f)       = poke (castPtr p) f
+  poke p (VArg v)       = poke (castPtr p) v
+  poke _ (TArg _)       = return ()
 
 
 --------------------------------------------------------------------------------
@@ -167,7 +183,16 @@ launch fn (w,h) mst =
 -- contains @(tx * ty * tz)@ threads and has access to a given number of bytes
 -- of shared memory. The launch may also be associated with a specific 'Stream'.
 --
-launchKernel
+-- In 'launchKernel', the number of kernel parameters and their offsets and
+-- sizes do not need to be specified, as this information is retrieved directly
+-- from the kernel's image. This requires the kernel to have been compiled with
+-- toolchain version 3.2 or later.
+--
+-- The alternative 'launchKernel'' will pass the arguments in directly,
+-- requiring the application to know the size and alignment/padding of each
+-- kernel parameter.
+--
+launchKernel, launchKernel'
     :: Fun                      -- ^ function to execute
     -> (Int,Int,Int)            -- ^ block grid dimension
     -> (Int,Int,Int)            -- ^ thread block shape
@@ -192,6 +217,29 @@ launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst args
       TArg _ -> error "launchKernel: TArg is deprecated"
 
 
+launchKernel' fn (gx,gy,gz) (tx,ty,tz) sm mst args
+  = (=<<) nothingIfOk
+  $ with bytes
+  $ \pb -> withArray' args
+  $ \pa -> withArray0 nullPtr [buffer, castPtr pa, size, castPtr pb]
+  $ \pp -> cuLaunchKernel fn gx gy gz tx ty tz sm st nullPtr pp
+  where
+    buffer      = wordPtrToPtr 0x01     -- CU_LAUNCH_PARAM_BUFFER_POINTER
+    size        = wordPtrToPtr 0x02     -- CU_LAUNCH_PARAM_BUFFER_SIZE
+    bytes       = foldl (\a x -> a + sizeOf x) 0 args
+    st          = fromMaybe (Stream nullPtr) mst
+
+    -- can't use the standard 'withArray' because 'mallocArray' will pass
+    -- 'undefined' to 'sizeOf' when determining how many bytes to allocate, but
+    -- our Storable instance for FunParam needs to dispatch on each constructor,
+    -- hence evaluating the undefined.
+    --
+    withArray' vals f =
+      allocaBytes bytes $ \ptr -> do
+        pokeArray ptr vals
+        f ptr
+
+
 {# fun unsafe cuLaunchKernel
   { useFun    `Fun'
   ,           `Int', `Int', `Int'
@@ -207,6 +255,8 @@ launchKernel fn (gx,gy,_) (tx,ty,tz) sm mst args = do
   setSharedSize fn (toInteger sm)
   setBlockShape fn (tx,ty,tz)
   launch        fn (gx,gy) mst
+
+launchKernel' = launchKernel
 #endif
 
 
@@ -224,8 +274,8 @@ setParams fn prs = do
   where
     offsets = scanl (\a b -> a + size b) 0 prs
 
-    size (IArg _)    = sizeOf (undefined::CUInt)
-    size (FArg _)    = sizeOf (undefined::CFloat)
+    size (IArg _)    = sizeOf (undefined :: CUInt)
+    size (FArg _)    = sizeOf (undefined :: CFloat)
     size (TArg _)    = 0
     size (VArg v)    = sizeOf v
 
