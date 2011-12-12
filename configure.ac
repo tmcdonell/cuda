@@ -1,4 +1,4 @@
-AC_INIT([Haskell CUDA bindings], [0.4.0.0], [tmcdonell@cse.unsw.edu.au], [cuda])
+AC_INIT([Haskell CUDA bindings], [0.4.1.0], [tmcdonell@cse.unsw.edu.au], [cuda])
 AC_CONFIG_SRCDIR([Foreign/CUDA.hs])
 AC_CONFIG_FILES([cuda.buildinfo])
 AC_PROG_CC
