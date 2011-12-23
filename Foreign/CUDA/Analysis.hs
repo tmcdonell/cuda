@@ -8,9 +8,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Analysis (module Analysis)
-  where
+module Foreign.CUDA.Analysis (
 
-import Foreign.CUDA.Analysis.Device     as Analysis
-import Foreign.CUDA.Analysis.Occupancy  as Analysis
+  module Foreign.CUDA.Analysis.Device,
+  module Foreign.CUDA.Analysis.Occupancy
+
+) where
+
+import Foreign.CUDA.Analysis.Device
+import Foreign.CUDA.Analysis.Occupancy
 
