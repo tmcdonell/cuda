@@ -49,7 +49,7 @@ module Foreign.CUDA.Analysis.Occupancy
   (
     Occupancy(..),
     occupancy, optimalBlockSize, optimalBlockSizeBy, maxResidentBlocks,
-    incPow2, incWarp
+    incPow2, incWarp, decPow2, decWarp
   )
   where
 
@@ -130,8 +130,9 @@ optimalBlockSize = flip optimalBlockSizeBy incWarp
 -- |
 -- As 'optimalBlockSize', but with a generator that produces the specific thread
 -- block sizes that should be tested. The generated list can produce values in
--- any order, but should be monotonically decreasing to return the smallest
--- satisfying block size (and vice-versa).
+-- any order, but the last satisfying block size will be returned. Hence, values
+-- should be monotonically decreasing to return the smallest block size yielding
+-- maximum occupancy, and vice-versa.
 --
 optimalBlockSizeBy
     :: DeviceProperties
@@ -146,11 +147,21 @@ optimalBlockSizeBy dev fblk freg fsmem
     threads   = fblk dev
 
 
--- | Decrements in powers-of-two, over the range of supported thread block sizes
+-- | Increments in powers-of-two, over the range of supported thread block sizes
 -- for the given device.
 --
 incPow2 :: DeviceProperties -> [Int]
-incPow2 dev = map ((2::Int)^) $ enumFromThenTo ub (ub-1) lb
+incPow2 dev = map ((2::Int)^) [lb, lb+1 .. ub]
+  where
+    round' = round :: Double -> Int
+    lb     = round' . logBase 2 . fromIntegral $ warpSize dev
+    ub     = round' . logBase 2 . fromIntegral $ maxThreadsPerBlock dev
+
+-- | Decrements in powers-of-two, over the range of supported thread block sizes
+-- for the given device.
+--
+decPow2 :: DeviceProperties -> [Int]
+decPow2 dev = map ((2::Int)^) [ub, ub-1 .. lb]
   where
     round' = round :: Double -> Int
     lb     = round' . logBase 2 . fromIntegral $ warpSize dev
@@ -159,11 +170,20 @@ incPow2 dev = map ((2::Int)^) $ enumFromThenTo ub (ub-1) lb
 -- | Decrements in the warp size of the device, over the range of supported
 -- thread block sizes.
 --
-incWarp :: DeviceProperties -> [Int]
-incWarp dev = enumFromThenTo mts (mts - det) det
+decWarp :: DeviceProperties -> [Int]
+decWarp dev = [block, block-warp .. warp]
   where
-    det = warpSize dev
-    mts = maxThreadsPerBlock dev
+    warp  = warpSize dev
+    block = maxThreadsPerBlock dev
+
+-- | Increments in the warp size of the device, over the range of supported
+-- thread block sizes.
+--
+incWarp :: DeviceProperties -> [Int]
+incWarp dev = [warp, 2*warp .. block]
+  where
+    warp  = warpSize dev
+    block = maxThreadsPerBlock dev
 
 
 -- |
