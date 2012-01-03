@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Analysis.Occupancy
@@ -63,10 +64,10 @@ import Foreign.CUDA.Analysis.Device
 --
 data Occupancy = Occupancy
   {
-    activeThreads      :: Int,          -- ^ Active threads per multiprocessor
-    activeThreadBlocks :: Int,          -- ^ Active thread blocks per multiprocessor
-    activeWarps        :: Int,          -- ^ Active warps per multiprocessor
-    occupancy100       :: Double        -- ^ Occupancy of each multiprocessor (percent)
+    activeThreads      :: !Int,         -- ^ Active threads per multiprocessor
+    activeThreadBlocks :: !Int,         -- ^ Active thread blocks per multiprocessor
+    activeWarps        :: !Int,         -- ^ Active warps per multiprocessor
+    occupancy100       :: !Double       -- ^ Occupancy of each multiprocessor (percent)
   }
   deriving (Eq, Ord, Show)
 
@@ -80,7 +81,7 @@ occupancy
     -> Int              -- ^ Registers per thread
     -> Int              -- ^ Shared memory per block (bytes)
     -> Occupancy
-occupancy dev thds regs smem
+occupancy !dev !thds !regs !smem
   = Occupancy at ab aw oc
   where
     at = ab * thds
@@ -124,7 +125,7 @@ optimalBlockSize
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
     -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-optimalBlockSize = flip optimalBlockSizeBy incWarp
+optimalBlockSize = flip optimalBlockSizeBy decWarp
 
 
 -- |

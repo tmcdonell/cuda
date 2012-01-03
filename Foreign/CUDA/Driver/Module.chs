@@ -54,10 +54,10 @@ newtype Module = Module { useModule :: {# type CUmodule #}}
 -- Just-in-time compilation options
 --
 data JITOption
-  = MaxRegisters       Int       -- ^ maximum number of registers per thread
-  | ThreadsPerBlock    Int       -- ^ number of threads per block to target for
-  | OptimisationLevel  Int       -- ^ level of optimisation to apply (1-4, default 4)
-  | Target             JITTarget -- ^ compilation target, otherwise determined from context
+  = MaxRegisters       !Int             -- ^ maximum number of registers per thread
+  | ThreadsPerBlock    !Int             -- ^ number of threads per block to target for
+  | OptimisationLevel  !Int             -- ^ level of optimisation to apply (1-4, default 4)
+  | Target             !JITTarget       -- ^ compilation target, otherwise determined from context
 --  | FallbackStrategy   JITFallback
   deriving (Show)
 
@@ -66,9 +66,9 @@ data JITOption
 --
 data JITResult = JITResult
   {
-    jitTime     :: Float,       -- ^ milliseconds spent compiling PTX
-    jitInfoLog  :: ByteString,  -- ^ information about PTX asembly
-    jitErrorLog :: ByteString   -- ^ compilation errors
+    jitTime     :: !Float,              -- ^ milliseconds spent compiling PTX
+    jitInfoLog  :: !ByteString,         -- ^ information about PTX asembly
+    jitErrorLog :: !ByteString          -- ^ compilation errors
   }
   deriving (Show)
 

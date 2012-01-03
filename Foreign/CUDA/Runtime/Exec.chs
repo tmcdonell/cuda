@@ -47,11 +47,11 @@ typedef struct cudaFuncAttributes cudaFuncAttributes;
 
 data FunAttributes = FunAttributes
   {
-    constSizeBytes           :: Int64,
-    localSizeBytes           :: Int64,
-    sharedSizeBytes          :: Int64,
-    maxKernelThreadsPerBlock :: Int,	-- ^ maximum block size that can be successively launched (based on register usage)
-    numRegs                  :: Int     -- ^ number of registers required for each thread
+    constSizeBytes           :: !Int64,
+    localSizeBytes           :: !Int64,
+    sharedSizeBytes          :: !Int64,
+    maxKernelThreadsPerBlock :: !Int,   -- ^ maximum block size that can be successively launched (based on register usage)
+    numRegs                  :: !Int    -- ^ number of registers required for each thread
   }
   deriving (Show)
 
@@ -91,10 +91,10 @@ data CacheConfig
 -- representation on devices that do not support doubles natively.
 --
 data FunParam where
-  IArg :: Int    -> FunParam
-  FArg :: Float  -> FunParam
-  DArg :: Double -> FunParam
-  VArg :: Storable a => a -> FunParam
+  IArg :: !Int             -> FunParam
+  FArg :: !Float           -> FunParam
+  DArg :: !Double          -> FunParam
+  VArg :: Storable a => !a -> FunParam
 
 
 --------------------------------------------------------------------------------
@@ -118,11 +118,11 @@ attributes fn = resultIfOk =<< cudaFuncGetAttributes fn
 -- with 'setParams', this pushes data onto the execution stack that will be
 -- popped when a function is 'launch'ed.
 --
-setConfig :: (Int,Int)		-- ^ grid dimensions
-	  -> (Int,Int,Int)	-- ^ block dimensions
-	  -> Int64		-- ^ shared memory per block (bytes)
-	  -> Maybe Stream	-- ^ associated processing stream
-	  -> IO ()
+setConfig :: (Int,Int)          -- ^ grid dimensions
+          -> (Int,Int,Int)      -- ^ block dimensions
+          -> Int64              -- ^ shared memory per block (bytes)
+          -> Maybe Stream       -- ^ associated processing stream
+          -> IO ()
 setConfig (gx,gy) (bx,by,bz) sharedMem mst =
   nothingIfOk =<<
     cudaConfigureCallSimple gx gy bx by bz sharedMem (maybe defaultStream id mst)
@@ -134,7 +134,7 @@ setConfig (gx,gy) (bx,by,bz) sharedMem mst =
 -- accepting plain integers.
 --
 {# fun unsafe cudaConfigureCallSimple
-  {	      `Int', `Int'
+  {           `Int', `Int'
   ,           `Int', `Int', `Int'
   , cIntConv  `Int64'
   , useStream `Stream'            } -> `Status' cToEnum #}

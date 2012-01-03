@@ -25,7 +25,7 @@ import Foreign.Storable
 -- |
 -- A reference to data stored on the device
 --
-data DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
+newtype DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
   deriving (Eq,Ord)
 
 instance Show (DevicePtr a) where
@@ -110,7 +110,7 @@ advanceDevPtr  = doAdvance undefined
 -- |
 -- A reference to page-locked host memory
 --
-data HostPtr a = HostPtr { useHostPtr :: Ptr a }
+newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
   deriving (Eq,Ord)
 
 instance Show (HostPtr a) where

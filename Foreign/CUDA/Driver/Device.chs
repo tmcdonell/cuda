@@ -56,16 +56,16 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
 --
 data CUDevProp = CUDevProp
   {
-    cuMaxThreadsPerBlock :: Int,           -- Maximum number of threads per block
-    cuMaxBlockSize       :: (Int,Int,Int), -- Maximum size of each dimension of a block
-    cuMaxGridSize        :: (Int,Int,Int), -- Maximum size of each dimension of a grid
-    cuSharedMemPerBlock  :: Int64,         -- Shared memory available per block in bytes
-    cuTotalConstMem      :: Int64,         -- Constant memory available on device in bytes
-    cuWarpSize           :: Int,           -- Warp size in threads (SIMD width)
-    cuMemPitch           :: Int64,         -- Maximum pitch in bytes allowed by memory copies
-    cuRegsPerBlock       :: Int,           -- 32-bit registers available per block
-    cuClockRate          :: Int,           -- Clock frequency in kilohertz
-    cuTextureAlignment   :: Int64          -- Alignment requirement for textures
+    cuMaxThreadsPerBlock :: !Int,               -- Maximum number of threads per block
+    cuMaxBlockSize       :: !(Int,Int,Int),     -- Maximum size of each dimension of a block
+    cuMaxGridSize        :: !(Int,Int,Int),     -- Maximum size of each dimension of a grid
+    cuSharedMemPerBlock  :: !Int64,             -- Shared memory available per block in bytes
+    cuTotalConstMem      :: !Int64,             -- Constant memory available on device in bytes
+    cuWarpSize           :: !Int,               -- Warp size in threads (SIMD width)
+    cuMemPitch           :: !Int64,             -- Maximum pitch in bytes allowed by memory copies
+    cuRegsPerBlock       :: !Int,               -- 32-bit registers available per block
+    cuClockRate          :: !Int,               -- Clock frequency in kilohertz
+    cuTextureAlignment   :: !Int64              -- Alignment requirement for textures
   }
   deriving (Show)
 

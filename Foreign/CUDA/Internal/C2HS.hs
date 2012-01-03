@@ -59,8 +59,8 @@ module Foreign.CUDA.Internal.C2HS (
 
 import Foreign
        hiding       (Word)
-		    -- Should also hide the Foreign.Marshal.Pool exports in
-		    -- compilers that export them
+                    -- Should also hide the Foreign.Marshal.Pool exports in
+                    -- compilers that export them
 import Foreign.C
 import Control.Monad        (liftM)
 
@@ -80,19 +80,19 @@ peekCStringLenIntConv (s, n)  = peekCStringLen (s, cIntConv n)
 --
 
 withIntConv   :: (Storable b, Integral a, Integral b) 
-	      => a -> (Ptr b -> IO c) -> IO c
+              => a -> (Ptr b -> IO c) -> IO c
 withIntConv    = with . cIntConv
 
 withFloatConv :: (Storable b, RealFloat a, RealFloat b) 
-	      => a -> (Ptr b -> IO c) -> IO c
+              => a -> (Ptr b -> IO c) -> IO c
 withFloatConv  = with . cFloatConv
 
 peekIntConv   :: (Storable a, Integral a, Integral b) 
-	      => Ptr a -> IO b
+              => Ptr a -> IO b
 peekIntConv    = liftM cIntConv . peek
 
 peekFloatConv :: (Storable a, RealFloat a, RealFloat b) 
-	      => Ptr a -> IO b
+              => Ptr a -> IO b
 peekFloatConv  = liftM cFloatConv . peek
 
 -- Passing Booleans by reference
@@ -124,15 +124,15 @@ instance Storable a => Storable (Maybe a) where
   alignment _ = alignment (undefined :: Ptr ())
 
   peek p = do
-	     ptr <- peek (castPtr p)
-	     if ptr == nullPtr
-	       then return Nothing
-	       else liftM Just $ peek ptr
+             ptr <- peek (castPtr p)
+             if ptr == nullPtr
+               then return Nothing
+               else liftM Just $ peek ptr
 
   poke p v = do
-	       ptr <- case v of
-		        Nothing -> return nullPtr
-			Just v' -> new v'
+               ptr <- case v of
+                        Nothing -> return nullPtr
+                        Just v' -> new v'
                poke (castPtr p) ptr
 -}
 
@@ -171,8 +171,8 @@ combineBitMasks = foldl (.|.) 0 . map (fromIntegral . fromEnum)
 --
 containsBitMask :: (Bits a, Enum b) => a -> b -> Bool
 bits `containsBitMask` bm = let bm' = fromIntegral . fromEnum $ bm
-			    in
-			    bm' .&. bits == bm'
+                            in
+                            bm' .&. bits == bm'
 
 -- |Given a bit pattern, yield all bit masks that it contains.
 --

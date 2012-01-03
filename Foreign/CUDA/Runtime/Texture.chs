@@ -46,10 +46,10 @@ typedef struct cudaChannelFormatDesc cudaChannelFormatDesc;
 
 data Texture = Texture
   {
-    normalised :: Bool,         -- ^ access texture using normalised coordinates [0.0,1.0)
-    filtering  :: FilterMode,
-    addressing :: (AddressMode, AddressMode, AddressMode),
-    format     :: FormatDesc
+    normalised :: !Bool,                -- ^ access texture using normalised coordinates [0.0,1.0)
+    filtering  :: !FilterMode,
+    addressing :: !(AddressMode, AddressMode, AddressMode),
+    format     :: !FormatDesc
   }
   deriving (Eq, Show)
 
@@ -80,8 +80,8 @@ data Texture = Texture
 
 data FormatDesc = FormatDesc
   {
-    depth :: (Int,Int,Int,Int),
-    kind  :: FormatKind
+    depth :: !(Int,Int,Int,Int),
+    kind  :: !FormatKind
   }
   deriving (Eq, Show)
 

@@ -70,7 +70,7 @@ Library
   Build-tools:          c2hs >= 0.16, hsc2hs
   Build-depends:        base >= 3 && < 5, bytestring, extensible-exceptions
   Extensions:
-  ghc-options:          -Wall -O2
+  ghc-options:          -Wall -O2 -funbox-strict-fields -fwarn-tabs
 
 
 source-repository head

@@ -76,10 +76,10 @@ data CacheConfig
 -- Kernel function parameters
 --
 data FunParam where
-  IArg :: Int             -> FunParam
-  FArg :: Float           -> FunParam
-  TArg :: Texture         -> FunParam
-  VArg :: Storable a => a -> FunParam
+  IArg :: !Int             -> FunParam
+  FArg :: !Float           -> FunParam
+  TArg :: !Texture         -> FunParam
+  VArg :: Storable a => !a -> FunParam
 
 instance Storable FunParam where
   sizeOf (IArg _)       = sizeOf (undefined :: CUInt)
