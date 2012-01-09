@@ -211,10 +211,20 @@ launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst args
 
     withFP :: FunParam -> (Ptr FunParam -> IO b) -> IO b
     withFP p f = case p of
-      IArg v -> with v (f . castPtr)
-      FArg v -> with v (f . castPtr)
-      VArg v -> with v (f . castPtr)
+      IArg v -> with' v (f . castPtr)
+      FArg v -> with' v (f . castPtr)
+      VArg v -> with' v (f . castPtr)
       TArg _ -> error "launchKernel: TArg is deprecated"
+
+    -- can't use the standard 'with' because 'alloca' will pass an undefined
+    -- dummy argument when determining 'sizeOf' and 'alignment', but sometimes
+    -- instances in Accelerate need to evaluate this argument.
+    --
+    with' :: Storable a => a -> (Ptr a -> IO b) -> IO b
+    with' val f =
+      allocaBytes (sizeOf val) $ \ptr -> do
+        poke ptr val
+        f ptr
 
 
 launchKernel' fn (gx,gy,gz) (tx,ty,tz) sm mst args
