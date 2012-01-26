@@ -210,7 +210,7 @@ cFromBool  = fromBool
 
 -- |Obtain Haskell 'Bool' from C value.
 --
-cToBool :: Num a => a -> Bool
+cToBool :: (Eq a, Num a) => a -> Bool
 cToBool  = toBool
 
 -- |Convert a C enumeration to Haskell.
