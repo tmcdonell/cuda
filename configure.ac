@@ -13,9 +13,9 @@ AC_CANONICAL_TARGET
 #
 AC_PATH_PROG(NVCC, nvcc)
 if test "$NVCC" != ""; then
-    cuda_prefix="$(dirname $(dirname $NVCC))"
-    cuda_c2hsflags="--cpp=$NVCC --cppopts=-E "
-    CPPFLAGS+=" -I${cuda_prefix}/include "
+    cuda_prefix="$(dirname "$(dirname "$NVCC")")"
+    cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E "
+    CPPFLAGS+=" "-I${cuda_prefix}/include" "
 #    CC=${NVCC}
 
     case $target in
@@ -73,8 +73,8 @@ AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find C
 
 # Populate the buildinfo, with the search paths and any target specific options
 #
-cuda_cppflags="$CPPFLAGS"
-cuda_ldflags="$LDFLAGS $LIBS"
+cuda_cppflags="$CPPFLAGS "
+cuda_ldflags="$LDFLAGS $LIBS "
 
 AC_SUBST([cuda_cppflags])
 AC_SUBST([cuda_ldflags])

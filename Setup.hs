@@ -54,8 +54,8 @@ runConfigureScript verbosity backwardsCompatHack flags lbi = do
   let env' = foldr appendToEnvironment env
                [("CC",       ccProg)
                ,("CFLAGS",   unwords ccFlags)
-               ,("CPPFLAGS", concatMap ("-I"++) (configExtraIncludeDirs flags))
-               ,("LDFLAGS",  concatMap ("-L"++) (configExtraLibDirs flags))
+               ,("CPPFLAGS", unwords $ map ("-I"++) (configExtraIncludeDirs flags))
+               ,("LDFLAGS",  unwords $ map ("-L"++) (configExtraLibDirs flags))
                ]
 
   handleNoWindowsSH $ rawSystemExitWithEnv verbosity "sh" args env'
