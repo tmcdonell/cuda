@@ -9,6 +9,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Foreign.CUDA.Runtime.Marshal (
 
   -- * Host Allocation
@@ -93,8 +95,9 @@ mallocHostArray flags = doMalloc undefined
   , cIntConv        `Int64'
   , combineBitMasks `[AllocFlag]'     } -> `Status' cToEnum #}
   where
-    alloca' = F.alloca
-    hptr p  = (HostPtr . castPtr) `fmap` peek p
+    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
+                poke ptr nullPtr >> f (castPtr ptr)
+    hptr p    = (HostPtr . castPtr) `fmap` peek p
 
 
 -- |
@@ -128,8 +131,9 @@ mallocArray = doMalloc undefined
   , cIntConv `Int64'             } -> `Status' cToEnum #}
   where
     -- C-> Haskell doesn't like qualified imports in marshaller specifications
-    alloca' = F.alloca
-    dptr p  = (castDevPtr . DevicePtr) `fmap` peek p
+    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
+                poke ptr nullPtr >> f (castPtr ptr)
+    dptr p    = (castDevPtr . DevicePtr) `fmap` peek p
 
 
 -- |
