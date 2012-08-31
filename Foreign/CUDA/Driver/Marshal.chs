@@ -10,6 +10,8 @@
 --
 --------------------------------------------------------------------------------
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Foreign.CUDA.Driver.Marshal (
 
   -- * Host Allocation
@@ -101,8 +103,9 @@ mallocHostArray flags = doMalloc undefined
   ,                 `Int'
   , combineBitMasks `[AllocFlag]'         } -> `Status' cToEnum #}
   where
-    alloca'  = F.alloca
-    peekHP p = (HostPtr . castPtr) `fmap` peek p
+    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
+                poke ptr nullPtr >> f (castPtr ptr)
+    peekHP p  = (HostPtr . castPtr) `fmap` peek p
 
 
 -- |
@@ -186,7 +189,8 @@ mallocArray = doMalloc undefined
   { alloca'- `DevicePtr a' peekDeviceHandle*
   ,          `Int'                           } -> `Status' cToEnum #}
   where
-    alloca'  = F.alloca
+    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
+                poke ptr nullPtr >> f (castPtr ptr)
 
 
 -- |
