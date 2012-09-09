@@ -163,13 +163,13 @@ nothingIfNull  = nothingIf (== nullPtr)
 -- Given a list of enumeration values that represent bit masks, combine these
 -- masks using bitwise disjunction.
 --
-combineBitMasks :: (Enum a, Bits b) => [a] -> b
+combineBitMasks :: (Enum a, Num b, Bits b) => [a] -> b
 combineBitMasks = foldl (.|.) 0 . map (fromIntegral . fromEnum)
 
 -- Tests whether the given bit mask is contained in the given bit pattern
 -- (i.e., all bits set in the mask are also set in the pattern).
 --
-containsBitMask :: (Bits a, Enum b) => a -> b -> Bool
+containsBitMask :: (Num a, Bits a, Enum b) => a -> b -> Bool
 bits `containsBitMask` bm = let bm' = fromIntegral . fromEnum $ bm
                             in
                             bm' .&. bits == bm'
@@ -180,8 +180,8 @@ bits `containsBitMask` bm = let bm' = fromIntegral . fromEnum $ bm
 --   combined yield the bit pattern, instead all contained bit masks are
 --   produced.
 --
-extractBitMasks :: (Bits a, Enum b, Bounded b) => a -> [b]
-extractBitMasks bits = 
+extractBitMasks :: (Num a, Bits a, Enum b, Bounded b) => a -> [b]
+extractBitMasks bits =
   [bm | bm <- [minBound..maxBound], bits `containsBitMask` bm]
 
 
