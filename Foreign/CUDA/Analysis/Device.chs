@@ -10,7 +10,7 @@
 
 module Foreign.CUDA.Analysis.Device
   (
-    Compute, ComputeMode(..),
+    Compute(..), ComputeMode(..),
     DeviceProperties(..), DeviceResources(..), Allocation(..), PCI(..),
     resources
   )
@@ -20,6 +20,7 @@ module Foreign.CUDA.Analysis.Device
 
 import Data.Int
 import Data.Maybe
+import Debug.Trace
 
 
 -- |
@@ -30,9 +31,27 @@ import Data.Maybe
     with prefix="CU_COMPUTEMODE" deriving (Eq, Show) #}
 
 -- |
--- GPU compute capability
+-- GPU compute capability, major and minor revision number respectively.
 --
-type Compute = Double
+data Compute = Compute !Int !Int
+  deriving Eq
+
+instance Show Compute where
+  show (Compute major minor) = show major ++ "." ++ show minor
+
+instance Ord Compute where
+  compare (Compute m1 n1) (Compute m2 n2) =
+    case compare m1 m2 of
+      EQ -> compare n1 n2
+      x  -> x
+
+{--
+cap :: Int -> Int -> Double
+cap a 0 = fromIntegral a
+cap a b = let a' = fromIntegral a in
+            let b' = fromIntegral b in
+            a' + b' / max 10 (10^ ((ceiling . logBase 10) b' :: Int))
+--}
 
 -- |
 -- The properties of a compute device
@@ -121,20 +140,30 @@ data DeviceResources = DeviceResources
 -- an exact match is not found, choose a sensible default.
 --
 resources :: DeviceProperties -> DeviceResources
-resources dev = fromMaybe def (lookup compute gpuData)
+resources dev = fromMaybe defaultGPU (lookup compute gpuData)
   where
-    compute             = computeCapability dev
-    def | compute < 1.0 = snd $ head gpuData
-        | otherwise     = snd $ last gpuData
+    compute     = computeCapability dev
+    defaultGPU  = trace warning . snd
+                $ if compute < Compute 1 0 then head gpuData
+                                           else last gpuData
 
+    -- This is slightly dodgy as the warning message is coming from pure code.
+    -- However, it should be OK because all library functions run in IO, so it
+    -- is likely the user code is as well.
+    --
+    warning     = unlines [ "*** Warning: unknown CUDA device compute capability: " ++ show compute
+                          , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
+
+    -- This is extracted from tables in the CUDA occupancy calculator
+    --
     gpuData =
-      [(1.0, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
-      ,(1.1, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
-      ,(1.2, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
-      ,(1.3, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
-      ,(2.0, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
-      ,(2.1, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
-      ,(3.0, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
-      ,(3.5, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
+      [(Compute 1 0, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
+      ,(Compute 1 1, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
+      ,(Compute 1 2, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
+      ,(Compute 1 3, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
+      ,(Compute 2 0, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
+      ,(Compute 2 1, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
+      ,(Compute 3 0, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
+      ,(Compute 3 5, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
       ]
 
