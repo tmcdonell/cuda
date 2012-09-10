@@ -1,4 +1,8 @@
-{-# LANGUAGE GADTs, CPP, ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs                    #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
@@ -58,7 +62,8 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 --
 {# enum CUfunction_attribute as FunAttribute
     { underscoreToCase
-    , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock }
+    , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock
+    , MAX as CU_FUNC_ATTRIBUTE_MAX }    -- ignore
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
 
 -- |

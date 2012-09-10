@@ -99,6 +99,9 @@ describe TooManyPeers                   = "peer mapping resources exhausted"
 describe HostMemoryAlreadyRegistered    = "part or all of the requested memory range is already mapped"
 describe HostMemoryNotRegistered        = "pointer does not correspond to a registered memory region"
 #endif
+#if CUDA_VERSION >= 5000
+describe PeerAccessUnsupported          = "peer access is not supported across the given devices"
+#endif
 describe Unknown                        = "unknown error"
 
 

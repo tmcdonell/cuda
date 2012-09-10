@@ -109,8 +109,8 @@ attributes :: String -> IO FunAttributes
 attributes fn = resultIfOk =<< cudaFuncGetAttributes fn
 
 {# fun unsafe cudaFuncGetAttributes
-  { alloca-      `FunAttributes' peek*
-  , withCString* `String'              } -> `Status' cToEnum #}
+  { alloca-       `FunAttributes' peek*
+  , withCString_* `String'              } -> `Status' cToEnum #}
 
 
 -- |
@@ -196,7 +196,7 @@ setCacheConfig _  _    = requireSDK 3.0 "setCacheConfig"
 setCacheConfig fn pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 
 {# fun unsafe cudaFuncSetCacheConfig
-  { withCString* `String'
+  { withCString_* `String'
   , cFromEnum    `CacheConfig' } -> `Status' cToEnum #}
 #endif
 
@@ -210,5 +210,15 @@ launch :: String -> IO ()
 launch fn = nothingIfOk =<< cudaLaunch fn
 
 {# fun unsafe cudaLaunch
-  { withCString* `String' } -> `Status' cToEnum #}
+  { withCString_* `String' } -> `Status' cToEnum #}
+
+
+--------------------------------------------------------------------------------
+-- Internals
+--------------------------------------------------------------------------------
+
+-- CUDA 5.0 changed the types of some attributes from char* to void*
+--
+withCString_ :: String -> (Ptr a -> IO b) -> IO b
+withCString_ str fn = withCString str (fn . castPtr)
 

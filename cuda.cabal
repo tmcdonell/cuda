@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.4.1.1
+Version:                0.5.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -13,16 +13,16 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
-    This release is for version 4.1 of the CUDA toolkit.
+    This release is for version 5.0 of the CUDA toolkit.
 
 License:                BSD3
 License-file:           LICENSE
-Copyright:              Copyright (c) [2009..2011]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
+Copyright:              Copyright (c) [2009..2012]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Category:               Foreign
-Cabal-version:          >=1.6
-Tested-with:            GHC >= 6.12
+Cabal-version:          >= 1.6
+Tested-with:            GHC >= 7.6
 
 Build-type:             Custom
 Extra-tmp-files:        cuda.buildinfo config.status config.log

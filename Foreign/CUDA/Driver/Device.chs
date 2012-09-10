@@ -45,7 +45,8 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
 -- Device attributes
 --
 {# enum CUdevice_attribute as DeviceAttribute
-    { underscoreToCase }
+    { underscoreToCase
+    , MAX as CU_DEVICE_ATTRIBUTE_MAX }          -- ignore
     with prefix="CU_DEVICE_ATTRIBUTE" deriving (Eq, Show) #}
 
 {# pointer *CUdevprop as ^ foreign -> CUDevProp nocode #}

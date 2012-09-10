@@ -173,8 +173,8 @@ getTex :: String -> IO TextureReference
 getTex name = resultIfOk =<< cudaGetTextureReference name
 
 {# fun unsafe cudaGetTextureReference
-  { alloca-      `Ptr Texture' peek*
-  , withCString* `String'            } -> `Status' cToEnum #}
+  { alloca-       `Ptr Texture' peek*
+  , withCString_* `String'            } -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
@@ -183,4 +183,10 @@ getTex name = resultIfOk =<< cudaGetTextureReference name
 
 with_ :: Storable a => a -> (Ptr a -> IO b) -> IO b
 with_ = with
+
+
+-- CUDA 5.0 changed the types of some attributes from char* to void*
+--
+withCString_ :: String -> (Ptr a -> IO b) -> IO b
+withCString_ str fn = withCString str (fn . castPtr)
 
