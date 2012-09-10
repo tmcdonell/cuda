@@ -128,10 +128,13 @@ resources dev = fromMaybe def (lookup compute gpuData)
         | otherwise     = snd $ last gpuData
 
     gpuData =
-      [(1.0, DeviceResources 32  768 8 24 16384 512  8192 256 2 Block)
-      ,(1.1, DeviceResources 32  768 8 24 16384 512  8192 256 2 Block)
-      ,(1.2, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
-      ,(1.3, DeviceResources 32 1024 8 32 16384 512 16384 512 2 Block)
-      ,(2.0, DeviceResources 32 1536 8 48 49152 128 32768  64 1 Warp)
+      [(1.0, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
+      ,(1.1, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
+      ,(1.2, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
+      ,(1.3, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
+      ,(2.0, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
+      ,(2.1, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
+      ,(3.0, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
+      ,(3.5, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
       ]
 
