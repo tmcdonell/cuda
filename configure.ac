@@ -11,7 +11,10 @@ AC_CANONICAL_TARGET
 # prefix to the include and library search directories. Additionally, set nvcc
 # as the C preprocessor for c2hs (only, or it won't try to link cudart)
 #
-AC_PATH_PROG(NVCC, nvcc)
+AC_ARG_WITH([compiler], [Haskell compiler], [GHC=$withval],  [AC_PATH_PROG(GHC, ghc)])
+AC_ARG_WITH([nvcc],     [CUDA compiler],    [NVCC=$withval], [AC_PATH_PROG(NVCC, nvcc)])
+AC_ARG_WITH([gcc],      [C compiler],       [CC=$withval])
+
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname "$(dirname "$NVCC")")"
     cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E "
