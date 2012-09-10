@@ -10,7 +10,7 @@ import Distribution.Simple.Program
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess           hiding (ppC2hs)
 
-import Control.Exception.Extensible
+import Control.Exception
 import System.FilePath
 import System.Directory
 import System.Environment

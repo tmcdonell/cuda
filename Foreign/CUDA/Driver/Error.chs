@@ -15,7 +15,7 @@ module Foreign.CUDA.Driver.Error
 
 -- System
 import Data.Typeable
-import Control.Exception.Extensible
+import Control.Exception
 
 #include <cuda.h>
 {# context lib="cuda" #}

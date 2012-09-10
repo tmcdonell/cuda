@@ -56,7 +56,7 @@ import Data.Int
 import Data.Maybe
 import Unsafe.Coerce
 import Control.Applicative
-import Control.Exception.Extensible
+import Control.Exception
 
 import Foreign.C
 import Foreign.Ptr

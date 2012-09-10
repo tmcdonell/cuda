@@ -45,7 +45,7 @@ import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Data.Int
-import Control.Exception.Extensible
+import Control.Exception
 
 import Foreign.C
 import Foreign.Ptr

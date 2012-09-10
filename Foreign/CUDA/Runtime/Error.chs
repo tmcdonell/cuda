@@ -26,7 +26,7 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign                                  hiding ( unsafePerformIO )
 import Foreign.C
 import Data.Typeable
-import Control.Exception.Extensible
+import Control.Exception
 import System.IO.Unsafe
 
 #include "cbits/stubs.h"
