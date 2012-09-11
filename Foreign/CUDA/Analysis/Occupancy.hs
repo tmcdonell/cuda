@@ -98,7 +98,7 @@ occupancy !dev !thds !regs !smem
 
     -- Physical resources
     --
-    gpu = resources dev
+    gpu = deviceResources dev
 
     -- Allocation per thread block
     --

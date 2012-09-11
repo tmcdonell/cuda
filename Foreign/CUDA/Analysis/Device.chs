@@ -12,14 +12,13 @@ module Foreign.CUDA.Analysis.Device
   (
     Compute(..), ComputeMode(..),
     DeviceProperties(..), DeviceResources(..), Allocation(..), PCI(..),
-    resources
+    deviceResources
   )
   where
 
 #include <cuda.h>
 
 import Data.Int
-import Data.Maybe
 import Debug.Trace
 
 
@@ -126,6 +125,7 @@ data DeviceResources = DeviceResources
     threadsPerMP       :: !Int,         -- ^ Maximum number of in-flight threads on a multiprocessor
     threadBlocksPerMP  :: !Int,         -- ^ Maximum number of thread blocks resident on a multiprocessor
     warpsPerMP         :: !Int,         -- ^ Maximum number of in-flight warps per multiprocessor
+    coresPerMP         :: !Int,         -- ^ Number of SIMD arithmetic units per multiprocessor
     sharedMemPerMP     :: !Int,         -- ^ Total amount of shared memory per multiprocessor (bytes)
     sharedMemAllocUnit :: !Int,         -- ^ Shared memory allocation unit size (bytes)
     regFileSize        :: !Int,         -- ^ Total number of registers in a multiprocessor
@@ -136,34 +136,32 @@ data DeviceResources = DeviceResources
 
 
 -- |
--- Extract some additional hardware resource limitations for a given device. If
--- an exact match is not found, choose a sensible default.
+-- Extract some additional hardware resource limitations for a given device.
 --
-resources :: DeviceProperties -> DeviceResources
-resources dev = fromMaybe defaultGPU (lookup compute gpuData)
+deviceResources :: DeviceProperties -> DeviceResources
+deviceResources = resources . computeCapability
   where
-    compute     = computeCapability dev
-    defaultGPU  = trace warning . snd
-                $ if compute < Compute 1 0 then head gpuData
-                                           else last gpuData
-
-    -- This is slightly dodgy as the warning message is coming from pure code.
-    -- However, it should be OK because all library functions run in IO, so it
-    -- is likely the user code is as well.
+    -- This is mostly extracted from tables in the CUDA occupancy calculator.
     --
-    warning     = unlines [ "*** Warning: unknown CUDA device compute capability: " ++ show compute
-                          , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
+    resources compute = case compute of
+      Compute 1 0 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 Block      -- Tesla G80
+      Compute 1 1 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 Block      -- Tesla G8x
+      Compute 1 2 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 Block      -- Tesla G9x
+      Compute 1 3 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 Block      -- Tesla GT200
+      Compute 2 0 -> DeviceResources 32 1536  8 48  32 49152 128 32768  64 2 Warp       -- Fermi GF100
+      Compute 2 1 -> DeviceResources 32 1536  8 48  48 49152 128 32768  64 2 Warp       -- Fermi GF10x
+      Compute 3 0 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 Warp       -- Kepler GK10x
+      Compute 3 5 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 Warp       -- Kepler GK11x
 
-    -- This is extracted from tables in the CUDA occupancy calculator
-    --
-    gpuData =
-      [(Compute 1 0, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
-      ,(Compute 1 1, DeviceResources 32  768  8 24 16384 512  8192 256 2 Block)
-      ,(Compute 1 2, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
-      ,(Compute 1 3, DeviceResources 32 1024  8 32 16384 512 16384 512 2 Block)
-      ,(Compute 2 0, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
-      ,(Compute 2 1, DeviceResources 32 1536  8 48 49152 128 32768  64 2 Warp)
-      ,(Compute 3 0, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
-      ,(Compute 3 5, DeviceResources 32 2048 16 64 49152 256 65536 256 4 Warp)
-      ]
+      -- Something might have gone wrong, or the library just needs to be
+      -- updated for the next generation of hardware, in which case we just want
+      -- to pick a sensible default and carry on.
+      --
+      -- This is slightly dodgy as the warning message is coming from pure code.
+      -- However, it should be OK because all library functions run in IO, so it
+      -- is likely the user code is as well.
+      --
+      _           -> trace warning $ resources (Compute 3 0)
+        where warning = unlines [ "*** Warning: unknown CUDA device compute capability: " ++ show compute
+                                , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
 
