@@ -29,7 +29,6 @@ module Foreign.CUDA.Driver.Exec (
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream               (Stream(..))
-import Foreign.CUDA.Driver.Texture              (Texture(..))
 
 -- System
 import Foreign
@@ -38,9 +37,6 @@ import Data.Maybe
 import Control.Monad                            (zipWithM_)
 
 
-#if CUDA_VERSION >= 3020
-{-# DEPRECATED TArg "as of CUDA version 3.2" #-}
-#endif
 #if CUDA_VERSION >= 4000
 {-# DEPRECATED setBlockShape, setSharedSize, setParams, launch
       "use launchKernel instead" #-}
@@ -83,24 +79,20 @@ data CacheConfig
 data FunParam where
   IArg :: !Int             -> FunParam
   FArg :: !Float           -> FunParam
-  TArg :: !Texture         -> FunParam
   VArg :: Storable a => !a -> FunParam
 
 instance Storable FunParam where
   sizeOf (IArg _)       = sizeOf (undefined :: CUInt)
   sizeOf (FArg _)       = sizeOf (undefined :: CFloat)
   sizeOf (VArg v)       = sizeOf v
-  sizeOf (TArg _)       = 0
 
   alignment (IArg _)    = alignment (undefined :: CUInt)
   alignment (FArg _)    = alignment (undefined :: CFloat)
   alignment (VArg v)    = alignment v
-  alignment (TArg _)    = 0
 
   poke p (IArg i)       = poke (castPtr p) i
   poke p (FArg f)       = poke (castPtr p) f
   poke p (VArg v)       = poke (castPtr p) v
-  poke _ (TArg _)       = return ()
 
 
 --------------------------------------------------------------------------------
@@ -219,7 +211,6 @@ launchKernel fn (gx,gy,gz) (tx,ty,tz) sm mst args
       IArg v -> with' v (f . castPtr)
       FArg v -> with' v (f . castPtr)
       VArg v -> with' v (f . castPtr)
-      TArg _ -> error "launchKernel: TArg is deprecated"
 
     -- can't use the standard 'with' because 'alloca' will pass an undefined
     -- dummy argument when determining 'sizeOf' and 'alignment', but sometimes
@@ -291,12 +282,10 @@ setParams fn prs = do
 
     size (IArg _)    = sizeOf (undefined :: CUInt)
     size (FArg _)    = sizeOf (undefined :: CFloat)
-    size (TArg _)    = 0
     size (VArg v)    = sizeOf v
 
     set f o (IArg v) = nothingIfOk =<< cuParamSeti f o v
     set f o (FArg v) = nothingIfOk =<< cuParamSetf f o v
-    set f _ (TArg v) = nothingIfOk =<< cuParamSetTexRef f (-1) v
     set f o (VArg v) = with v $ \p -> (nothingIfOk =<< cuParamSetv f o p (sizeOf v))
 
 
@@ -320,9 +309,4 @@ setParams fn prs = do
   ,         `Int'
   , castPtr `Ptr a'
   ,         `Int'   } -> `Status' cToEnum #}
-
-{# fun unsafe cuParamSetTexRef
-  { useFun     `Fun'
-  ,            `Int'    -- must be CU_PARAM_TR_DEFAULT (-1)
-  , useTexture `Texture' } -> `Status' cToEnum #}
 
