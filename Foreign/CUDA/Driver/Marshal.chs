@@ -1,4 +1,6 @@
-{-# LANGUAGE CPP, ForeignFunctionInterface #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
@@ -9,8 +11,6 @@
 -- Memory management for low-level driver interface
 --
 --------------------------------------------------------------------------------
-
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Foreign.CUDA.Driver.Marshal (
 

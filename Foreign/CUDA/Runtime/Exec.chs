@@ -1,4 +1,6 @@
-{-# LANGUAGE GADTs, CPP, ForeignFunctionInterface #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GADTs                    #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Exec

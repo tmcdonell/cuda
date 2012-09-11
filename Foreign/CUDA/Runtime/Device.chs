@@ -1,4 +1,6 @@
-{-# LANGUAGE CPP, ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Device

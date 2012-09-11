@@ -1,4 +1,5 @@
-{-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls           #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Stream
@@ -46,7 +47,6 @@ newtype Stream = Stream { useStream :: {# type CUstream #}}
 -- exports actual option values.
 --
 data StreamFlag
-
 instance Enum StreamFlag where
 
 --------------------------------------------------------------------------------

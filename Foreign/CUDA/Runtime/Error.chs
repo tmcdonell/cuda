@@ -1,4 +1,5 @@
-{-# LANGUAGE ForeignFunctionInterface, DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable       #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Error
