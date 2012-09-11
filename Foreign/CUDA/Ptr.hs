@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Ptr
--- Copyright : (c) [2009..2011] Trevor L. McDonell
+-- Copyright : (c) [2009..2012] Trevor L. McDonell
 -- License   : BSD
 --
 -- A common interface for host and device pointers. While it is possible mix the

@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
--- Copyright : (c) [2009..2011] Trevor L. McDonell
+-- Copyright : (c) [2009..2012] Trevor L. McDonell
 -- License   : BSD
 --
 -- Event management for low-level driver interface

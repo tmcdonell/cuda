@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver
--- Copyright : (c) [2009..2011] Trevor L. McDonell
+-- Copyright : (c) [2009..2012] Trevor L. McDonell
 -- License   : BSD
 --
 -- Top level bindings to CUDA driver API

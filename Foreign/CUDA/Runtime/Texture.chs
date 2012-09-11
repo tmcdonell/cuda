@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Texture
--- Copyright : (c) [2009..2011] Trevor L. McDonell
+-- Copyright : (c) [2009..2012] Trevor L. McDonell
 -- License   : BSD
 --
 -- Texture references
