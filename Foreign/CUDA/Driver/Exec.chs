@@ -16,7 +16,7 @@
 module Foreign.CUDA.Driver.Exec (
 
   -- * Kernel Execution
-  Fun(Fun), FunParam(..), FunAttribute(..), CacheConfig(..),
+  Fun(Fun), FunParam(..), FunAttribute(..),
   requires, setBlockShape, setSharedSize, setParams, setCacheConfigFun,
   launch, launchKernel, launchKernel'
 
@@ -28,6 +28,7 @@ module Foreign.CUDA.Driver.Exec (
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Context              (Cache(..))
 import Foreign.CUDA.Driver.Stream               (Stream(..))
 
 -- System
@@ -61,17 +62,6 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
     , MAX_THREADS_PER_BLOCK as MaxKernelThreadsPerBlock
     , MAX as CU_FUNC_ATTRIBUTE_MAX }    -- ignore
     with prefix="CU_FUNC_ATTRIBUTE" deriving (Eq, Show) #}
-
--- |
--- Cache configuration preference
---
-#if CUDA_VERSION < 3000
-data CacheConfig
-#else
-{# enum CUfunc_cache_enum as CacheConfig
-    { underscoreToCase }
-    with prefix="CU_FUNC_CACHE_PREFER" deriving (Eq, Show) #}
-#endif
 
 -- |
 -- Kernel function parameters
@@ -146,7 +136,7 @@ setSharedSize fn bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 -- Switching between configuration modes may insert a device-side
 -- synchronisation point for streamed kernel launches.
 --
-setCacheConfigFun :: Fun -> CacheConfig -> IO ()
+setCacheConfigFun :: Fun -> Cache -> IO ()
 #if CUDA_VERSION < 3000
 setCacheConfigFun _  _    = requireSDK 3.0 "setCacheConfigFun"
 #else
@@ -154,7 +144,7 @@ setCacheConfigFun fn pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 
 {# fun unsafe cuFuncSetCacheConfig
   { useFun    `Fun'
-  , cFromEnum `CacheConfig' } -> `Status' cToEnum #}
+  , cFromEnum `Cache' } -> `Status' cToEnum #}
 #endif
 
 -- |

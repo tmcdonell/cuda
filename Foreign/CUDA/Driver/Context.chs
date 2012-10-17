@@ -71,9 +71,9 @@ data Limit
 #endif
 
 -- |
--- Device cache configuration flags
+-- Device cache configuration preference
 --
-#if CUDA_VERSION < 3020
+#if CUDA_VERSION < 3000
 data Cache
 #else
 {# enum CUfunc_cache_enum as Cache
