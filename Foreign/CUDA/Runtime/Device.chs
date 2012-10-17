@@ -14,7 +14,7 @@
 module Foreign.CUDA.Runtime.Device (
 
   -- * Device Management
-  ComputeMode(..), Device, DeviceFlag(..), DeviceProperties(..),
+  Device, DeviceFlag(..), DeviceProperties(..), Compute(..), ComputeMode(..),
   choose, get, count, props, set, setFlags, setOrder, reset, sync,
 
   -- * Peer Access
