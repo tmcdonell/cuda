@@ -4,19 +4,19 @@
 --
 --  Redistribution and use in source and binary forms, with or without
 --  modification, are permitted provided that the following conditions are met:
--- 
+--
 --  1. Redistributions of source code must retain the above copyright notice,
---     this list of conditions and the following disclaimer. 
+--     this list of conditions and the following disclaimer.
 --  2. Redistributions in binary form must reproduce the above copyright
 --     notice, this list of conditions and the following disclaimer in the
---     documentation and/or other materials provided with the distribution. 
+--     documentation and/or other materials provided with the distribution.
 --  3. The name of the author may not be used to endorse or promote products
---     derived from this software without specific prior written permission. 
+--     derived from this software without specific prior written permission.
 --
 --  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 --  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
 --  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
---  NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+--  NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 --  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
 --  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 --  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
@@ -28,19 +28,13 @@
 --
 --  Language: Haskell 98
 --
---  This module provides the marshaling routines for Haskell files produced by 
+--  This module provides the marshaling routines for Haskell files produced by
 --  C->Haskell for binding to C library interfaces.  It exports all of the
 --  low-level FFI (language-independent plus the C-specific parts) together
 --  with the C->HS-specific higher-level marshalling routines.
 --
 
 module Foreign.CUDA.Internal.C2HS (
-
---  -- * Re-export the language-independent component of the FFI 
---  module Foreign,
---
---  -- * Re-export the C language component of the FFI
---  module CForeign,
 
   -- * Composite marshalling functions
   withCStringLenIntConv, peekCStringLenIntConv, withIntConv, withFloatConv,
@@ -54,13 +48,10 @@ module Foreign.CUDA.Internal.C2HS (
 
   -- * Conversion between C and Haskell types
   cIntConv, cFloatConv, cToBool, cFromBool, cToEnum, cFromEnum
-) where 
+) where
 
 
 import Foreign
-       hiding       (Word)
-                    -- Should also hide the Foreign.Marshal.Pool exports in
-                    -- compilers that export them
 import Foreign.C
 import Control.Monad        (liftM)
 
@@ -70,49 +61,45 @@ import Control.Monad        (liftM)
 
 -- Strings with explicit length
 --
-withCStringLenIntConv     :: String -> (CStringLen -> IO a) -> IO a
-withCStringLenIntConv s f  = withCStringLen s $ \(p, n) -> f (p, cIntConv n)
+withCStringLenIntConv :: String -> (CStringLen -> IO a) -> IO a
+withCStringLenIntConv s f = withCStringLen s $ \(p, n) -> f (p, cIntConv n)
 
-peekCStringLenIntConv        :: CStringLen -> IO String
-peekCStringLenIntConv (s, n)  = peekCStringLen (s, cIntConv n)
+peekCStringLenIntConv :: CStringLen -> IO String
+peekCStringLenIntConv (s, n) = peekCStringLen (s, cIntConv n)
 
 -- Marshalling of numerals
 --
 
-withIntConv   :: (Storable b, Integral a, Integral b) 
-              => a -> (Ptr b -> IO c) -> IO c
-withIntConv    = with . cIntConv
+withIntConv :: (Storable b, Integral a, Integral b) => a -> (Ptr b -> IO c) -> IO c
+withIntConv = with . cIntConv
 
-withFloatConv :: (Storable b, RealFloat a, RealFloat b) 
-              => a -> (Ptr b -> IO c) -> IO c
-withFloatConv  = with . cFloatConv
+withFloatConv :: (Storable b, RealFloat a, RealFloat b) => a -> (Ptr b -> IO c) -> IO c
+withFloatConv = with . cFloatConv
 
-peekIntConv   :: (Storable a, Integral a, Integral b) 
-              => Ptr a -> IO b
-peekIntConv    = liftM cIntConv . peek
+peekIntConv :: (Storable a, Integral a, Integral b) => Ptr a -> IO b
+peekIntConv = liftM cIntConv . peek
 
-peekFloatConv :: (Storable a, RealFloat a, RealFloat b) 
-              => Ptr a -> IO b
-peekFloatConv  = liftM cFloatConv . peek
+peekFloatConv :: (Storable a, RealFloat a, RealFloat b) => Ptr a -> IO b
+peekFloatConv = liftM cFloatConv . peek
 
 -- Passing Booleans by reference
 --
 
 withBool :: (Integral a, Storable a) => Bool -> (Ptr a -> IO b) -> IO b
-withBool  = with . fromBool
+withBool = with . fromBool
 
 peekBool :: (Integral a, Storable a) => Ptr a -> IO Bool
-peekBool  = liftM toBool . peek
+peekBool = liftM toBool . peek
 
 
 -- Passing enums by reference
 --
 
 withEnum :: (Enum a, Integral b, Storable b) => a -> (Ptr b -> IO c) -> IO c
-withEnum  = with . cFromEnum
+withEnum = with . cFromEnum
 
 peekEnum :: (Enum a, Integral b, Storable b) => Ptr b -> IO a
-peekEnum  = liftM cToEnum . peek
+peekEnum = liftM cToEnum . peek
 
 
 {-
@@ -148,13 +135,13 @@ instance Storable a => Storable (Maybe a) where
 -- * the second argument allows to map a result wrapped into `Just' to some
 --   other domain
 --
-nothingIf       :: (a -> Bool) -> (a -> b) -> a -> Maybe b
-nothingIf p f x  = if p x then Nothing else Just $ f x
+nothingIf :: (a -> Bool) -> (a -> b) -> a -> Maybe b
+nothingIf p f x = if p x then Nothing else Just $ f x
 
 -- |Instance for special casing null pointers.
 --
 nothingIfNull :: (Ptr a -> b) -> Ptr a -> Maybe b
-nothingIfNull  = nothingIf (== nullPtr)
+nothingIfNull = nothingIf (== nullPtr)
 
 
 -- Support for bit masks
