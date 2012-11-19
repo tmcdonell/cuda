@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -131,12 +132,14 @@ instance Storable Texture where
 -- reference given by the named symbol. Any previously bound references are
 -- unbound.
 --
+{-# INLINEABLE bind #-}
 bind :: String -> Texture -> DevicePtr a -> Int64 -> IO ()
-bind name tex dptr bytes = do
+bind !name !tex !dptr !bytes = do
   ref <- getTex name
   poke ref tex
   nothingIfOk =<< cudaBindTexture ref dptr (format tex) bytes
 
+{-# INLINE cudaBindTexture #-}
 {# fun unsafe cudaBindTexture
   { alloca- `Int'
   , id      `TextureReference'
@@ -150,12 +153,14 @@ bind name tex dptr bytes = do
 -- in texel units, and the row pitch in bytes. Any previously bound references
 -- are unbound.
 --
+{-# INLINEABLE bind2D #-}
 bind2D :: String -> Texture -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
-bind2D name tex dptr (width,height) bytes = do
+bind2D !name !tex !dptr (!width,!height) !bytes = do
   ref <- getTex name
   poke ref tex
   nothingIfOk =<< cudaBindTexture2D ref dptr (format tex) width height bytes
 
+{-# INLINE cudaBindTexture2D #-}
 {# fun unsafe cudaBindTexture2D
   { alloca- `Int'
   , id      `TextureReference'
@@ -169,9 +174,11 @@ bind2D name tex dptr (width,height) bytes = do
 
 -- |Returns the texture reference associated with the given symbol
 --
+{-# INLINEABLE getTex #-}
 getTex :: String -> IO TextureReference
-getTex name = resultIfOk =<< cudaGetTextureReference name
+getTex !name = resultIfOk =<< cudaGetTextureReference name
 
+{-# INLINE cudaGetTextureReference #-}
 {# fun unsafe cudaGetTextureReference
   { alloca-       `Ptr Texture' peek*
   , withCString_* `String'            } -> `Status' cToEnum #}
@@ -181,12 +188,14 @@ getTex name = resultIfOk =<< cudaGetTextureReference name
 -- Internal
 --------------------------------------------------------------------------------
 
+{-# INLINE with_ #-}
 with_ :: Storable a => a -> (Ptr a -> IO b) -> IO b
 with_ = with
 
 
 -- CUDA 5.0 changed the types of some attributes from char* to void*
 --
+{-# INLINE withCString_ #-}
 withCString_ :: String -> (Ptr a -> IO b) -> IO b
-withCString_ str fn = withCString str (fn . castPtr)
+withCString_ !str !fn = withCString str (fn . castPtr)
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs                    #-}
@@ -107,9 +108,11 @@ data FunParam where
 -- Obtain the attributes of the named @__global__@ device function. This
 -- itemises the requirements to successfully launch the given kernel.
 --
+{-# INLINEABLE attributes #-}
 attributes :: String -> IO FunAttributes
-attributes fn = resultIfOk =<< cudaFuncGetAttributes fn
+attributes !fn = resultIfOk =<< cudaFuncGetAttributes fn
 
+{-# INLINE cudaFuncGetAttributes #-}
 {# fun unsafe cudaFuncGetAttributes
   { alloca-       `FunAttributes' peek*
   , withCString_* `String'              } -> `Status' cToEnum #}
@@ -120,12 +123,13 @@ attributes fn = resultIfOk =<< cudaFuncGetAttributes fn
 -- with 'setParams', this pushes data onto the execution stack that will be
 -- popped when a function is 'launch'ed.
 --
+{-# INLINEABLE setConfig #-}
 setConfig :: (Int,Int)          -- ^ grid dimensions
           -> (Int,Int,Int)      -- ^ block dimensions
           -> Int64              -- ^ shared memory per block (bytes)
           -> Maybe Stream       -- ^ associated processing stream
           -> IO ()
-setConfig (gx,gy) (bx,by,bz) sharedMem mst =
+setConfig (!gx,!gy) (!bx,!by,!bz) !sharedMem !mst =
   nothingIfOk =<<
     cudaConfigureCallSimple gx gy bx by bz sharedMem (maybe defaultStream id mst)
 
@@ -135,6 +139,7 @@ setConfig (gx,gy) (bx,by,bz) sharedMem mst =
 -- this is highly platform/compiler dependent. Wrap our own function stub
 -- accepting plain integers.
 --
+{-# INLINE cudaConfigureCallSimple #-}
 {# fun unsafe cudaConfigureCallSimple
   {           `Int', `Int'
   ,           `Int', `Int', `Int'
@@ -146,10 +151,11 @@ setConfig (gx,gy) (bx,by,bz) sharedMem mst =
 -- Set the argument parameters that will be passed to the next kernel
 -- invocation. This is used in conjunction with 'setConfig' to control kernel
 -- execution.
+{-# INLINEABLE setParams #-}
 setParams :: [FunParam] -> IO ()
 setParams = foldM_ k 0
   where
-    k offset arg = do
+    k !offset !arg = do
       let s = size arg
       set arg s offset >>= nothingIfOk
       return (offset + s)
@@ -167,6 +173,7 @@ setParams = foldM_ k 0
       cudaSetupArgument d s o
 
 
+{-# INLINE cudaSetupArgument #-}
 {# fun unsafe cudaSetupArgument
   `Storable a' =>
   { with'* `a'
@@ -175,6 +182,7 @@ setParams = foldM_ k 0
   where
     with' v a = with v $ \p -> a (castPtr p)
 
+{-# INLINE cudaSetDoubleForDevice #-}
 {# fun unsafe cudaSetDoubleForDevice
   { with'* `Double' peek'* } -> `Status' cToEnum #}
   where
@@ -191,12 +199,14 @@ setParams = foldM_ k 0
 -- Switching between configuration modes may insert a device-side
 -- synchronisation point for streamed kernel launches
 --
+{-# INLINEABLE setCacheConfig #-}
 setCacheConfig :: String -> CacheConfig -> IO ()
 #if CUDART_VERSION < 3000
-setCacheConfig _  _    = requireSDK 3.0 "setCacheConfig"
+setCacheConfig _ _       = requireSDK 3.0 "setCacheConfig"
 #else
-setCacheConfig fn pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
+setCacheConfig !fn !pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 
+{-# INLINE cudaFuncSetCacheConfig #-}
 {# fun unsafe cudaFuncSetCacheConfig
   { withCString_* `String'
   , cFromEnum    `CacheConfig' } -> `Status' cToEnum #}
@@ -208,9 +218,11 @@ setCacheConfig fn pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 -- @__global__@. This must be preceded by a call to 'setConfig' and (if
 -- appropriate) 'setParams'.
 --
+{-# INLINEABLE launch #-}
 launch :: String -> IO ()
-launch fn = nothingIfOk =<< cudaLaunch fn
+launch !fn = nothingIfOk =<< cudaLaunch fn
 
+{-# INLINE cudaLaunch #-}
 {# fun unsafe cudaLaunch
   { withCString_* `String' } -> `Status' cToEnum #}
 
@@ -221,6 +233,7 @@ launch fn = nothingIfOk =<< cudaLaunch fn
 
 -- CUDA 5.0 changed the types of some attributes from char* to void*
 --
+{-# INLINE withCString_ #-}
 withCString_ :: String -> (Ptr a -> IO b) -> IO b
-withCString_ str fn = withCString str (fn . castPtr)
+withCString_ !str !fn = withCString str (fn . castPtr)
 

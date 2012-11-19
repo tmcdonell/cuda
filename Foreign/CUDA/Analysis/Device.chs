@@ -57,7 +57,7 @@ cap a b = let a' = fromIntegral a in
 --
 data DeviceProperties = DeviceProperties
   {
-    deviceName                  :: String,              -- ^ Identifier
+    deviceName                  :: !String,             -- ^ Identifier
     computeCapability           :: !Compute,            -- ^ Supported compute capability
     totalGlobalMem              :: !Int64,              -- ^ Available global memory on the device in bytes
     totalConstMem               :: !Int64,              -- ^ Available constant memory on the device in bytes

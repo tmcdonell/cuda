@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -185,9 +186,11 @@ instance Storable DeviceProperties where
 -- |
 -- Select the compute device which best matches the given criteria
 --
+{-# INLINEABLE choose #-}
 choose :: DeviceProperties -> IO Device
-choose dev = resultIfOk =<< cudaChooseDevice dev
+choose !dev = resultIfOk =<< cudaChooseDevice dev
 
+{-# INLINE cudaChooseDevice #-}
 {# fun unsafe cudaChooseDevice
   { alloca-      `Int'              peekIntConv*
   , withDevProp* `DeviceProperties'              } -> `Status' cToEnum #}
@@ -198,9 +201,11 @@ choose dev = resultIfOk =<< cudaChooseDevice dev
 -- |
 -- Returns which device is currently being used
 --
+{-# INLINEABLE get #-}
 get :: IO Device
 get = resultIfOk =<< cudaGetDevice
 
+{-# INLINE cudaGetDevice #-}
 {# fun unsafe cudaGetDevice
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
@@ -209,9 +214,11 @@ get = resultIfOk =<< cudaGetDevice
 -- Returns the number of devices available for execution, with compute
 -- capability >= 1.0
 --
+{-# INLINEABLE count #-}
 count :: IO Int
 count = resultIfOk =<< cudaGetDeviceCount
 
+{-# INLINE cudaGetDeviceCount #-}
 {# fun unsafe cudaGetDeviceCount
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
@@ -219,9 +226,11 @@ count = resultIfOk =<< cudaGetDeviceCount
 -- |
 -- Return information about the selected compute device
 --
+{-# INLINEABLE props #-}
 props :: Device -> IO DeviceProperties
-props n = resultIfOk =<< cudaGetDeviceProperties n
+props !n = resultIfOk =<< cudaGetDeviceProperties n
 
+{-# INLINE cudaGetDeviceProperties #-}
 {# fun unsafe cudaGetDeviceProperties
   { alloca- `DeviceProperties' peek*
   ,         `Int'                    } -> `Status' cToEnum #}
@@ -230,9 +239,11 @@ props n = resultIfOk =<< cudaGetDeviceProperties n
 -- |
 -- Set device to be used for GPU execution
 --
+{-# INLINEABLE set #-}
 set :: Device -> IO ()
-set n = nothingIfOk =<< cudaSetDevice n
+set !n = nothingIfOk =<< cudaSetDevice n
 
+{-# INLINE cudaSetDevice #-}
 {# fun unsafe cudaSetDevice
   { `Int' } -> `Status' cToEnum #}
 
@@ -240,9 +251,11 @@ set n = nothingIfOk =<< cudaSetDevice n
 -- |
 -- Set flags to be used for device executions
 --
+{-# INLINEABLE setFlags #-}
 setFlags :: [DeviceFlag] -> IO ()
-setFlags f = nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
+setFlags !f = nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
 
+{-# INLINE cudaSetDeviceFlags #-}
 {# fun unsafe cudaSetDeviceFlags
   { `Int' } -> `Status' cToEnum #}
 
@@ -250,9 +263,11 @@ setFlags f = nothingIfOk =<< cudaSetDeviceFlags (combineBitMasks f)
 -- |
 -- Set list of devices for CUDA execution in priority order
 --
+{-# INLINEABLE setOrder #-}
 setOrder :: [Device] -> IO ()
-setOrder l = nothingIfOk =<< cudaSetValidDevices l (length l)
+setOrder !l = nothingIfOk =<< cudaSetValidDevices l (length l)
 
+{-# INLINE cudaSetValidDevices #-}
 {# fun unsafe cudaSetValidDevices
   { withArrayIntConv* `[Int]'
   ,                   `Int'   } -> `Status' cToEnum #}
@@ -263,11 +278,14 @@ setOrder l = nothingIfOk =<< cudaSetValidDevices l (length l)
 -- Block until the device has completed all preceding requested tasks. Returns
 -- an error if one of the tasks fails.
 --
+{-# INLINEABLE sync #-}
 sync :: IO ()
 #if CUDART_VERSION < 4000
+{-# INLINE cudaThreadSynchronize #-}
 sync = nothingIfOk =<< cudaThreadSynchronize
 {# fun unsafe cudaThreadSynchronize { } -> `Status' cToEnum #}
 #else
+{-# INLINE cudaDeviceSynchronize #-}
 sync = nothingIfOk =<< cudaDeviceSynchronize
 {# fun unsafe cudaDeviceSynchronize { } -> `Status' cToEnum #}
 #endif
@@ -281,11 +299,14 @@ sync = nothingIfOk =<< cudaDeviceSynchronize
 -- responsibility to ensure that the device is not being accessed by any other
 -- host threads from the process when this function is called.
 --
+{-# INLINEABLE reset #-}
 reset :: IO ()
 #if CUDART_VERSION >= 4000
+{-# INLINE cudaDeviceReset #-}
 reset = nothingIfOk =<< cudaDeviceReset
 {# fun unsafe cudaDeviceReset { } -> `Status' cToEnum #}
 #else
+{-# INLINE cudaThreadExit #-}
 reset = nothingIfOk =<< cudaThreadExit
 {# fun unsafe cudaThreadExit  { } -> `Status' cToEnum #}
 #endif
@@ -306,12 +327,14 @@ instance Enum PeerFlag where
 -- direct access is possible, it can then be enabled with 'add'. Requires
 -- cuda-4.0.
 --
+{-# INLINEABLE accessible #-}
 accessible :: Device -> Device -> IO Bool
 #if CUDART_VERSION < 4000
-accessible _   _    = requireSDK 4.0 "accessible"
+accessible _ _        = requireSDK 4.0 "accessible"
 #else
-accessible dev peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
+accessible !dev !peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
 
+{-# INLINE cudaDeviceCanAccessPeer #-}
 {# fun unsafe cudaDeviceCanAccessPeer
   { alloca-  `Bool'   peekBool*
   , cIntConv `Device'
@@ -323,12 +346,14 @@ accessible dev peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
 -- addressing, then enable allocations in the supplied context to be accessible
 -- by the current context. Requires cuda-4.0.
 --
+{-# INLINEABLE add #-}
 add :: Device -> [PeerFlag] -> IO ()
 #if CUDART_VERSION < 4000
-add _   _     = requireSDK 4.0 "add"
+add _ _         = requireSDK 4.0 "add"
 #else
-add dev flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
+add !dev !flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
 
+{-# INLINE cudaDeviceEnablePeerAccess #-}
 {# fun unsafe cudaDeviceEnablePeerAccess
   { cIntConv        `Device'
   , combineBitMasks `[PeerFlag]' } -> `Status' cToEnum #}
@@ -339,12 +364,14 @@ add dev flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
 -- Disable direct memory access from the current context to the supplied
 -- context. Requires cuda-4.0.
 --
+{-# INLINEABLE remove #-}
 remove :: Device -> IO ()
 #if CUDART_VERSION < 4000
-remove _   = requireSDK 4.0 "remove"
+remove _    = requireSDK 4.0 "remove"
 #else
-remove dev = nothingIfOk =<< cudaDeviceDisablePeerAccess dev
+remove !dev = nothingIfOk =<< cudaDeviceDisablePeerAccess dev
 
+{-# INLINE cudaDeviceDisablePeerAccess #-}
 {# fun unsafe cudaDeviceDisablePeerAccess
   { cIntConv `Device' } -> `Status' cToEnum #}
 #endif
@@ -369,18 +396,21 @@ data Limit
 -- |
 -- Query compute 2.0 call stack limits. Requires cuda-3.1.
 --
+{-# INLINEABLE getLimit #-}
 getLimit :: Limit -> IO Int
 #if   CUDART_VERSION < 3010
-getLimit _ = requireSDK 3.1 "getLimit"
+getLimit _  = requireSDK 3.1 "getLimit"
 #elif CUDART_VERSION < 4000
-getLimit l = resultIfOk =<< cudaThreadGetLimit l
+getLimit !l = resultIfOk =<< cudaThreadGetLimit l
 
+{-# INLINE cudaThreadGetLimit #-}
 {# fun unsafe cudaThreadGetLimit
   { alloca-   `Int' peekIntConv*
   , cFromEnum `Limit'            } -> `Status' cToEnum #}
 #else
-getLimit l = resultIfOk =<< cudaDeviceGetLimit l
+getLimit !l = resultIfOk =<< cudaDeviceGetLimit l
 
+{-# INLINE cudaDeviceGetLimit #-}
 {# fun unsafe cudaDeviceGetLimit
   { alloca-   `Int' peekIntConv*
   , cFromEnum `Limit'            } -> `Status' cToEnum #}
@@ -390,18 +420,21 @@ getLimit l = resultIfOk =<< cudaDeviceGetLimit l
 -- |
 -- Set compute 2.0 call stack limits. Requires cuda-3.1.
 --
+{-# INLINEABLE setLimit #-}
 setLimit :: Limit -> Int -> IO ()
 #if   CUDART_VERSION < 3010
-setLimit _ _ = requireSDK 3.1 "setLimit"
+setLimit _ _   = requireSDK 3.1 "setLimit"
 #elif CUDART_VERSION < 4000
-setLimit l n = nothingIfOk =<< cudaThreadSetLimit l n
+setLimit !l !n = nothingIfOk =<< cudaThreadSetLimit l n
 
+{-# INLINE cudaThreadSetLimit #-}
 {# fun unsafe cudaThreadSetLimit
   { cFromEnum `Limit'
   , cIntConv  `Int'   } -> `Status' cToEnum #}
 #else
-setLimit l n = nothingIfOk =<< cudaDeviceSetLimit l n
+setLimit !l !n = nothingIfOk =<< cudaDeviceSetLimit l n
 
+{-# INLINE cudaDeviceSetLimit #-}
 {# fun unsafe cudaDeviceSetLimit
   { cFromEnum `Limit'
   , cIntConv  `Int'   } -> `Status' cToEnum #}

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -8,8 +9,6 @@
 -- Memory management for CUDA devices
 --
 --------------------------------------------------------------------------------
-
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Foreign.CUDA.Runtime.Marshal (
 
@@ -84,28 +83,31 @@ typedef enum cudaMemHostAlloc_option_enum {
 -- system performance may suffer. This is best used sparingly to allocate
 -- staging areas for data exchange
 --
+{-# INLINEABLE mallocHostArray #-}
 mallocHostArray :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
-mallocHostArray flags = doMalloc undefined
+mallocHostArray !flags = doMalloc undefined
   where
     doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
-    doMalloc x n = resultIfOk =<< cudaHostAlloc (fromIntegral n * fromIntegral (sizeOf x)) flags
+    doMalloc x !n = resultIfOk =<< cudaHostAlloc (fromIntegral n * fromIntegral (sizeOf x)) flags
 
+{-# INLINE cudaHostAlloc #-}
 {# fun unsafe cudaHostAlloc
   { alloca'-        `HostPtr a' hptr*
   , cIntConv        `Int64'
   , combineBitMasks `[AllocFlag]'     } -> `Status' cToEnum #}
   where
-    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
-                poke ptr nullPtr >> f (castPtr ptr)
-    hptr p    = (HostPtr . castPtr) `fmap` peek p
+    alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
+    hptr !p    = (HostPtr . castPtr) `fmap` peek p
 
 
 -- |
 -- Free page-locked host memory previously allocated with 'mallecHost'
 --
+{-# INLINEABLE freeHost #-}
 freeHost :: HostPtr a -> IO ()
-freeHost p = nothingIfOk =<< cudaFreeHost p
+freeHost !p = nothingIfOk =<< cudaFreeHost p
 
+{-# INLINE cudaFreeHost #-}
 {# fun unsafe cudaFreeHost
   { hptr `HostPtr a' } -> `Status' cToEnum #}
   where hptr = castPtr . useHostPtr
@@ -120,20 +122,21 @@ freeHost p = nothingIfOk =<< cudaFreeHost p
 -- it. The memory is sufficient to hold the given number of elements of storable
 -- type. It is suitable aligned, and not cleared.
 --
+{-# INLINEABLE mallocArray #-}
 mallocArray :: Storable a => Int -> IO (DevicePtr a)
 mallocArray = doMalloc undefined
   where
     doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
-    doMalloc x n = resultIfOk =<< cudaMalloc (fromIntegral n * fromIntegral (sizeOf x))
+    doMalloc x !n = resultIfOk =<< cudaMalloc (fromIntegral n * fromIntegral (sizeOf x))
 
+{-# INLINE cudaMalloc #-}
 {# fun unsafe cudaMalloc
   { alloca'- `DevicePtr a' dptr*
   , cIntConv `Int64'             } -> `Status' cToEnum #}
   where
     -- C-> Haskell doesn't like qualified imports in marshaller specifications
-    alloca' f = F.alloca $ \(ptr :: Ptr (Ptr ())) ->
-                poke ptr nullPtr >> f (castPtr ptr)
-    dptr p    = (castDevPtr . DevicePtr) `fmap` peek p
+    alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
+    dptr !p    = (castDevPtr . DevicePtr) `fmap` peek p
 
 
 -- |
@@ -145,6 +148,7 @@ mallocArray = doMalloc undefined
 -- Note that kernel launches can be asynchronous, so you may need to add a
 -- synchronisation point at the end of the computation.
 --
+{-# INLINEABLE allocaArray #-}
 allocaArray :: Storable a => Int -> (DevicePtr a -> IO b) -> IO b
 allocaArray n = bracket (mallocArray n) free
 
@@ -152,9 +156,11 @@ allocaArray n = bracket (mallocArray n) free
 -- |
 -- Free previously allocated memory on the device
 --
+{-# INLINEABLE free #-}
 free :: DevicePtr a -> IO ()
-free p = nothingIfOk =<< cudaFree p
+free !p = nothingIfOk =<< cudaFree p
 
+{-# INLINE cudaFree #-}
 {# fun unsafe cudaFree
   { dptr `DevicePtr a' } -> `Status' cToEnum #}
   where
@@ -169,16 +175,18 @@ free p = nothingIfOk =<< cudaFree p
 -- Copy a number of elements from the device to host memory. This is a
 -- synchronous operation.
 --
+{-# INLINEABLE peekArray #-}
 peekArray :: Storable a => Int -> DevicePtr a -> Ptr a -> IO ()
-peekArray n dptr hptr = memcpy hptr (useDevicePtr dptr) n DeviceToHost
+peekArray !n !dptr !hptr = memcpy hptr (useDevicePtr dptr) n DeviceToHost
 
 
 -- |
 -- Copy memory from the device asynchronously, possibly associated with a
 -- particular stream. The destination memory must be page locked.
 --
+{-# INLINEABLE peekArrayAsync #-}
 peekArrayAsync :: Storable a => Int -> DevicePtr a -> HostPtr a -> Maybe Stream -> IO ()
-peekArrayAsync n dptr hptr mst =
+peekArrayAsync !n !dptr !hptr !mst =
   memcpyAsync (useHostPtr hptr) (useDevicePtr dptr) n DeviceToHost mst
 
 
@@ -187,8 +195,9 @@ peekArrayAsync n dptr hptr mst =
 -- this requires two memory copies: firstly from the device into a heap
 -- allocated array, and from there marshalled into a list
 --
+{-# INLINEABLE peekListArray #-}
 peekListArray :: Storable a => Int -> DevicePtr a -> IO [a]
-peekListArray n dptr =
+peekListArray !n !dptr =
   F.allocaArray n $ \p -> do
     peekArray   n dptr p
     F.peekArray n p
@@ -197,16 +206,18 @@ peekListArray n dptr =
 -- |
 -- Copy a number of elements onto the device. This is a synchronous operation.
 --
+{-# INLINEABLE pokeArray #-}
 pokeArray :: Storable a => Int -> Ptr a -> DevicePtr a -> IO ()
-pokeArray n hptr dptr = memcpy (useDevicePtr dptr) hptr n HostToDevice
+pokeArray !n !hptr !dptr = memcpy (useDevicePtr dptr) hptr n HostToDevice
 
 
 -- |
 -- Copy memory onto the device asynchronously, possibly associated with a
 -- particular stream. The source memory must be page-locked.
 --
+{-# INLINEABLE pokeArrayAsync #-}
 pokeArrayAsync :: Storable a => Int -> HostPtr a -> DevicePtr a -> Maybe Stream -> IO ()
-pokeArrayAsync n hptr dptr mst =
+pokeArrayAsync !n !hptr !dptr !mst =
   memcpyAsync (useDevicePtr dptr) (useHostPtr hptr) n HostToDevice mst
 
 
@@ -215,8 +226,9 @@ pokeArrayAsync n hptr dptr mst =
 -- sufficiently large to hold the entire list. This requires two marshalling
 -- operations
 --
+{-# INLINEABLE pokeListArray #-}
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
-pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
+pokeListArray !xs !dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
 
 
 -- |
@@ -224,8 +236,9 @@ pokeListArray xs dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
 -- second (destination). The copied areas may not overlap. This is a synchronous
 -- operation.
 --
+{-# INLINEABLE copyArray #-}
 copyArray :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
-copyArray n src dst = memcpy (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice
+copyArray !n !src !dst = memcpy (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice
 
 
 -- |
@@ -234,8 +247,9 @@ copyArray n src dst = memcpy (useDevicePtr dst) (useDevicePtr src) n DeviceToDev
 -- asynchronous with respect to host, but will never overlap with kernel
 -- execution.
 --
+{-# INLINEABLE copyArrayAsync #-}
 copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Stream -> IO ()
-copyArrayAsync n src dst mst =
+copyArrayAsync !n !src !dst !mst =
   memcpyAsync (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice mst
 
 
@@ -248,18 +262,20 @@ copyArrayAsync n src dst mst =
 -- |
 -- Copy data between host and device. This is a synchronous operation.
 --
+{-# INLINEABLE memcpy #-}
 memcpy :: Storable a
        => Ptr a                 -- ^ destination
        -> Ptr a                 -- ^ source
        -> Int                   -- ^ number of elements
        -> CopyDirection
        -> IO ()
-memcpy dst src n dir = doMemcpy undefined dst
+memcpy !dst !src !n !dir = doMemcpy undefined dst
   where
     doMemcpy :: Storable a' => a' -> Ptr a' -> IO ()
     doMemcpy x _ =
       nothingIfOk =<< cudaMemcpy dst src (fromIntegral n * fromIntegral (sizeOf x)) dir
 
+{-# INLINE cudaMemcpy #-}
 {# fun unsafe cudaMemcpy
   { castPtr   `Ptr a'
   , castPtr   `Ptr a'
@@ -272,6 +288,7 @@ memcpy dst src n dir = doMemcpy undefined dst
 -- with a particular stream. The host-side memory must be page-locked (allocated
 -- with 'mallocHostArray').
 --
+{-# INLINEABLE memcpyAsync #-}
 memcpyAsync :: Storable a
             => Ptr a            -- ^ destination
             -> Ptr a            -- ^ source
@@ -279,13 +296,14 @@ memcpyAsync :: Storable a
             -> CopyDirection
             -> Maybe Stream
             -> IO ()
-memcpyAsync dst src n kind mst = doMemcpy undefined dst
+memcpyAsync !dst !src !n !kind !mst = doMemcpy undefined dst
   where
     doMemcpy :: Storable a' => a' -> Ptr a' -> IO ()
     doMemcpy x _ =
       let bytes = fromIntegral n * fromIntegral (sizeOf x) in
       nothingIfOk =<< cudaMemcpyAsync dst src bytes kind (maybe defaultStream id mst)
 
+{-# INLINE cudaMemcpyAsync #-}
 {# fun unsafe cudaMemcpyAsync
   { castPtr   `Ptr a'
   , castPtr   `Ptr a'
@@ -305,8 +323,9 @@ memcpyAsync dst src n kind mst = doMemcpy undefined dst
 -- list into a heap-allocated array, and from there into device memory. The
 -- array should be 'free'd when no longer required.
 --
+{-# INLINEABLE newListArrayLen #-}
 newListArrayLen :: Storable a => [a] -> IO (DevicePtr a, Int)
-newListArrayLen xs =
+newListArrayLen !xs =
   F.withArrayLen xs                     $ \len p ->
   bracketOnError (mallocArray len) free $ \d_xs  -> do
     pokeArray len p d_xs
@@ -317,8 +336,9 @@ newListArrayLen xs =
 -- Write a list of storable elements into a newly allocated device array. This
 -- is 'newListArrayLen' composed with 'fst'.
 --
+{-# INLINEABLE newListArray #-}
 newListArray :: Storable a => [a] -> IO (DevicePtr a)
-newListArray xs = fst `fmap` newListArrayLen xs
+newListArray !xs = fst `fmap` newListArrayLen xs
 
 
 -- |
@@ -330,16 +350,18 @@ newListArray xs = fst `fmap` newListArrayLen xs
 -- should not return the pointer from the action, and be sure that any
 -- asynchronous operations (such as kernel execution) have completed.
 --
+{-# INLINEABLE withListArray #-}
 withListArray :: Storable a => [a] -> (DevicePtr a -> IO b) -> IO b
-withListArray xs = withListArrayLen xs . const
+withListArray !xs = withListArrayLen xs . const
 
 
 -- |
 -- A variant of 'withListArray' which also supplies the number of elements in
 -- the array to the applied function
 --
+{-# INLINEABLE withListArrayLen #-}
 withListArrayLen :: Storable a => [a] -> (Int -> DevicePtr a -> IO b) -> IO b
-withListArrayLen xs f =
+withListArrayLen !xs !f =
   bracket (newListArrayLen xs) (free . fst) (uncurry . flip $ f)
 --
 -- XXX: Will this attempt to double-free the device array on error (together
@@ -354,12 +376,14 @@ withListArrayLen xs f =
 -- |
 -- Initialise device memory to a given 8-bit value
 --
+{-# INLINEABLE memset #-}
 memset :: DevicePtr a                   -- ^ The device memory
        -> Int64                         -- ^ Number of bytes
        -> Int8                          -- ^ Value to set for each byte
        -> IO ()
-memset dptr bytes symbol = nothingIfOk =<< cudaMemset dptr symbol bytes
+memset !dptr !bytes !symbol = nothingIfOk =<< cudaMemset dptr symbol bytes
 
+{-# INLINE cudaMemset #-}
 {# fun unsafe cudaMemset
   { dptr     `DevicePtr a'
   , cIntConv `Int8'

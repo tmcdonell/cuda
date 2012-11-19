@@ -75,6 +75,7 @@ data Occupancy = Occupancy
 -- |
 -- Calculate occupancy data for a given GPU and kernel resource usage
 --
+{-# INLINEABLE occupancy #-}
 occupancy
     :: DeviceProperties -- ^ Properties of the card in question
     -> Int              -- ^ Threads per block
@@ -120,6 +121,7 @@ occupancy !dev !thds !regs !smem
 -- resource usage. This returns the smallest satisfying block size in increments
 -- of a single warp.
 --
+{-# INLINEABLE optimalBlockSize #-}
 optimalBlockSize
     :: DeviceProperties         -- ^ Architecture to optimise for
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
@@ -135,13 +137,14 @@ optimalBlockSize = flip optimalBlockSizeBy decWarp
 -- should be monotonically decreasing to return the smallest block size yielding
 -- maximum occupancy, and vice-versa.
 --
+{-# INLINEABLE optimalBlockSizeBy #-}
 optimalBlockSizeBy
     :: DeviceProperties
     -> (DeviceProperties -> [Int])
     -> (Int -> Int)
     -> (Int -> Int)
     -> (Int, Occupancy)
-optimalBlockSizeBy dev fblk freg fsmem
+optimalBlockSizeBy !dev !fblk !freg !fsmem
   = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
   where
     residency = map (\t -> occupancy dev t (freg t) (fsmem t)) threads
@@ -151,8 +154,9 @@ optimalBlockSizeBy dev fblk freg fsmem
 -- | Increments in powers-of-two, over the range of supported thread block sizes
 -- for the given device.
 --
+{-# INLINEABLE incPow2 #-}
 incPow2 :: DeviceProperties -> [Int]
-incPow2 dev = map ((2::Int)^) [lb, lb+1 .. ub]
+incPow2 !dev = map ((2::Int)^) [lb, lb+1 .. ub]
   where
     round' = round :: Double -> Int
     lb     = round' . logBase 2 . fromIntegral $ warpSize dev
@@ -161,8 +165,9 @@ incPow2 dev = map ((2::Int)^) [lb, lb+1 .. ub]
 -- | Decrements in powers-of-two, over the range of supported thread block sizes
 -- for the given device.
 --
+{-# INLINEABLE decPow2 #-}
 decPow2 :: DeviceProperties -> [Int]
-decPow2 dev = map ((2::Int)^) [ub, ub-1 .. lb]
+decPow2 !dev = map ((2::Int)^) [ub, ub-1 .. lb]
   where
     round' = round :: Double -> Int
     lb     = round' . logBase 2 . fromIntegral $ warpSize dev
@@ -171,17 +176,19 @@ decPow2 dev = map ((2::Int)^) [ub, ub-1 .. lb]
 -- | Decrements in the warp size of the device, over the range of supported
 -- thread block sizes.
 --
+{-# INLINEABLE decWarp #-}
 decWarp :: DeviceProperties -> [Int]
-decWarp dev = [block, block-warp .. warp]
+decWarp !dev = [block, block-warp .. warp]
   where
-    warp  = warpSize dev
-    block = maxThreadsPerBlock dev
+    !warp  = warpSize dev
+    !block = maxThreadsPerBlock dev
 
 -- | Increments in the warp size of the device, over the range of supported
 -- thread block sizes.
 --
+{-# INLINEABLE incWarp #-}
 incWarp :: DeviceProperties -> [Int]
-incWarp dev = [warp, 2*warp .. block]
+incWarp !dev = [warp, 2*warp .. block]
   where
     warp  = warpSize dev
     block = maxThreadsPerBlock dev
@@ -191,12 +198,13 @@ incWarp dev = [warp, 2*warp .. block]
 -- Determine the maximum number of CTAs that can be run simultaneously for a
 -- given kernel / device combination.
 --
+{-# INLINEABLE maxResidentBlocks #-}
 maxResidentBlocks
   :: DeviceProperties   -- ^ Properties of the card in question
   -> Int                -- ^ Threads per block
   -> Int                -- ^ Registers per thread
   -> Int                -- ^ Shared memory per block (bytes)
   -> Int                -- ^ Maximum number of resident blocks
-maxResidentBlocks dev thds regs smem =
+maxResidentBlocks !dev !thds !regs !smem =
   multiProcessorCount dev * activeThreadBlocks (occupancy dev thds regs smem)
 

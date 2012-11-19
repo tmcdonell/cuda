@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
@@ -111,9 +112,11 @@ typedef enum CUtexture_flag_enum {
 -- reference functions are used to specify the format and interpretation to be
 -- used when the memory is read through this reference.
 --
+{-# INLINEABLE create #-}
 create :: IO Texture
 create = resultIfOk =<< cuTexRefCreate
 
+{-# INLINE cuTexRefCreate #-}
 {# fun unsafe cuTexRefCreate
   { alloca- `Texture' peekTex* } -> `Status' cToEnum #}
 
@@ -121,9 +124,11 @@ create = resultIfOk =<< cuTexRefCreate
 -- |
 -- Destroy a texture reference
 --
+{-# INLINEABLE destroy #-}
 destroy :: Texture -> IO ()
-destroy tex = nothingIfOk =<< cuTexRefDestroy tex
+destroy !tex = nothingIfOk =<< cuTexRefDestroy tex
 
+{-# INLINE cuTexRefDestroy #-}
 {# fun unsafe cuTexRefDestroy
   { useTexture `Texture' } -> `Status' cToEnum #}
 
@@ -132,9 +137,11 @@ destroy tex = nothingIfOk =<< cuTexRefDestroy tex
 -- Bind a linear array address of the given size (bytes) as a texture
 -- reference. Any previously bound references are unbound.
 --
+{-# INLINEABLE bind #-}
 bind :: Texture -> DevicePtr a -> Int64 -> IO ()
-bind tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
+bind !tex !dptr !bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 
+{-# INLINE cuTexRefSetAddress #-}
 {# fun unsafe cuTexRefSetAddress
   { alloca-         `Int'
   , useTexture      `Texture'
@@ -148,10 +155,12 @@ bind tex dptr bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 -- calls to 'setFormat' can not follow a call to 'bind2D' for the same texture
 -- reference.
 --
+{-# INLINEABLE bind2D #-}
 bind2D :: Texture -> Format -> Int -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
-bind2D tex fmt chn dptr (width,height) pitch =
+bind2D !tex !fmt !chn !dptr (!width,!height) !pitch =
   nothingIfOk =<< cuTexRefSetAddress2DSimple tex fmt chn dptr width height pitch
 
+{-# INLINE cuTexRefSetAddress2DSimple #-}
 {# fun unsafe cuTexRefSetAddress2DSimple
   { useTexture      `Texture'
   , cFromEnum       `Format'
@@ -166,9 +175,11 @@ bind2D tex fmt chn dptr (width,height) pitch =
 -- Get the addressing mode used by a texture reference, corresponding to the
 -- given dimension (currently the only supported dimension values are 0 or 1).
 --
+{-# INLINEABLE getAddressMode #-}
 getAddressMode :: Texture -> Int -> IO AddressMode
-getAddressMode tex dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
+getAddressMode !tex !dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
 
+{-# INLINE cuTexRefGetAddressMode #-}
 {# fun unsafe cuTexRefGetAddressMode
   { alloca-    `AddressMode' peekEnum*
   , useTexture `Texture'
@@ -178,9 +189,11 @@ getAddressMode tex dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
 -- |
 -- Get the filtering mode used by a texture reference
 --
+{-# INLINEABLE getFilterMode #-}
 getFilterMode :: Texture -> IO FilterMode
-getFilterMode tex = resultIfOk =<< cuTexRefGetFilterMode tex
+getFilterMode !tex = resultIfOk =<< cuTexRefGetFilterMode tex
 
+{-# INLINE cuTexRefGetFilterMode #-}
 {# fun unsafe cuTexRefGetFilterMode
   { alloca-    `FilterMode' peekEnum*
   , useTexture `Texture'              } -> `Status' cToEnum #}
@@ -189,11 +202,13 @@ getFilterMode tex = resultIfOk =<< cuTexRefGetFilterMode tex
 -- |
 -- Get the data format and number of channel components of the bound texture
 --
+{-# INLINEABLE getFormat #-}
 getFormat :: Texture -> IO (Format, Int)
-getFormat tex = do
-  (status,fmt,dim) <- cuTexRefGetFormat tex
+getFormat !tex = do
+  (!status,!fmt,!dim) <- cuTexRefGetFormat tex
   resultIfOk (status,(fmt,dim))
 
+{-# INLINE cuTexRefGetFormat #-}
 {# fun unsafe cuTexRefGetFormat
   { alloca-    `Format'    peekEnum*
   , alloca-    `Int'       peekIntConv*
@@ -203,9 +218,11 @@ getFormat tex = do
 -- |
 -- Specify the addressing mode for the given dimension of a texture reference
 --
+{-# INLINEABLE setAddressMode #-}
 setAddressMode :: Texture -> Int -> AddressMode -> IO ()
-setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mode
+setAddressMode !tex !dim !mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mode
 
+{-# INLINE cuTexRefSetAddressMode #-}
 {# fun unsafe cuTexRefSetAddressMode
   { useTexture `Texture'
   ,            `Int'
@@ -216,9 +233,11 @@ setAddressMode tex dim mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim mod
 -- Specify the filtering mode to be used when reading memory through a texture
 -- reference
 --
+{-# INLINEABLE setFilterMode #-}
 setFilterMode :: Texture -> FilterMode -> IO ()
-setFilterMode tex mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
+setFilterMode !tex !mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
 
+{-# INLINE cuTexRefSetFilterMode #-}
 {# fun unsafe cuTexRefSetFilterMode
   { useTexture `Texture'
   , cFromEnum  `FilterMode' } -> `Status' cToEnum #}
@@ -228,9 +247,11 @@ setFilterMode tex mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
 -- Specify additional characteristics for reading and indexing the texture
 -- reference
 --
+{-# INLINEABLE setReadMode #-}
 setReadMode :: Texture -> ReadMode -> IO ()
-setReadMode tex mode = nothingIfOk =<< cuTexRefSetFlags tex mode
+setReadMode !tex !mode = nothingIfOk =<< cuTexRefSetFlags tex mode
 
+{-# INLINE cuTexRefSetFlags #-}
 {# fun unsafe cuTexRefSetFlags
   { useTexture `Texture'
   , cFromEnum  `ReadMode' } -> `Status' cToEnum #}
@@ -240,9 +261,11 @@ setReadMode tex mode = nothingIfOk =<< cuTexRefSetFlags tex mode
 -- Specify the format of the data and number of packed components per element to
 -- be read by the texture reference
 --
+{-# INLINEABLE setFormat #-}
 setFormat :: Texture -> Format -> Int -> IO ()
-setFormat tex fmt chn = nothingIfOk =<< cuTexRefSetFormat tex fmt chn
+setFormat !tex !fmt !chn = nothingIfOk =<< cuTexRefSetFormat tex fmt chn
 
+{-# INLINE cuTexRefSetFormat #-}
 {# fun unsafe cuTexRefSetFormat
   { useTexture `Texture'
   , cFromEnum  `Format'
@@ -253,6 +276,7 @@ setFormat tex fmt chn = nothingIfOk =<< cuTexRefSetFormat tex fmt chn
 -- Internal
 --------------------------------------------------------------------------------
 
+{-# INLINE peekTex #-}
 peekTex :: Ptr {# type CUtexref #} -> IO Texture
 peekTex = liftM Texture . peek
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -93,9 +94,11 @@ data JITResult = JITResult
 -- |
 -- Returns a function handle
 --
+{-# INLINEABLE getFun #-}
 getFun :: Module -> String -> IO Fun
-getFun mdl fn = resultIfFound "function" fn =<< cuModuleGetFunction mdl fn
+getFun !mdl !fn = resultIfFound "function" fn =<< cuModuleGetFunction mdl fn
 
+{-# INLINE cuModuleGetFunction #-}
 {# fun unsafe cuModuleGetFunction
   { alloca-      `Fun'    peekFun*
   , useModule    `Module'
@@ -106,11 +109,13 @@ getFun mdl fn = resultIfFound "function" fn =<< cuModuleGetFunction mdl fn
 -- |
 -- Return a global pointer, and size of the global (in bytes)
 --
+{-# INLINEABLE getPtr #-}
 getPtr :: Module -> String -> IO (DevicePtr a, Int)
-getPtr mdl name = do
-  (status,dptr,bytes) <- cuModuleGetGlobal mdl name
+getPtr !mdl !name = do
+  (!status,!dptr,!bytes) <- cuModuleGetGlobal mdl name
   resultIfFound "global" name (status,(dptr,bytes))
 
+{-# INLINE cuModuleGetGlobal #-}
 {# fun unsafe cuModuleGetGlobal
   { alloca-      `DevicePtr a' peekDeviceHandle*
   , alloca-      `Int'         peekIntConv*
@@ -121,9 +126,11 @@ getPtr mdl name = do
 -- |
 -- Return a handle to a texture reference
 --
+{-# INLINEABLE getTex #-}
 getTex :: Module -> String -> IO Texture
-getTex mdl name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
+getTex !mdl !name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
 
+{-# INLINE cuModuleGetTexRef #-}
 {# fun unsafe cuModuleGetTexRef
   { alloca-      `Texture' peekTex*
   , useModule    `Module'
@@ -134,9 +141,11 @@ getTex mdl name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context
 --
+{-# INLINEABLE loadFile #-}
 loadFile :: FilePath -> IO Module
-loadFile ptx = resultIfOk =<< cuModuleLoad ptx
+loadFile !ptx = resultIfOk =<< cuModuleLoad ptx
 
+{-# INLINE cuModuleLoad #-}
 {# fun unsafe cuModuleLoad
   { alloca-      `Module'   peekMod*
   , withCString* `FilePath'          } -> `Status' cToEnum #}
@@ -147,9 +156,11 @@ loadFile ptx = resultIfOk =<< cuModuleLoad ptx
 -- into the current context. The image (typically) is the contents of a cubin or
 -- ptx file as a NULL-terminated string.
 --
+{-# INLINEABLE loadData #-}
 loadData :: ByteString -> IO Module
-loadData img = resultIfOk =<< cuModuleLoadData img
+loadData !img = resultIfOk =<< cuModuleLoadData img
 
+{-# INLINE cuModuleLoadData #-}
 {# fun unsafe cuModuleLoadData
   { alloca-        `Module'     peekMod*
   , useByteString* `ByteString'          } -> ` Status' cToEnum #}
@@ -159,8 +170,9 @@ loadData img = resultIfOk =<< cuModuleLoadData img
 -- Load a module with online compiler options. The actual attributes of the
 -- compiled kernel can be probed using 'requires'.
 --
+{-# INLINEABLE loadDataEx #-}
 loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
-loadDataEx img options =
+loadDataEx !img !options =
   allocaArray logSize $ \p_ilog ->
   allocaArray logSize $ \p_elog ->
   let (opt,val) = unzip $
@@ -188,6 +200,7 @@ loadDataEx img options =
     unpack (Target x)            = (JIT_TARGET, fromEnum x)
 
 
+{-# INLINE cuModuleLoadDataEx #-}
 {# fun unsafe cuModuleLoadDataEx
   { alloca-        `Module'       peekMod*
   , useByteString* `ByteString'
@@ -199,9 +212,11 @@ loadDataEx img options =
 -- |
 -- Unload a module from the current context
 --
+{-# INLINEABLE unload #-}
 unload :: Module -> IO ()
-unload m = nothingIfOk =<< cuModuleUnload m
+unload !m = nothingIfOk =<< cuModuleUnload m
 
+{-# INLINE cuModuleUnload #-}
 {# fun unsafe cuModuleUnload
   { useModule `Module' } -> `Status' cToEnum #}
 
@@ -210,16 +225,19 @@ unload m = nothingIfOk =<< cuModuleUnload m
 -- Internal
 --------------------------------------------------------------------------------
 
+{-# INLINE resultIfFound #-}
 resultIfFound :: String -> String -> (Status, a) -> IO a
-resultIfFound kind name (status,result) =
+resultIfFound kind name (!status,!result) =
   case status of
        Success  -> return result
        NotFound -> cudaError (kind ++ ' ' : describe status ++ ": " ++ name)
        _        -> throwIO (ExitCode status)
 
+{-# INLINE peekMod #-}
 peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
 
+{-# INLINE useByteString #-}
 useByteString :: ByteString -> (Ptr a -> IO b) -> IO b
-useByteString bs act = B.useAsCString bs $ \p -> act (castPtr p)
+useByteString !bs !act = B.useAsCString bs $ \ !p -> act (castPtr p)
 

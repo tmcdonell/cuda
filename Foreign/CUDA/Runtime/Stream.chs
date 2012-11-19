@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
@@ -48,9 +49,11 @@ newtype Stream = Stream { useStream :: {# type cudaStream_t #}}
 -- |
 -- Create a new asynchronous stream
 --
+{-# INLINEABLE create #-}
 create :: IO Stream
 create = resultIfOk =<< cudaStreamCreate
 
+{-# INLINE cudaStreamCreate #-}
 {# fun unsafe cudaStreamCreate
   { alloca- `Stream' peekStream* } -> `Status' cToEnum #}
 
@@ -58,9 +61,11 @@ create = resultIfOk =<< cudaStreamCreate
 -- |
 -- Destroy and clean up an asynchronous stream
 --
+{-# INLINEABLE destroy #-}
 destroy :: Stream -> IO ()
-destroy s = nothingIfOk =<< cudaStreamDestroy s
+destroy !s = nothingIfOk =<< cudaStreamDestroy s
 
+{-# INLINE cudaStreamDestroy #-}
 {# fun unsafe cudaStreamDestroy
   { useStream `Stream' } -> `Status' cToEnum #}
 
@@ -68,14 +73,16 @@ destroy s = nothingIfOk =<< cudaStreamDestroy s
 -- |
 -- Determine if all operations in a stream have completed
 --
-finished   :: Stream -> IO Bool
-finished s =
+{-# INLINEABLE finished #-}
+finished :: Stream -> IO Bool
+finished !s =
   cudaStreamQuery s >>= \rv -> do
   case rv of
       Success  -> return True
       NotReady -> return False
       _        -> resultIfOk (rv,undefined)
 
+{-# INLINE cudaStreamQuery #-}
 {# fun unsafe cudaStreamQuery
   { useStream `Stream' } -> `Status' cToEnum #}
 
@@ -83,9 +90,11 @@ finished s =
 -- |
 -- Block until all operations in a Stream have been completed
 --
+{-# INLINEABLE block #-}
 block :: Stream -> IO ()
-block s = nothingIfOk =<< cudaStreamSynchronize s
+block !s = nothingIfOk =<< cudaStreamSynchronize s
 
+{-# INLINE cudaStreamSynchronize #-}
 {# fun unsafe cudaStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
 
@@ -93,6 +102,7 @@ block s = nothingIfOk =<< cudaStreamSynchronize s
 -- |
 -- The main execution stream (0)
 --
+{-# INLINE defaultStream #-}
 defaultStream :: Stream
 #if CUDART_VERSION < 3010
 defaultStream = Stream 0
@@ -104,6 +114,7 @@ defaultStream = Stream nullPtr
 -- Internal
 --------------------------------------------------------------------------------
 
+{-# INLINE peekStream #-}
 peekStream :: Ptr {#type cudaStream_t#} -> IO Stream
 #if CUDART_VERSION < 3010
 peekStream = liftM Stream . peekIntConv

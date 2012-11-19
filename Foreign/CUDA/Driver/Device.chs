@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -122,9 +123,11 @@ instance Enum InitFlag where
 -- Initialise the CUDA driver API. Must be called before any other driver
 -- function.
 --
+{-# INLINEABLE initialise #-}
 initialise :: [InitFlag] -> IO ()
-initialise flags = nothingIfOk =<< cuInit flags
+initialise !flags = nothingIfOk =<< cuInit flags
 
+{-# INLINE cuInit #-}
 {# fun unsafe cuInit
   { combineBitMasks `[InitFlag]' } -> `Status' cToEnum #}
 
@@ -136,10 +139,12 @@ initialise flags = nothingIfOk =<< cuInit flags
 -- |
 -- Return the compute compatibility revision supported by the device
 --
+{-# INLINEABLE capability #-}
 capability :: Device -> IO Compute
-capability dev =
-  (\(s,a,b) -> resultIfOk (s,Compute a b)) =<< cuDeviceComputeCapability dev
+capability !dev =
+  (\(!s,!a,!b) -> resultIfOk (s,Compute a b)) =<< cuDeviceComputeCapability dev
 
+{-# INLINE cuDeviceComputeCapability #-}
 {# fun unsafe cuDeviceComputeCapability
   { alloca-   `Int'    peekIntConv*
   , alloca-   `Int'    peekIntConv*
@@ -149,9 +154,11 @@ capability dev =
 -- |
 -- Return a device handle
 --
+{-# INLINEABLE device #-}
 device :: Int -> IO Device
-device d = resultIfOk =<< cuDeviceGet d
+device !d = resultIfOk =<< cuDeviceGet d
 
+{-# INLINE cuDeviceGet #-}
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
   , cIntConv `Int'           } -> `Status' cToEnum #}
@@ -161,9 +168,11 @@ device d = resultIfOk =<< cuDeviceGet d
 -- |
 -- Return the selected attribute for the given device
 --
+{-# INLINEABLE attribute #-}
 attribute :: Device -> DeviceAttribute -> IO Int
-attribute d a = resultIfOk =<< cuDeviceGetAttribute a d
+attribute !d !a = resultIfOk =<< cuDeviceGetAttribute a d
 
+{-# INLINE cuDeviceGetAttribute #-}
 {# fun unsafe cuDeviceGetAttribute
   { alloca-   `Int'             peekIntConv*
   , cFromEnum `DeviceAttribute'
@@ -173,9 +182,11 @@ attribute d a = resultIfOk =<< cuDeviceGetAttribute a d
 -- |
 -- Return the number of device with compute capability > 1.0
 --
+{-# INLINEABLE count #-}
 count :: IO Int
 count = resultIfOk =<< cuDeviceGetCount
 
+{-# INLINE cuDeviceGetCount #-}
 {# fun unsafe cuDeviceGetCount
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
@@ -183,9 +194,11 @@ count = resultIfOk =<< cuDeviceGetCount
 -- |
 -- Name of the device
 --
+{-# INLINEABLE name #-}
 name :: Device -> IO String
-name d = resultIfOk =<< cuDeviceGetName d
+name !d = resultIfOk =<< cuDeviceGetName d
 
+{-# INLINE cuDeviceGetName #-}
 {# fun unsafe cuDeviceGetName
   { allocaS-  `String'& peekS*
   , useDevice `Device'         } -> `Status' cToEnum #}
@@ -202,8 +215,9 @@ name d = resultIfOk =<< cuDeviceGetName d
 -- Annoyingly, the driver API requires several different functions to extract
 -- all device properties that are part of a single structure in the runtime API
 --
+{-# INLINEABLE props #-}
 props :: Device -> IO DeviceProperties
-props d = do
+props !d = do
   p   <- resultIfOk =<< cuDeviceGetProperties d
 
   -- And the remaining properties
@@ -281,6 +295,7 @@ props d = do
     }
 
 
+{-# INLINE cuDeviceGetProperties #-}
 {# fun unsafe cuDeviceGetProperties
   { alloca-   `CUDevProp' peek*
   , useDevice `Device'          } -> `Status' cToEnum #}
@@ -289,9 +304,11 @@ props d = do
 -- |
 -- Total memory available on the device (bytes)
 --
+{-# INLINEABLE totalMem #-}
 totalMem :: Device -> IO Int64
-totalMem d = resultIfOk =<< cuDeviceTotalMem d
+totalMem !d = resultIfOk =<< cuDeviceTotalMem d
 
+{-# INLINE cuDeviceTotalMem #-}
 {# fun unsafe cuDeviceTotalMem
   { alloca-   `Int64'  peekIntConv*
   , useDevice `Device'              } -> `Status' cToEnum #}

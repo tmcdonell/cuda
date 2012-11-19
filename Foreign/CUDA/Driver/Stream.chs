@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
@@ -56,9 +57,11 @@ instance Enum StreamFlag where
 -- |
 -- Create a new stream
 --
+{-# INLINEABLE create #-}
 create :: [StreamFlag] -> IO Stream
-create flags = resultIfOk =<< cuStreamCreate flags
+create !flags = resultIfOk =<< cuStreamCreate flags
 
+{-# INLINE cuStreamCreate #-}
 {# fun unsafe cuStreamCreate
   { alloca-         `Stream'       peekStream*
   , combineBitMasks `[StreamFlag]'             } -> `Status' cToEnum #}
@@ -67,9 +70,11 @@ create flags = resultIfOk =<< cuStreamCreate flags
 -- |
 -- Destroy a stream
 --
+{-# INLINEABLE destroy #-}
 destroy :: Stream -> IO ()
-destroy st = nothingIfOk =<< cuStreamDestroy st
+destroy !st = nothingIfOk =<< cuStreamDestroy st
 
+{-# INLINE cuStreamDestroy #-}
 {# fun unsafe cuStreamDestroy
   { useStream `Stream' } -> `Status' cToEnum #}
 
@@ -77,14 +82,16 @@ destroy st = nothingIfOk =<< cuStreamDestroy st
 -- |
 -- Check if all operations in the stream have completed
 --
+{-# INLINEABLE finished #-}
 finished :: Stream -> IO Bool
-finished st =
+finished !st =
   cuStreamQuery st >>= \rv ->
   case rv of
     Success  -> return True
     NotReady -> return False
     _        -> resultIfOk (rv,undefined)
 
+{-# INLINE cuStreamQuery #-}
 {# fun unsafe cuStreamQuery
   { useStream `Stream' } -> `Status' cToEnum #}
 
@@ -92,9 +99,11 @@ finished st =
 -- |
 -- Wait until the device has completed all operations in the Stream
 --
+{-# INLINEABLE block #-}
 block :: Stream -> IO ()
-block st = nothingIfOk =<< cuStreamSynchronize st
+block !st = nothingIfOk =<< cuStreamSynchronize st
 
+{-# INLINE cuStreamSynchronize #-}
 {# fun unsafe cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
 

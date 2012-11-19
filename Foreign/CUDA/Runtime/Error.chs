@@ -94,6 +94,7 @@ requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
 -- Return the results of a function on successful execution, otherwise return
 -- the error string associated with the return code
 --
+{-# INLINE resultIfOk #-}
 resultIfOk :: (Status, a) -> IO a
 resultIfOk (status,result) =
     case status of
@@ -105,6 +106,7 @@ resultIfOk (status,result) =
 -- Return the error string associated with an unsuccessful return code,
 -- otherwise Nothing
 --
+{-# INLINE nothingIfOk #-}
 nothingIfOk :: Status -> IO ()
 nothingIfOk status =
     case status of

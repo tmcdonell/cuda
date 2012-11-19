@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -101,9 +102,11 @@ instance Enum PeerFlag where
 -- |
 -- Create a new CUDA context and associate it with the calling thread
 --
+{-# INLINEABLE create #-}
 create :: Device -> [ContextFlag] -> IO Context
-create dev flags = resultIfOk =<< cuCtxCreate flags dev
+create !dev !flags = resultIfOk =<< cuCtxCreate flags dev
 
+{-# INLINE cuCtxCreate #-}
 {# fun unsafe cuCtxCreate
   { alloca-         `Context'       peekCtx*
   , combineBitMasks `[ContextFlag]'
@@ -115,9 +118,11 @@ create dev flags = resultIfOk =<< cuCtxCreate flags dev
 -- Increments the usage count of the context. API: no context flags are
 -- currently supported, so this parameter must be empty.
 --
+{-# INLINEABLE attach #-}
 attach :: Context -> [ContextFlag] -> IO ()
-attach ctx flags = nothingIfOk =<< cuCtxAttach ctx flags
+attach !ctx !flags = nothingIfOk =<< cuCtxAttach ctx flags
 
+{-# INLINE cuCtxAttach #-}
 {# fun unsafe cuCtxAttach
   { withCtx*        `Context'
   , combineBitMasks `[ContextFlag]' } -> `Status' cToEnum #}
@@ -127,9 +132,11 @@ attach ctx flags = nothingIfOk =<< cuCtxAttach ctx flags
 -- |
 -- Detach the context, and destroy if no longer used
 --
+{-# INLINEABLE detach #-}
 detach :: Context -> IO ()
-detach ctx = nothingIfOk =<< cuCtxDetach ctx
+detach !ctx = nothingIfOk =<< cuCtxDetach ctx
 
+{-# INLINE cuCtxDetach #-}
 {# fun unsafe cuCtxDetach
   { useContext `Context' } -> `Status' cToEnum #}
 
@@ -138,9 +145,11 @@ detach ctx = nothingIfOk =<< cuCtxDetach ctx
 -- Destroy the specified context. This fails if the context is more than a
 -- single attachment (including that from initial creation).
 --
+{-# INLINEABLE destroy #-}
 destroy :: Context -> IO ()
-destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
+destroy !ctx = nothingIfOk =<< cuCtxDestroy ctx
 
+{-# INLINE cuCtxDestroy #-}
 {# fun unsafe cuCtxDestroy
   { useContext `Context' } -> `Status' cToEnum #}
 
@@ -148,12 +157,14 @@ destroy ctx = nothingIfOk =<< cuCtxDestroy ctx
 -- |
 -- Return the context bound to the calling CPU thread. Requires cuda-4.0.
 --
+{-# INLINEABLE get #-}
 get :: IO Context
 #if CUDA_VERSION < 4000
 get = requireSDK 4.0 "get"
 #else
 get = resultIfOk =<< cuCtxGetCurrent
 
+{-# INLINE cuCtxGetCurrent #-}
 {# fun unsafe cuCtxGetCurrent
   { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
   where peekCtx = liftM Context . peek
@@ -163,12 +174,14 @@ get = resultIfOk =<< cuCtxGetCurrent
 -- |
 -- Bind the specified context to the calling thread. Requires cuda-4.0.
 --
+{-# INLINEABLE set #-}
 set :: Context -> IO ()
 #if CUDA_VERSION < 4000
-set _   = requireSDK 4.0 "set"
+set _    = requireSDK 4.0 "set"
 #else
-set ctx = nothingIfOk =<< cuCtxSetCurrent ctx
+set !ctx = nothingIfOk =<< cuCtxSetCurrent ctx
 
+{-# INLINE cuCtxSetCurrent #-}
 {# fun unsafe cuCtxSetCurrent
   { useContext `Context' } -> `Status' cToEnum #}
 #endif
@@ -176,9 +189,11 @@ set ctx = nothingIfOk =<< cuCtxSetCurrent ctx
 -- |
 -- Return the device of the currently active context
 --
+{-# INLINEABLE device #-}
 device :: IO Device
 device = resultIfOk =<< cuCtxGetDevice
 
+{-# INLINE cuCtxGetDevice #-}
 {# fun unsafe cuCtxGetDevice
   { alloca- `Device' dev* } -> `Status' cToEnum #}
   where dev = liftM Device . peekIntConv
@@ -189,9 +204,11 @@ device = resultIfOk =<< cuCtxGetDevice
 -- single usage count (matching calls to 'attach' and 'detach'). If successful,
 -- the new context is returned, and the old may be attached to a different CPU.
 --
+{-# INLINEABLE pop #-}
 pop :: IO Context
 pop = resultIfOk =<< cuCtxPopCurrent
 
+{-# INLINE cuCtxPopCurrent #-}
 {# fun unsafe cuCtxPopCurrent
   { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
   where peekCtx = liftM Context . peek
@@ -201,9 +218,11 @@ pop = resultIfOk =<< cuCtxPopCurrent
 -- Push the given context onto the CPU's thread stack of current contexts. The
 -- context must be floating (via 'pop'), i.e. not attached to any thread.
 --
+{-# INLINEABLE push #-}
 push :: Context -> IO ()
-push ctx = nothingIfOk =<< cuCtxPushCurrent ctx
+push !ctx = nothingIfOk =<< cuCtxPushCurrent ctx
 
+{-# INLINE cuCtxPushCurrent #-}
 {# fun unsafe cuCtxPushCurrent
   { useContext `Context' } -> `Status' cToEnum #}
 
@@ -211,9 +230,11 @@ push ctx = nothingIfOk =<< cuCtxPushCurrent ctx
 -- |
 -- Block until the device has completed all preceding requests
 --
+{-# INLINEABLE sync #-}
 sync :: IO ()
 sync = nothingIfOk =<< cuCtxSynchronize
 
+{-# INLINE cuCtxSynchronize #-}
 {# fun unsafe cuCtxSynchronize
   { } -> `Status' cToEnum #}
 
@@ -227,12 +248,14 @@ sync = nothingIfOk =<< cuCtxSynchronize
 -- direct access is possible, it can then be enabled with 'add'. Requires
 -- cuda-4.0.
 --
+{-# INLINEABLE accessible #-}
 accessible :: Device -> Device -> IO Bool
 #if CUDA_VERSION < 4000
-accessible _   _    = requireSDK 4.0 "accessible"
+accessible _ _        = requireSDK 4.0 "accessible"
 #else
-accessible dev peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
+accessible !dev !peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
 
+{-# INLINE cuDeviceCanAccessPeer #-}
 {# fun unsafe cuDeviceCanAccessPeer
   { alloca-   `Bool'   peekBool*
   , useDevice `Device'
@@ -245,12 +268,14 @@ accessible dev peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
 -- addressing, then enable allocations in the supplied context to be accessible
 -- by the current context. Requires cuda-4.0.
 --
+{-# INLINEABLE add #-}
 add :: Context -> [PeerFlag] -> IO ()
 #if CUDA_VERSION < 4000
-add _   _     = requireSDK 4.0 "add"
+add _ _         = requireSDK 4.0 "add"
 #else
-add ctx flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
+add !ctx !flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
 
+{-# INLINE cuCtxEnablePeerAccess #-}
 {# fun unsafe cuCtxEnablePeerAccess
   { useContext      `Context'
   , combineBitMasks `[PeerFlag]' } -> `Status' cToEnum #}
@@ -261,12 +286,14 @@ add ctx flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
 -- Disable direct memory access from the current context to the supplied
 -- context. Requires cuda-4.0.
 --
+{-# INLINEABLE remove #-}
 remove :: Context -> IO ()
 #if CUDA_VERSION < 4000
-remove _   = requireSDK 4.0 "remove"
+remove _    = requireSDK 4.0 "remove"
 #else
-remove ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
+remove !ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 
+{-# INLINE cuCtxDisablePeerAccess #-}
 {# fun unsafe cuCtxDisablePeerAccess
   { useContext `Context' } -> `Status' cToEnum #}
 #endif
@@ -279,12 +306,14 @@ remove ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 -- |
 -- Query compute 2.0 call stack limits. Requires cuda-3.1.
 --
+{-# INLINEABLE getLimit #-}
 getLimit :: Limit -> IO Int
 #if CUDA_VERSION < 3010
-getLimit _ = requireSDK 3.1 "getLimit"
+getLimit _  = requireSDK 3.1 "getLimit"
 #else
-getLimit l = resultIfOk =<< cuCtxGetLimit l
+getLimit !l = resultIfOk =<< cuCtxGetLimit l
 
+{-# INLINE cuCtxGetLimit #-}
 {# fun unsafe cuCtxGetLimit
   { alloca-   `Int' peekIntConv*
   , cFromEnum `Limit'            } -> `Status' cToEnum #}
@@ -294,12 +323,14 @@ getLimit l = resultIfOk =<< cuCtxGetLimit l
 -- Specify the size of the call stack, for compute 2.0 devices. Requires
 -- cuda-3.1.
 --
+{-# INLINEABLE setLimit #-}
 setLimit :: Limit -> Int -> IO ()
 #if CUDA_VERSION < 3010
-setLimit _ _ = requireSDK 3.1 "setLimit"
+setLimit _ _   = requireSDK 3.1 "setLimit"
 #else
-setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
+setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
 
+{-# INLINE cuCtxSetLimit #-}
 {# fun unsafe cuCtxSetLimit
   { cFromEnum `Limit'
   , cIntConv  `Int'   } -> `Status' cToEnum #}
@@ -310,12 +341,14 @@ setLimit l n = nothingIfOk =<< cuCtxSetLimit l n
 -- resources, this sets the preferred cache configuration for the current
 -- context. This is only a preference. Requires cuda-3.2.
 --
+{-# INLINEABLE setCacheConfig #-}
 setCacheConfig :: Cache -> IO ()
 #if CUDA_VERSION < 3020
-setCacheConfig _ = requireSDK 3.2 "setCacheConfig"
+setCacheConfig _  = requireSDK 3.2 "setCacheConfig"
 #else
-setCacheConfig c = nothingIfOk =<< cuCtxSetCacheConfig c
+setCacheConfig !c = nothingIfOk =<< cuCtxSetCacheConfig c
 
+{-# INLINE cuCtxSetCacheConfig #-}
 {# fun unsafe cuCtxSetCacheConfig
   { cFromEnum `Cache' } -> `Status' cToEnum #}
 #endif

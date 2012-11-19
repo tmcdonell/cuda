@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 --------------------------------------------------------------------------------
 -- |
@@ -144,6 +145,7 @@ requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
 -- Return the results of a function on successful execution, otherwise throw an
 -- exception with an error string associated with the return code
 --
+{-# INLINE resultIfOk #-}
 resultIfOk :: (Status, a) -> IO a
 resultIfOk (status,result) =
     case status of
@@ -155,6 +157,7 @@ resultIfOk (status,result) =
 -- Throw an exception with an error string associated with an unsuccessful
 -- return code, otherwise return unit.
 --
+{-# INLINE nothingIfOk #-}
 nothingIfOk :: Status -> IO ()
 nothingIfOk status =
     case status of

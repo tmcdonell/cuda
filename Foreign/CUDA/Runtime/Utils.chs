@@ -27,9 +27,11 @@ import Foreign.C
 -- |
 -- Return the version number of the installed CUDA driver
 --
+{-# INLINEABLE runtimeVersion #-}
 runtimeVersion :: IO Int
 runtimeVersion =  resultIfOk =<< cudaRuntimeGetVersion
 
+{-# INLINE cudaRuntimeGetVersion #-}
 {# fun unsafe cudaRuntimeGetVersion
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
@@ -37,9 +39,11 @@ runtimeVersion =  resultIfOk =<< cudaRuntimeGetVersion
 -- |
 -- Return the version number of the installed CUDA runtime
 --
+{-# INLINEABLE driverVersion #-}
 driverVersion :: IO Int
 driverVersion =  resultIfOk =<< cudaDriverGetVersion
 
+{-# INLINE cudaDriverGetVersion #-}
 {# fun unsafe cudaDriverGetVersion
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
 
