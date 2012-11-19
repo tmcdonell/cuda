@@ -101,6 +101,8 @@ describe HostMemoryNotRegistered        = "pointer does not correspond to a regi
 #endif
 #if CUDA_VERSION >= 5000
 describe PeerAccessUnsupported          = "peer access is not supported across the given devices"
+describe NotPermitted                   = "not permitted"
+describe NotSupported                   = "not supported"
 #endif
 describe Unknown                        = "unknown error"
 
