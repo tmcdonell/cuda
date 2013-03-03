@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.5.0.0
+Version:                0.5.0.1
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -17,7 +17,7 @@ Description:
 
 License:                BSD3
 License-file:           LICENSE
-Copyright:              Copyright (c) [2009..2012]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
+Copyright:              Copyright (c) [2009..2013]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Category:               Foreign
