@@ -53,6 +53,7 @@ import Control.Monad
 -- A texture reference
 --
 newtype Texture = Texture { useTexture :: {# type CUtexref #}}
+  deriving (Eq, Show)
 
 instance Storable Texture where
   sizeOf _    = sizeOf    (undefined :: {# type CUtexref #})

@@ -51,6 +51,7 @@ import Control.Monad                    (liftM)
 -- A device context
 --
 newtype Context = Context { useContext :: {# type CUcontext #}}
+  deriving (Eq, Show)
 
 
 -- |

@@ -41,6 +41,7 @@ import Control.Monad                            (liftM)
 -- A processing stream
 --
 newtype Stream = Stream { useStream :: {# type CUstream #}}
+  deriving (Eq, Show)
 
 
 -- |

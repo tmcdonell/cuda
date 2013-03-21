@@ -43,6 +43,7 @@ import Control.Monad                            (liftM)
 -- Events
 --
 newtype Event = Event { useEvent :: {# type CUevent #}}
+  deriving (Eq, Show)
 
 -- |
 -- Event creation flags

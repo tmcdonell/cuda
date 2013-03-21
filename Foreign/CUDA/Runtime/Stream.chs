@@ -39,7 +39,7 @@ import Control.Monad                                    (liftM)
 -- A processing stream
 --
 newtype Stream = Stream { useStream :: {# type cudaStream_t #}}
-  deriving (Show)
+  deriving (Eq, Show)
 
 
 --------------------------------------------------------------------------------

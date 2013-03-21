@@ -42,6 +42,7 @@ import Control.Monad            (liftM)
 --------------------------------------------------------------------------------
 
 newtype Device = Device { useDevice :: {# type CUdevice #}}
+  deriving (Eq, Show)
 
 
 -- |

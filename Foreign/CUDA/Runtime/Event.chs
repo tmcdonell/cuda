@@ -50,6 +50,7 @@ typedef enum cudaEvent_option_enum {
 -- Events
 --
 newtype Event = Event { useEvent :: {# type cudaEvent_t #}}
+  deriving (Eq, Show)
 
 -- |
 -- Event creation flags
