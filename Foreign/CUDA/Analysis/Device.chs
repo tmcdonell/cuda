@@ -121,17 +121,18 @@ data PCI = PCI
 data Allocation      = Warp | Block
 data DeviceResources = DeviceResources
   {
-    threadsPerWarp     :: !Int,         -- ^ Warp size
-    threadsPerMP       :: !Int,         -- ^ Maximum number of in-flight threads on a multiprocessor
-    threadBlocksPerMP  :: !Int,         -- ^ Maximum number of thread blocks resident on a multiprocessor
-    warpsPerMP         :: !Int,         -- ^ Maximum number of in-flight warps per multiprocessor
-    coresPerMP         :: !Int,         -- ^ Number of SIMD arithmetic units per multiprocessor
-    sharedMemPerMP     :: !Int,         -- ^ Total amount of shared memory per multiprocessor (bytes)
-    sharedMemAllocUnit :: !Int,         -- ^ Shared memory allocation unit size (bytes)
-    regFileSize        :: !Int,         -- ^ Total number of registers in a multiprocessor
-    regAllocUnit       :: !Int,         -- ^ Register allocation unit size
-    regAllocWarp       :: !Int,         -- ^ Register allocation granularity for warps
-    allocation         :: !Allocation   -- ^ How multiprocessor resources are divided
+    threadsPerWarp      :: !Int,        -- ^ Warp size
+    threadsPerMP        :: !Int,        -- ^ Maximum number of in-flight threads on a multiprocessor
+    threadBlocksPerMP   :: !Int,        -- ^ Maximum number of thread blocks resident on a multiprocessor
+    warpsPerMP          :: !Int,        -- ^ Maximum number of in-flight warps per multiprocessor
+    coresPerMP          :: !Int,        -- ^ Number of SIMD arithmetic units per multiprocessor
+    sharedMemPerMP      :: !Int,        -- ^ Total amount of shared memory per multiprocessor (bytes)
+    sharedMemAllocUnit  :: !Int,        -- ^ Shared memory allocation unit size (bytes)
+    regFileSize         :: !Int,        -- ^ Total number of registers in a multiprocessor
+    regAllocUnit        :: !Int,        -- ^ Register allocation unit size
+    regAllocWarp        :: !Int,        -- ^ Register allocation granularity for warps
+    regPerThread        :: !Int,        -- ^ Maximum number of registers per thread
+    allocation          :: !Allocation  -- ^ How multiprocessor resources are divided
   }
 
 
@@ -144,14 +145,14 @@ deviceResources = resources . computeCapability
     -- This is mostly extracted from tables in the CUDA occupancy calculator.
     --
     resources compute = case compute of
-      Compute 1 0 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 Block      -- Tesla G80
-      Compute 1 1 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 Block      -- Tesla G8x
-      Compute 1 2 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 Block      -- Tesla G9x
-      Compute 1 3 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 Block      -- Tesla GT200
-      Compute 2 0 -> DeviceResources 32 1536  8 48  32 49152 128 32768  64 2 Warp       -- Fermi GF100
-      Compute 2 1 -> DeviceResources 32 1536  8 48  48 49152 128 32768  64 2 Warp       -- Fermi GF10x
-      Compute 3 0 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 Warp       -- Kepler GK10x
-      Compute 3 5 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 Warp       -- Kepler GK11x
+      Compute 1 0 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 124 Block  -- Tesla G80
+      Compute 1 1 -> DeviceResources 32  768  8 24   8 16384 512  8192 256 2 124 Block  -- Tesla G8x
+      Compute 1 2 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 124 Block  -- Tesla G9x
+      Compute 1 3 -> DeviceResources 32 1024  8 32   8 16384 512 16384 512 2 124 Block  -- Tesla GT200
+      Compute 2 0 -> DeviceResources 32 1536  8 48  32 49152 128 32768  64 2  63 Warp   -- Fermi GF100
+      Compute 2 1 -> DeviceResources 32 1536  8 48  48 49152 128 32768  64 2  63 Warp   -- Fermi GF10x
+      Compute 3 0 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4  63 Warp   -- Kepler GK10x
+      Compute 3 5 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 255 Warp   -- Kepler GK11x
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
