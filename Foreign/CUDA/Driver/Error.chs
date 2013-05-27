@@ -147,7 +147,7 @@ requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
 --
 {-# INLINE resultIfOk #-}
 resultIfOk :: (Status, a) -> IO a
-resultIfOk (status,result) =
+resultIfOk (status, !result) =
     case status of
         Success -> return  result
         _       -> throwIO (ExitCode status)
