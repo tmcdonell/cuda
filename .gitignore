@@ -2,3 +2,6 @@
 /config.status
 /cuda.buildinfo
 /configure
+*.i
+dist/
+autom4te.cache/

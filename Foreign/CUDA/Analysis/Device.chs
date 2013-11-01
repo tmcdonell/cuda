@@ -16,7 +16,7 @@ module Foreign.CUDA.Analysis.Device
   )
   where
 
-#include <cuda.h>
+#include "cbits/stubs.h"
 
 import Data.Int
 import Debug.Trace

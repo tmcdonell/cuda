@@ -28,7 +28,6 @@ module Foreign.CUDA.Driver.Context (
 
 ) where
 
-#include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
 

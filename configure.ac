@@ -33,7 +33,7 @@ CPPFLAGS+=" -I${cuda_inc_path} "
 case $target_os in
   darwin*)
     cuda_lib_path="${cuda_prefix}/lib"
-    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
+    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} -F/Library/Frameworks -framework CUDA"
     #CPPFLAGS+=" -arch ${target_cpu} "
     ;;
   *)
