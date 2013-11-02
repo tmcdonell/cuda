@@ -125,5 +125,5 @@ AC_SUBST([cuda_ghcflags])
 AC_SUBST([cuda_ccflags])
 AC_SUBST([cuda_ldflags])
 AC_SUBST([cuda_c2hsflags])
+AC_SUBST([cuda_lib_path])
 AC_OUTPUT
-
