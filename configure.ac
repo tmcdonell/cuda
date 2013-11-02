@@ -101,14 +101,18 @@ often require both "lib64" and "lib" library paths, in that order.
 
 ********************************************************************************'
 
+# NB: We must use 'AC_CHECK_LIB' (not 'AC_SEARCH_LIBS') for 'libcuda'; otherwise, '-lcuda' is not added to $LIBS with
+# CUDA 5.5 on OS X (Mavericks) — I guess, because the library is now only a stub.
+#
 AC_CHECK_HEADERS([cuda.h cuda_runtime_api.h], [], [AC_MSG_ERROR(could not find CUDA headers${longerror})])
-AC_SEARCH_LIBS(cuDriverGetVersion,    cuda,   [], [AC_MSG_ERROR(could not find CUDA driver library${longerror})])
+AC_CHECK_LIB(cuda, cuDriverGetVersion,        [], [AC_MSG_ERROR(could not find CUDA driver library${longerror})])
 AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find CUDA runtime library${longerror})])
 
 # Populate the buildinfo, with the search paths and any target specific options
 #
 cuda_ccflags="$CPPFLAGS "
 cuda_ldflags="$LDFLAGS $LIBS "
+
 
 for x in $cuda_ccflags; do
     cuda_ghcflags+="-optc${x} "
