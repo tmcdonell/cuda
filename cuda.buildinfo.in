@@ -3,3 +3,4 @@ cc-options: @cuda_ccflags@
 ld-options: @cuda_ldflags@
 x-extra-c2hs-options: @cuda_c2hsflags@
 extra-lib-dirs: @cuda_lib_path@
+frameworks: @cuda_frameworks@
