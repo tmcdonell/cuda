@@ -13,6 +13,8 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
+    /NOTE:/ Mavericks users (OS X 10.9) should use CUDA 5.5.28 and upwards.
+    .
     This release is for version 5.0 of the CUDA toolkit.
 
 License:                BSD3
