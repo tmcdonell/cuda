@@ -11,9 +11,12 @@ AC_CANONICAL_TARGET
 # prefix to the include and library search directories. Additionally, set nvcc
 # as the C preprocessor for c2hs (only, or it won't try to link cudart)
 #
-AC_ARG_WITH([compiler], [Haskell compiler], [GHC=$withval],  [AC_PATH_PROG(GHC, ghc)])
-AC_ARG_WITH([nvcc],     [CUDA compiler],    [NVCC=$withval], [AC_PATH_PROG(NVCC, nvcc)])
-AC_ARG_WITH([gcc],      [C compiler],       [CC=$withval])
+AC_ARG_WITH([compiler], [  --with-compiler=HC      use HC as the Haskell compiler], 
+            [GHC=$withval],  [AC_PATH_PROG(GHC, ghc)])
+AC_ARG_WITH([nvcc],     [  --with-nvcc=NVCC        use NVCC as the CUDA compiler],    
+            [NVCC=$withval], [AC_PATH_PROG(NVCC, nvcc, [], [$PATH:/usr/local/cuda/bin])])
+AC_ARG_WITH([gcc],      [  --with-gcc=CC           use CC as the C compiler],       
+            [CC=$withval])
 
 # If NVCC is detected in the path, set the location of the toolkit relative to
 # that, otherwise choose the default
@@ -22,6 +25,7 @@ if test "$NVCC" != ""; then
     cuda_prefix="$(dirname "$(dirname "$NVCC")")"
     cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E "
 else
+    echo "WARNING: Cannot find the CUDA compiler 'nvcc'. This is likely to cause problems."
     cuda_prefix="/usr/local/cuda"
 fi
 
@@ -29,11 +33,13 @@ fi
 #
 cuda_inc_path="${cuda_prefix}/include"
 CPPFLAGS+=" -I${cuda_inc_path} "
+cuda_frameworks=""
 
 case $target_os in
   darwin*)
     cuda_lib_path="${cuda_prefix}/lib"
-    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
+    cuda_frameworks="CUDA"
+    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} -F/Library/Frameworks -framework ${cuda_frameworks}"
     #CPPFLAGS+=" -arch ${target_cpu} "
     ;;
   *)
@@ -71,6 +77,9 @@ esac
 # confuses the c2hs preprocessor. We disable this by undefining the __BLOCKS__
 # macro.
 #
+# NB: This test doesn't work with newer versions of Xcode/command lines tools anymore.
+#     However, other CPP magic keeps blocks at bay.
+#
 AC_MSG_CHECKING(for Apple Blocks extension)
 if test -r "/usr/include/stdlib.h"; then
     BLOCKS=`grep __BLOCKS__ /usr/include/stdlib.h`
@@ -101,14 +110,18 @@ often require both "lib64" and "lib" library paths, in that order.
 
 ********************************************************************************'
 
+# NB: We must use 'AC_CHECK_LIB' (not 'AC_SEARCH_LIBS') for 'libcuda'; otherwise, '-lcuda' is not added to $LIBS with
+# CUDA 5.5 on OS X (Mavericks) — I guess, because the library is now only a stub.
+#
 AC_CHECK_HEADERS([cuda.h cuda_runtime_api.h], [], [AC_MSG_ERROR(could not find CUDA headers${longerror})])
-AC_SEARCH_LIBS(cuDriverGetVersion,    cuda,   [], [AC_MSG_ERROR(could not find CUDA driver library${longerror})])
+AC_SEARCH_LIBS(cuDriverGetVersion, cuda,      [], [AC_MSG_ERROR(could not find CUDA driver library${longerror})])
 AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find CUDA runtime library${longerror})])
 
 # Populate the buildinfo, with the search paths and any target specific options
 #
 cuda_ccflags="$CPPFLAGS "
 cuda_ldflags="$LDFLAGS $LIBS "
+
 
 for x in $cuda_ccflags; do
     cuda_ghcflags+="-optc${x} "
@@ -121,5 +134,6 @@ AC_SUBST([cuda_ghcflags])
 AC_SUBST([cuda_ccflags])
 AC_SUBST([cuda_ldflags])
 AC_SUBST([cuda_c2hsflags])
+AC_SUBST([cuda_lib_path])
+AC_SUBST([cuda_frameworks])
 AC_OUTPUT
-

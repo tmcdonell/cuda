@@ -25,7 +25,6 @@ module Foreign.CUDA.Driver.Texture (
 
 ) where
 
-#include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
 

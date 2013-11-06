@@ -40,7 +40,6 @@ module Foreign.CUDA.Driver.Marshal (
 
 ) where
 
-#include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
 

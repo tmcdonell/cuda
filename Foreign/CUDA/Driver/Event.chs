@@ -20,7 +20,6 @@ module Foreign.CUDA.Driver.Event (
 
 ) where
 
-#include <cuda.h>
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
 
