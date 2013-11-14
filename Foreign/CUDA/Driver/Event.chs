@@ -15,7 +15,7 @@
 module Foreign.CUDA.Driver.Event (
 
   -- * Event Management
-  Event, EventFlag(..), WaitFlag,
+  Event(..), EventFlag(..), WaitFlag,
   create, destroy, elapsedTime, query, record, wait, block
 
 ) where
