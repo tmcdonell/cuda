@@ -11,6 +11,7 @@ import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess           hiding (ppC2hs)
 
 import Control.Exception
+import Control.Monad
 import System.FilePath
 import System.Directory
 import System.Environment
@@ -27,12 +28,23 @@ main = defaultMainWithHooks customHooks
   where
     preprocessors = hookedPreProcessors autoconfUserHooks
     customHooks   = autoconfUserHooks {
-      postConf            = defaultPostConf,
+      preConf             = preConfHook,
+      postConf            = postConfHook,
       hookedPreProcessors = ("chs",ppC2hs) : filter (\x -> fst x /= "chs") preprocessors
     }
 
-    defaultPostConf :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-    defaultPostConf args flags pkg_descr lbi
+    preConfHook :: Args -> ConfigFlags -> IO HookedBuildInfo
+    preConfHook args flags = do
+      let verbosity = fromFlag (configVerbosity flags)
+
+      confExists <- doesFileExist "configure"
+      unless confExists $
+        rawSystemExit verbosity "autoconf" []
+
+      preConf autoconfUserHooks args flags
+
+    postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+    postConfHook args flags pkg_descr lbi
       = let verbosity = fromFlag (configVerbosity flags)
         in do
           noExtraFlags args
