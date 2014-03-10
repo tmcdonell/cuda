@@ -25,7 +25,7 @@ module Foreign.CUDA.Runtime.Error (
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Foreign                                  hiding ( unsafePerformIO )
+import Foreign
 import Foreign.C
 import Data.Typeable
 import Control.Exception
