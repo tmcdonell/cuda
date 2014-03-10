@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Module (
 {# context lib="cuda" #}
 
 -- Friends
+import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
@@ -48,6 +49,7 @@ import qualified Data.ByteString.Char8          as B
 -- A reference to a Module object, containing collections of device functions
 --
 newtype Module = Module { useModule :: {# type CUmodule #}}
+  deriving (Eq, Show)
 
 
 -- |
@@ -57,8 +59,11 @@ data JITOption
   = MaxRegisters       !Int             -- ^ maximum number of registers per thread
   | ThreadsPerBlock    !Int             -- ^ number of threads per block to target for
   | OptimisationLevel  !Int             -- ^ level of optimisation to apply (1-4, default 4)
-  | Target             !JITTarget       -- ^ compilation target, otherwise determined from context
---  | FallbackStrategy   JITFallback
+  | Target             !Compute         -- ^ compilation target, otherwise determined from context
+  | FallbackStrategy   !JITFallback     -- ^ fallback strategy if matching cubin not found
+  | GenerateDebugInfo                   -- ^ generate debug info (-g)
+  | GenerateLineInfo                    -- ^ generate line number information (-lineinfo)
+  | Verbose                             -- ^ verbose log messages
   deriving (Show)
 
 -- |
@@ -67,8 +72,8 @@ data JITOption
 data JITResult = JITResult
   {
     jitTime     :: !Float,              -- ^ milliseconds spent compiling PTX
-    jitInfoLog  :: !ByteString,         -- ^ information about PTX asembly
-    jitErrorLog :: !ByteString          -- ^ compilation errors
+    jitInfoLog  :: !ByteString,         -- ^ information about PTX assembly
+    jitModule   :: !Module              -- ^ compilation error log or compiled module
   }
   deriving (Show)
 
@@ -170,12 +175,12 @@ loadData !img = resultIfOk =<< cuModuleLoadData img
 -- compiled kernel can be probed using 'requires'.
 --
 {-# INLINEABLE loadDataEx #-}
-loadDataEx :: ByteString -> [JITOption] -> IO (Module, JITResult)
+loadDataEx :: ByteString -> [JITOption] -> IO JITResult
 loadDataEx !img !options =
   allocaArray logSize $ \p_ilog ->
   allocaArray logSize $ \p_elog ->
   let (opt,val) = unzip $
-        [ (JIT_WALL_TIME, 0) -- must be first
+        [ (JIT_WALL_TIME, 0) -- must be first, this is extracted below
         , (JIT_INFO_LOG_BUFFER_SIZE_BYTES,  logSize)
         , (JIT_ERROR_LOG_BUFFER_SIZE_BYTES, logSize)
         , (JIT_INFO_LOG_BUFFER,  unsafeCoerce (p_ilog :: CString))
@@ -188,15 +193,34 @@ loadDataEx !img !options =
   infoLog <- B.packCString p_ilog
   errLog  <- B.packCString p_elog
   time    <- peek (castPtr p_vals)
-  resultIfOk (s, (mdl, JITResult time infoLog errLog))
+  case s of
+    Success     -> return    (JITResult time infoLog mdl)
+    _           -> cudaError (unlines [describe s, B.unpack errLog])
 
   where
     logSize = 2048
 
-    unpack (MaxRegisters x)      = (JIT_MAX_REGISTERS, x)
-    unpack (ThreadsPerBlock x)   = (JIT_THREADS_PER_BLOCK, x)
-    unpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL, x)
-    unpack (Target x)            = (JIT_TARGET, fromEnum x)
+    unpack (MaxRegisters x)      = (JIT_MAX_REGISTERS,       x)
+    unpack (ThreadsPerBlock x)   = (JIT_THREADS_PER_BLOCK,   x)
+    unpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL,  x)
+    unpack (Target x)            = (JIT_TARGET,              jitTargetOfCompute x)
+    unpack (FallbackStrategy x)  = (JIT_FALLBACK_STRATEGY,   fromEnum x)
+    unpack GenerateDebugInfo     = (JIT_GENERATE_DEBUG_INFO, fromEnum True)
+    unpack GenerateLineInfo      = (JIT_GENERATE_LINE_INFO,  fromEnum True)
+    unpack Verbose               = (JIT_LOG_VERBOSE,         fromEnum True)
+
+    jitTargetOfCompute (Compute x y)
+      = fromEnum
+      $ case (x,y) of
+          (1,0) -> Compute10
+          (1,1) -> Compute11
+          (1,2) -> Compute12
+          (1,3) -> Compute13
+          (2,0) -> Compute20
+          (2,1) -> Compute21
+          (3,0) -> Compute30
+          (3,5) -> Compute35
+          _     -> error ("Unknown JIT Target for Compute " ++ show (Compute x y))
 
 
 {-# INLINE cuModuleLoadDataEx #-}
