@@ -313,6 +313,7 @@ pokeHostArray !n !ptr !hptr = doPoke undefined hptr
 {# fun unsafe cuMemcpyAtoH
   { useDeviceHandle `HostPtr a'
   , castPtr         `Ptr a'
+  ,                 `Int'
   ,                 `Int'         } -> `Status' cToEnum #}
 
 
