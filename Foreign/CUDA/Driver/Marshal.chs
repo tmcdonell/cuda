@@ -23,7 +23,7 @@ module Foreign.CUDA.Driver.Marshal (
 
   -- * Marshalling
   peekArray, peekArrayAsync, peekListArray,
-  pokeArray, pokeArrayAsync, pokeListArray, pokeHostArray, pokeHostListArray
+  pokeArray, pokeArrayAsync, pokeListArray, pokeHostArray, pokeHostListArray,
   copyArrayAsync,
   copyArrayPeer, copyArrayPeerAsync,
 
