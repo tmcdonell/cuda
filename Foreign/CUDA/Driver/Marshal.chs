@@ -23,7 +23,7 @@ module Foreign.CUDA.Driver.Marshal (
 
   -- * Marshalling
   peekArray, peekArrayAsync, peekListArray,
-  pokeArray, pokeArrayAsync, pokeListArray,
+  pokeArray, pokeArrayAsync, pokeListArray, pokeHostArray, pokeHostListArray
   copyArrayAsync,
   copyArrayPeer, copyArrayPeerAsync,
 
@@ -300,6 +300,23 @@ pokeArray !n !hptr !dptr = doPoke undefined dptr
 
 
 -- |
+-- Copy a number of elements onto the host. This is a synchronous operation
+--
+{-# INLINEABLE pokeHostArray #-}
+pokeHostArray :: Storable a => Int -> Ptr a -> HostPtr a -> IO ()
+pokeHostArray !n !ptr !hptr = doPoke undefined hptr
+  where
+    doPoke :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPoke x _ = nothingIfOk =<< cuMemcpyAtoH hptr ptr (n * sizeOf x)
+
+{-# INLINE cuMemcpyAtoH #-}
+{# fun unsafe cuMemcpyAtoH
+  { useDeviceHandle `HostPtr a'
+  , castPtr         `Ptr a'
+  ,                 `Int'         } -> `Status' cToEnum #}
+
+
+-- |
 -- Copy memory onto the device asynchronously, possibly associated with a
 -- particular stream. The source host memory must be page-locked.
 --
@@ -329,6 +346,14 @@ pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
 pokeListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeArray len p dptr
 
+-- |
+-- Write a list of storable elements into a host array. The host array must
+-- be sufficiently large to hold the entire list. This requires two marshalling
+-- operations.
+--
+{-# INLINEABLE pokeHostListArray #-}
+pokeHostListArray :: Storable a => [a] -> HostPtr a -> IO ()
+pokeHostListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeHostArray len p dptr
 
 -- |
 -- Copy the given number of elements from the first device array (source) to the

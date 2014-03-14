@@ -91,6 +91,14 @@ CUresult CUDAAPI cuMemcpyDtoD(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size
     return cuMemcpyDtoD_v2(dstDevice, srcDevice, ByteCount);
 }
 
+CUresult CUDAAPI cuMemcpyHtoA(CUarray dstArray, unsigned int dstOffset, const void *srcHost, unsigned int ByteCount) {
+    return cuMemcpyHtoA_v2(dstArray, dstOffset, srcHost, ByteCount);
+}
+
+CUresult CUDAAPI cuMemcpyAtoH(void *dstHost, CUarray srcArray, unsigned int srcOffset, unsigned int ByteCount) {
+    return cuMemcpyAtoH_v2(dstHost, srcArray, srcOffset, ByteCount);
+}
+
 CUresult CUDAAPI cuMemcpyHtoDAsync(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream)
 {
     return cuMemcpyHtoDAsync_v2(dstDevice, srcHost, ByteCount, hStream);
