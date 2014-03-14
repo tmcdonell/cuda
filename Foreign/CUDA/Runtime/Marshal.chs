@@ -20,8 +20,8 @@ module Foreign.CUDA.Runtime.Marshal (
   mallocArray, allocaArray, free,
 
   -- * Marshalling
-  peekArray, peekArrayAsync, peekListArray,
-  pokeArray, pokeArrayAsync, pokeListArray,
+  peekArray, peekArrayAsync, peekListArray, peekHostArray, peekHostListArray,
+  pokeArray, pokeArrayAsync, pokeListArray, pokeHostArray, pokeHostListArray,
   copyArray, copyArrayAsync,
 
   -- * Combined Allocation and Marshalling
@@ -181,6 +181,15 @@ peekArray !n !dptr !hptr = memcpy hptr (useDevicePtr dptr) n DeviceToHost
 
 
 -- |
+-- Copy a number of elements from the host to host memory. This is a
+-- synchronous operation.
+--
+{-# INLINEABLE peekHostArray #-}
+peekHostArray :: Storable a => Int -> HostPtr a -> Ptr a -> IO ()
+peekHostArray !n !dptr !hptr = memcpy hptr (useHostPtr dptr) n HostToHost
+
+
+-- |
 -- Copy memory from the device asynchronously, possibly associated with a
 -- particular stream. The destination memory must be page locked.
 --
@@ -204,11 +213,31 @@ peekListArray !n !dptr =
 
 
 -- |
+-- Copy a number of elements from the host into a new Haskell list. Note that
+-- this requires two memory copies: firstly from the device into a heap
+-- allocated array, and from there marshalled into a list
+--
+{-# INLINEABLE peekHostListArray #-}
+peekHostListArray :: Storable a => Int -> HostPtr a -> IO [a]
+peekHostListArray !n !dptr =
+  F.allocaArray n $ \p -> do
+    peekHostArray   n dptr p
+    F.peekArray n p
+
+
+-- |
 -- Copy a number of elements onto the device. This is a synchronous operation.
 --
 {-# INLINEABLE pokeArray #-}
 pokeArray :: Storable a => Int -> Ptr a -> DevicePtr a -> IO ()
 pokeArray !n !hptr !dptr = memcpy (useDevicePtr dptr) hptr n HostToDevice
+
+-- |
+-- Copy a number of elements onto the host. This is a synchronous operation.
+--
+{-# INLINEABLE pokeHostArray #-}
+pokeHostArray :: Storable a => Int -> Ptr a -> HostPtr a -> IO ()
+pokeHostArray !n !hptr !dptr = memcpy (useHostPtr dptr) hptr n HostToHost
 
 
 -- |
@@ -229,6 +258,15 @@ pokeArrayAsync !n !hptr !dptr !mst =
 {-# INLINEABLE pokeListArray #-}
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
 pokeListArray !xs !dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
+
+-- |
+-- Write a list of storable elements into a host array. The array must be
+-- sufficiently large to hold the entire list. This requires two marshalling
+-- operations
+--
+{-# INLINEABLE pokeHostListArray #-}
+pokeHostListArray :: Storable a => [a] -> HostPtr a -> IO ()
+pokeHostListArray !xs !dptr = F.withArrayLen xs $ \len p -> pokeHostArray len p dptr
 
 
 -- |
