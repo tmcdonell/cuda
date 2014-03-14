@@ -354,7 +354,7 @@ pokeListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeArray len p dptr
 --
 {-# INLINEABLE pokeHostListArray #-}
 pokeHostListArray :: Storable a => [a] -> HostPtr a -> IO ()
-pokeHostListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeHostArray len p dptr
+pokeHostListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeHostArray len p hptr
 
 -- |
 -- Copy the given number of elements from the first device array (source) to the
@@ -362,6 +362,7 @@ pokeHostListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeHostArray len
 -- asynchronous with respect to the host, but will never overlap with kernel
 -- execution.
 --
+
 {-# INLINEABLE copyArrayAsync #-}
 copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
 copyArrayAsync !n = docopy undefined
