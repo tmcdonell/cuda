@@ -47,6 +47,7 @@ import Control.Monad                            (liftM)
 import Control.Exception                        (throwIO)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8          as B
+import qualified Data.ByteString.Internal       as B
 
 
 --------------------------------------------------------------------------------
@@ -210,26 +211,33 @@ loadDataEx !img !options =
 --
 {-# INLINEABLE loadDataFromPtrEx #-}
 loadDataFromPtrEx :: Ptr Word8 -> [JITOption] -> IO JITResult
-loadDataFromPtrEx !img !options =
-  allocaArray logSize $ \p_ilog ->
-  allocaArray logSize $ \p_elog ->
+loadDataFromPtrEx !img !options = do
+  fp_ilog <- B.mallocByteString logSize
+
+  allocaArray logSize    $ \p_elog -> do
+  withForeignPtr fp_ilog $ \p_ilog -> do
+
   let (opt,val) = unzip $
         [ (JIT_WALL_TIME, 0) -- must be first, this is extracted below
         , (JIT_INFO_LOG_BUFFER_SIZE_BYTES,  logSize)
         , (JIT_ERROR_LOG_BUFFER_SIZE_BYTES, logSize)
         , (JIT_INFO_LOG_BUFFER,  unsafeCoerce (p_ilog :: CString))
-        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ map unpack options in
+        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ map unpack options
 
-  withArray (map cFromEnum opt)    $ \p_opts ->
+  withArray (map cFromEnum opt)    $ \p_opts -> do
   withArray (map unsafeCoerce val) $ \p_vals -> do
 
   (s,mdl) <- cuModuleLoadDataEx img (length opt) p_opts p_vals
-  infoLog <- B.packCString p_ilog
-  errLog  <- B.packCString p_elog
-  time    <- peek (castPtr p_vals)
+
   case s of
-    Success     -> return    (JITResult time infoLog mdl)
-    _           -> cudaError (unlines [describe s, B.unpack errLog])
+    Success     -> do
+      time    <- peek (castPtr p_vals)
+      infoLog <- B.fromForeignPtr (castForeignPtr fp_ilog) 0 `fmap` c_strnlen p_ilog logSize
+      return  $! JITResult time infoLog mdl
+
+    _           -> do
+      errLog  <- peekCString p_elog
+      cudaError (unlines [describe s, errLog])
 
   where
     logSize = 2048
@@ -293,4 +301,12 @@ resultIfFound kind name (!status,!result) =
 {-# INLINE peekMod #-}
 peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
+
+{-# INLINE c_strnlen' #-}
+foreign import ccall unsafe "string.h strnlen" c_strnlen'
+  :: CString -> CSize -> IO CSize
+
+{-# INLINE c_strnlen #-}
+c_strnlen :: CString -> Int -> IO Int
+c_strnlen str maxlen = cIntConv `fmap` c_strnlen' str (cIntConv maxlen)
 
