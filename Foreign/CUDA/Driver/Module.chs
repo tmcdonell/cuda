@@ -14,7 +14,15 @@ module Foreign.CUDA.Driver.Module (
 
   -- * Module Management
   Module, JITOption(..), JITTarget(..), JITResult(..),
-  getFun, getPtr, getTex, loadFile, loadData, loadDataEx, unload
+
+  -- ** Querying module inhabitants
+  getFun, getPtr, getTex,
+
+  -- ** Loading and unloading modules
+  loadFile,
+  loadData,   loadDataFromPtr,
+  loadDataEx, loadDataFromPtrEx,
+  unload
 
 ) where
 
@@ -143,7 +151,7 @@ getTex !mdl !name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
 
 -- |
 -- Load the contents of the specified file (either a ptx or cubin file) to
--- create a new module, and load that module into the current context
+-- create a new module, and load that module into the current context.
 --
 {-# INLINEABLE loadFile #-}
 loadFile :: FilePath -> IO Module
@@ -157,26 +165,52 @@ loadFile !ptx = resultIfOk =<< cuModuleLoad ptx
 
 -- |
 -- Load the contents of the given image into a new module, and load that module
--- into the current context. The image (typically) is the contents of a cubin or
--- ptx file as a NULL-terminated string.
+-- into the current context. The image is (typically) the contents of a cubin or
+-- PTX file.
+--
+-- Note that the 'ByteString' will be copied into a temporary staging area so
+-- that it can be passed to C.
 --
 {-# INLINEABLE loadData #-}
 loadData :: ByteString -> IO Module
-loadData !img = resultIfOk =<< cuModuleLoadData img
+loadData !img =
+  B.useAsCString img (\p -> loadDataFromPtr (castPtr p))
+
+-- |
+-- As 'loadData', but read the image data from the given pointer. The image is a
+-- NULL-terminated sequence of bytes.
+--
+{-# INLINEABLE loadDataFromPtr #-}
+loadDataFromPtr :: Ptr Word8 -> IO Module
+loadDataFromPtr !img = resultIfOk =<< cuModuleLoadData img
 
 {-# INLINE cuModuleLoadData #-}
 {# fun unsafe cuModuleLoadData
-  { alloca-        `Module'     peekMod*
-  , useByteString* `ByteString'          } -> ` Status' cToEnum #}
+  { alloca- `Module'    peekMod*
+  , castPtr `Ptr Word8'          } -> ` Status' cToEnum #}
 
 
 -- |
--- Load a module with online compiler options. The actual attributes of the
+-- Load the contents of the given image into a module with online compiler
+-- options, and load the module into the current context. The image is
+-- (typically) the contents of a cubin or PTX file. The actual attributes of the
 -- compiled kernel can be probed using 'requires'.
+--
+-- Note that the 'ByteString' will be copied into a temporary staging area so
+-- that it can be passed to C.
 --
 {-# INLINEABLE loadDataEx #-}
 loadDataEx :: ByteString -> [JITOption] -> IO JITResult
 loadDataEx !img !options =
+  B.useAsCString img (\p -> loadDataFromPtrEx (castPtr p) options)
+
+-- |
+-- As 'loadDataEx', but read the image data from the given pointer. The image is
+-- a NULL-terminated sequence of bytes.
+--
+{-# INLINEABLE loadDataFromPtrEx #-}
+loadDataFromPtrEx :: Ptr Word8 -> [JITOption] -> IO JITResult
+loadDataFromPtrEx !img !options =
   allocaArray logSize $ \p_ilog ->
   allocaArray logSize $ \p_elog ->
   let (opt,val) = unzip $
@@ -225,11 +259,11 @@ loadDataEx !img !options =
 
 {-# INLINE cuModuleLoadDataEx #-}
 {# fun unsafe cuModuleLoadDataEx
-  { alloca-        `Module'       peekMod*
-  , useByteString* `ByteString'
-  ,                `Int'
-  , id             `Ptr CInt'
-  , id             `Ptr (Ptr ())'          } -> `Status' cToEnum #}
+  { alloca- `Module'       peekMod*
+  , castPtr `Ptr Word8'
+  ,         `Int'
+  , id      `Ptr CInt'
+  , id      `Ptr (Ptr ())'          } -> `Status' cToEnum #}
 
 
 -- |
@@ -259,8 +293,4 @@ resultIfFound kind name (!status,!result) =
 {-# INLINE peekMod #-}
 peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
-
-{-# INLINE useByteString #-}
-useByteString :: ByteString -> (Ptr a -> IO b) -> IO b
-useByteString !bs !act = B.useAsCString bs $ \ !p -> act (castPtr p)
 
