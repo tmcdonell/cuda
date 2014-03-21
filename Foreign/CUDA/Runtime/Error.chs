@@ -25,8 +25,8 @@ module Foreign.CUDA.Runtime.Error (
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Foreign
 import Foreign.C
+import Foreign.Ptr
 import Data.Typeable
 import Control.Exception
 import System.IO.Unsafe
