@@ -70,9 +70,11 @@ data JITOption
   | OptimisationLevel  !Int             -- ^ level of optimisation to apply (1-4, default 4)
   | Target             !Compute         -- ^ compilation target, otherwise determined from context
   | FallbackStrategy   !JITFallback     -- ^ fallback strategy if matching cubin not found
+#if CUDA_VERSION >= 5050
   | GenerateDebugInfo                   -- ^ generate debug info (-g)
   | GenerateLineInfo                    -- ^ generate line number information (-lineinfo)
   | Verbose                             -- ^ verbose log messages
+#endif
   deriving (Show)
 
 -- |
@@ -247,9 +249,11 @@ loadDataFromPtrEx !img !options = do
     unpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL,  x)
     unpack (Target x)            = (JIT_TARGET,              jitTargetOfCompute x)
     unpack (FallbackStrategy x)  = (JIT_FALLBACK_STRATEGY,   fromEnum x)
+#if CUDA_VERSION >= 5050
     unpack GenerateDebugInfo     = (JIT_GENERATE_DEBUG_INFO, fromEnum True)
     unpack GenerateLineInfo      = (JIT_GENERATE_LINE_INFO,  fromEnum True)
     unpack Verbose               = (JIT_LOG_VERBOSE,         fromEnum True)
+#endif
 
     jitTargetOfCompute (Compute x y)
       = fromEnum
