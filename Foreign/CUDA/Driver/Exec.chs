@@ -67,7 +67,7 @@ newtype Fun = Fun { useFun :: {# type CUfunction #}}
 -- Kernel function parameters
 --
 data FunParam where
-  IArg :: !Int             -> FunParam
+  IArg :: !Int32           -> FunParam
   FArg :: !Float           -> FunParam
   VArg :: Storable a => !a -> FunParam
 
@@ -302,7 +302,7 @@ setParams !fn !prs = do
 {# fun unsafe cuParamSeti
   { useFun `Fun'
   ,        `Int'
-  ,        `Int' } -> `Status' cToEnum #}
+  ,        `Int32' } -> `Status' cToEnum #}
 
 {-# INLINE cuParamSetf #-}
 {# fun unsafe cuParamSetf
