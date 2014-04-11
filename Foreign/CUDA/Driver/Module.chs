@@ -45,6 +45,8 @@ import Unsafe.Coerce
 
 import Control.Monad                            (liftM)
 import Control.Exception                        (throwIO)
+import Debug.Trace                              (trace)
+import Data.Maybe                               (mapMaybe)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8          as B
 import qualified Data.ByteString.Internal       as B
@@ -70,11 +72,9 @@ data JITOption
   | OptimisationLevel  !Int             -- ^ level of optimisation to apply (1-4, default 4)
   | Target             !Compute         -- ^ compilation target, otherwise determined from context
   | FallbackStrategy   !JITFallback     -- ^ fallback strategy if matching cubin not found
-#if CUDA_VERSION >= 5050
-  | GenerateDebugInfo                   -- ^ generate debug info (-g)
-  | GenerateLineInfo                    -- ^ generate line number information (-lineinfo)
-  | Verbose                             -- ^ verbose log messages
-#endif
+  | GenerateDebugInfo                   -- ^ generate debug info (-g) (requires cuda >= 5.5)
+  | GenerateLineInfo                    -- ^ generate line number information (-lineinfo) (requires cuda >= 5.5)
+  | Verbose                             -- ^ verbose log messages (requires cuda >= 5.5)
   deriving (Show)
 
 -- |
@@ -224,7 +224,7 @@ loadDataFromPtrEx !img !options = do
         , (JIT_INFO_LOG_BUFFER_SIZE_BYTES,  logSize)
         , (JIT_ERROR_LOG_BUFFER_SIZE_BYTES, logSize)
         , (JIT_INFO_LOG_BUFFER,  unsafeCoerce (p_ilog :: CString))
-        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ map unpack options
+        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ mapMaybe unpack options
 
   withArray (map cFromEnum opt)    $ \p_opts -> do
   withArray (map unsafeCoerce val) $ \p_vals -> do
@@ -244,15 +244,17 @@ loadDataFromPtrEx !img !options = do
   where
     logSize = 2048
 
-    unpack (MaxRegisters x)      = (JIT_MAX_REGISTERS,       x)
-    unpack (ThreadsPerBlock x)   = (JIT_THREADS_PER_BLOCK,   x)
-    unpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL,  x)
-    unpack (Target x)            = (JIT_TARGET,              jitTargetOfCompute x)
-    unpack (FallbackStrategy x)  = (JIT_FALLBACK_STRATEGY,   fromEnum x)
+    unpack (MaxRegisters x)      = Just (JIT_MAX_REGISTERS,       x)
+    unpack (ThreadsPerBlock x)   = Just (JIT_THREADS_PER_BLOCK,   x)
+    unpack (OptimisationLevel x) = Just (JIT_OPTIMIZATION_LEVEL,  x)
+    unpack (Target x)            = Just (JIT_TARGET,              jitTargetOfCompute x)
+    unpack (FallbackStrategy x)  = Just (JIT_FALLBACK_STRATEGY,   fromEnum x)
 #if CUDA_VERSION >= 5050
-    unpack GenerateDebugInfo     = (JIT_GENERATE_DEBUG_INFO, fromEnum True)
-    unpack GenerateLineInfo      = (JIT_GENERATE_LINE_INFO,  fromEnum True)
-    unpack Verbose               = (JIT_LOG_VERBOSE,         fromEnum True)
+    unpack GenerateDebugInfo     = Just (JIT_GENERATE_DEBUG_INFO, fromEnum True)
+    unpack GenerateLineInfo      = Just (JIT_GENERATE_LINE_INFO,  fromEnum True)
+    unpack Verbose               = Just (JIT_LOG_VERBOSE,         fromEnum True)
+#else
+    unpack x                     = trace ("Warning: JITOption '" ++ show x ++ "' requires at least cuda-5.5") Nothing
 #endif
 
     jitTargetOfCompute (Compute x y)
