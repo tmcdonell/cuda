@@ -12,6 +12,7 @@ import Distribution.Simple.PreProcess           hiding (ppC2hs)
 
 import Control.Exception
 import Control.Monad
+import System.Exit
 import System.FilePath
 import System.Directory
 import System.Environment
@@ -38,8 +39,11 @@ main = defaultMainWithHooks customHooks
       let verbosity = fromFlag (configVerbosity flags)
 
       confExists <- doesFileExist "configure"
-      unless confExists $
-        rawSystemExit verbosity "autoconf" []
+      unless confExists $ do
+        code <- rawSystemExitCode verbosity "autoconf" []
+        case code of
+          ExitSuccess   -> return ()
+          ExitFailure c -> die $ "autoconf exited with code " ++ show c
 
       preConf autoconfUserHooks args flags
 
