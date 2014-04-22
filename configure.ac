@@ -23,7 +23,7 @@ AC_ARG_WITH([gcc],      [  --with-gcc=CC           use CC as the C compiler],
 #
 if test "$NVCC" != ""; then
     cuda_prefix="$(dirname "$(dirname "$NVCC")")"
-    cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E "
+    cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E --cppopts=-arch=sm_20 "
 else
     echo "WARNING: Cannot find the CUDA compiler 'nvcc'. This is likely to cause problems."
     cuda_prefix="/usr/local/cuda"
