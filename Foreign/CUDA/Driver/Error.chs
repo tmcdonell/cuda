@@ -31,8 +31,11 @@ import Control.Exception
 --
 {# enum CUresult as Status
     { underscoreToCase
-    , CUDA_SUCCESS as Success
-    , CUDA_ERROR_NO_BINARY_FOR_GPU as NoBinaryForGPU }
+    , CUDA_SUCCESS                      as Success
+    , CUDA_ERROR_NO_BINARY_FOR_GPU      as NoBinaryForGPU
+    , CUDA_ERROR_INVALID_PTX            as InvalidPTX
+    , CUDA_ERROR_INVALID_PC             as InvalidPC
+    }
     with prefix="CUDA_ERROR" deriving (Eq, Show) #}
 
 
@@ -104,6 +107,15 @@ describe HostMemoryNotRegistered        = "pointer does not correspond to a regi
 describe PeerAccessUnsupported          = "peer access is not supported across the given devices"
 describe NotPermitted                   = "not permitted"
 describe NotSupported                   = "not supported"
+#endif
+#if CUDA_VERSION >= 6000
+describe InvalidPTX                     = "PTX JIT compilation failed"
+describe IllegalAddress                 = "load or store to an invalid address"
+describe HardwareStackError             = "stack corruption or stack size limit exceeded"
+describe IllegalInstruction             = "illegal instruction encountered"
+describe MisalignedAddress              = "load or store instruction on unaligned memory address"
+describe InvalidAddressSpace            = "instruction applied to incorrect address space (global, shared, or local)"
+describe InvalidPC                      = "program counter wrapped during kernel execution"
 #endif
 describe Unknown                        = "unknown error"
 
