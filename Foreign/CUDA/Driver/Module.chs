@@ -45,12 +45,14 @@ import Unsafe.Coerce
 
 import Control.Monad                            (liftM)
 import Control.Exception                        (throwIO)
-import Debug.Trace                              (trace)
 import Data.Maybe                               (mapMaybe)
 import Data.ByteString.Char8                    (ByteString)
 import qualified Data.ByteString.Char8          as B
 import qualified Data.ByteString.Internal       as B
 
+#if CUDA_VERSION < 5050
+import Debug.Trace                              (trace)
+#endif
 
 --------------------------------------------------------------------------------
 -- Data Types
