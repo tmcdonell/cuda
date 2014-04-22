@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.5.1.2
+Version:                0.6.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -13,9 +13,7 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
-    /NOTE:/ Mavericks users (OS X 10.9) should use CUDA 5.5.28 and upwards.
-    .
-    This release is for version 5.0 of the CUDA toolkit.
+    This release is for version 6.0 of the CUDA toolkit.
 
 License:                BSD3
 License-file:           LICENSE
