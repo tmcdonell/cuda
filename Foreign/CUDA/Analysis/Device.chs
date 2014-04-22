@@ -153,6 +153,7 @@ deviceResources = resources . computeCapability
       Compute 2 1 -> DeviceResources 32 1536  8 48  48 49152 128 32768  64 2  63 Warp   -- Fermi GF10x
       Compute 3 0 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4  63 Warp   -- Kepler GK10x
       Compute 3 5 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 255 Warp   -- Kepler GK11x
+      Compute 5 0 -> DeviceResources 32 2048 32 64 128 65536 256 65536 256 4 255 Warp   -- Maxwell GM10x
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
