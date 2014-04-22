@@ -21,6 +21,10 @@ module Foreign.CUDA.Driver.Marshal (
   -- * Device Allocation
   mallocArray, allocaArray, free,
 
+  -- * Unified Memory
+  AttachFlag(..),
+  mallocManagedArray,
+
   -- * Marshalling
   peekArray, peekArrayAsync, peekListArray,
   pokeArray, pokeArrayAsync, pokeListArray,
@@ -69,6 +73,16 @@ typedef enum CUmemhostalloc_option_enum {
     CU_MEMHOSTALLOC_OPTION_WRITE_COMBINED = CU_MEMHOSTALLOC_WRITECOMBINED
 } CUmemhostalloc_option;
 #endc
+
+#if CUDA_VERSION >= 6000
+#c
+typedef enum CUmemAttachFlags_option_enum {
+    CU_MEM_ATTACH_OPTION_GLOBAL = CU_MEM_ATTACH_GLOBAL,
+    CU_MEM_ATTACH_OPTION_HOST   = CU_MEM_ATTACH_HOST,
+    CU_MEM_ATTACH_OPTION_SINGLE = CU_MEM_ATTACH_SINGLE
+} CUmemAttachFlags_option;
+#endc
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -224,6 +238,45 @@ free !dp = nothingIfOk =<< cuMemFree dp
 {-# INLINE cuMemFree #-}
 {# fun unsafe cuMemFree
   { useDeviceHandle `DevicePtr a' } -> `Status' cToEnum #}
+
+
+--------------------------------------------------------------------------------
+-- Unified memory allocations
+--------------------------------------------------------------------------------
+
+-- |
+-- Options for unified memory allocations
+--
+#if CUDA_VERSION >= 6000
+{# enum CUmemAttachFlags_option as AttachFlag
+    { underscoreToCase }
+    with prefix="CU_MEM_ATTACH_OPTION" deriving (Eq, Show) #}
+#else
+data AttachFlag
+#endif
+
+-- |
+-- Allocates memory that will be automatically managed by the Unified Memory
+-- system
+--
+{-# INLINEABLE mallocManagedArray #-}
+mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
+#if CUDA_VERSION < 6000
+mallocManagedArray _      = requireSDK 6.0 "mallocManagedArray"
+#else
+mallocManagedArray !flags = doMalloc undefined
+  where
+    doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
+    doMalloc x !n = resultIfOk =<< cuMemAllocManaged (n * sizeOf x) flags
+
+{-# INLINE cuMemAllocManaged #-}
+{# fun unsafe cuMemAllocManaged
+  { alloca'-        `DevicePtr a' peekDeviceHandle*
+  ,                 `Int'
+  , combineBitMasks `[AttachFlag]'                  } -> `Status' cToEnum #}
+  where
+    alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
+#endif
 
 
 --------------------------------------------------------------------------------
