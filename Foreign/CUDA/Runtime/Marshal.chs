@@ -19,6 +19,10 @@ module Foreign.CUDA.Runtime.Marshal (
   -- * Device Allocation
   mallocArray, allocaArray, free,
 
+  -- * Unified Memory Allocation
+  AttachFlag(..),
+  mallocManagedArray,
+
   -- * Marshalling
   peekArray, peekArrayAsync, peekListArray,
   pokeArray, pokeArrayAsync, pokeListArray,
@@ -59,6 +63,16 @@ typedef enum cudaMemHostAlloc_option_enum {
     CUDA_MEMHOSTALLOC_OPTION_WRITE_COMBINED = cudaHostAllocWriteCombined
 } cudaMemHostAlloc_option;
 #endc
+
+#if CUDART_VERSION >= 6000
+#c
+typedef enum cudaMemAttachFlags_option_enum {
+    CUDA_MEM_ATTACH_OPTION_GLOBAL = cudaMemAttachGlobal,
+    CUDA_MEM_ATTACH_OPTION_HOST   = cudaMemAttachHost,
+    CUDA_MEM_ATTACH_OPTION_SINGLE = cudaMemAttachSingle
+} cudaMemAttachFlags_option;
+#endc
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -165,6 +179,46 @@ free !p = nothingIfOk =<< cudaFree p
   { dptr `DevicePtr a' } -> `Status' cToEnum #}
   where
     dptr = useDevicePtr . castDevPtr
+
+
+--------------------------------------------------------------------------------
+-- Unified memory allocation
+--------------------------------------------------------------------------------
+
+-- |
+-- Options for unified memory allocations
+--
+#if CUDART_VERSION >= 6000
+{# enum cudaMemAttachFlags_option as AttachFlag
+    { underscoreToCase }
+    with prefix="CUDA_MEM_ATTACH_OPTION" deriving (Eq, Show) #}
+#else
+data AttachFlag
+#endif
+
+-- |
+-- Allocates memory that will be automatically managed by the Unified Memory
+-- system
+--
+{-# INLINEABLE mallocManagedArray #-}
+mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
+#if CUDART_VERSION < 6000
+mallocManagedArray _      = requireSDK 6.0 "mallocManagedArray"
+#else
+mallocManagedArray !flags = doMalloc undefined
+  where
+    doMalloc :: Storable a' => a' -> Int -> IO (DevicePtr a')
+    doMalloc x !n = resultIfOk =<< cudaMallocManaged (fromIntegral n * fromIntegral (sizeOf x)) flags
+
+{-# INLINE cudaMallocManaged #-}
+{# fun unsafe cudaMallocManaged
+  { alloca'-        `DevicePtr a' dptr*
+  , cIntConv        `Int64'
+  , combineBitMasks `[AttachFlag]'      } -> `Status' cToEnum #}
+  where
+    alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
+    dptr !p    = (castDevPtr . DevicePtr) `fmap` peek p
+#endif
 
 
 --------------------------------------------------------------------------------

@@ -21,7 +21,7 @@ module Foreign.CUDA.Driver.Marshal (
   -- * Device Allocation
   mallocArray, allocaArray, free,
 
-  -- * Unified Memory
+  -- * Unified Memory Allocation
   AttachFlag(..),
   mallocManagedArray,
 
