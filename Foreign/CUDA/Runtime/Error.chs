@@ -20,7 +20,6 @@ module Foreign.CUDA.Runtime.Error (
 
 ) where
 
-
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 

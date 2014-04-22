@@ -1,5 +1,6 @@
-{-# LANGUAGE BangPatterns       #-}
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE DeriveDataTypeable       #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Error
@@ -13,10 +14,18 @@
 module Foreign.CUDA.Driver.Error
   where
 
+-- Friends
+import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Data.Typeable
 import Control.Exception
+import Control.Monad
+import Foreign.C
+import Foreign.Ptr
+import Foreign.Marshal
+import Foreign.Storable
+import System.IO.Unsafe
 
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
@@ -43,6 +52,17 @@ import Control.Exception
 -- Return a descriptive error string associated with a particular error code
 --
 describe :: Status -> String
+#if CUDA_VERSION >= 6000
+describe status
+  = unsafePerformIO $ resultIfOk =<< cuGetErrorString status
+
+{# fun unsafe cuGetErrorString
+    { cFromEnum `Status'
+    , alloca-   `String' ppeek* } -> `Status' cToEnum #}
+    where
+      ppeek = peek >=> peekCString
+
+#else
 describe Success                        = "no error"
 describe InvalidValue                   = "invalid argument"
 describe OutOfMemory                    = "out of memory"
@@ -108,16 +128,8 @@ describe PeerAccessUnsupported          = "peer access is not supported across t
 describe NotPermitted                   = "not permitted"
 describe NotSupported                   = "not supported"
 #endif
-#if CUDA_VERSION >= 6000
-describe InvalidPTX                     = "PTX JIT compilation failed"
-describe IllegalAddress                 = "load or store to an invalid address"
-describe HardwareStackError             = "stack corruption or stack size limit exceeded"
-describe IllegalInstruction             = "illegal instruction encountered"
-describe MisalignedAddress              = "load or store instruction on unaligned memory address"
-describe InvalidAddressSpace            = "instruction applied to incorrect address space (global, shared, or local)"
-describe InvalidPC                      = "program counter wrapped during kernel execution"
-#endif
 describe Unknown                        = "unknown error"
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -152,6 +164,7 @@ requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
 --------------------------------------------------------------------------------
 -- Helper Functions
 --------------------------------------------------------------------------------
+
 
 -- |
 -- Return the results of a function on successful execution, otherwise throw an
