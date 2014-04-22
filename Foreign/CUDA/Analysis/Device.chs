@@ -97,11 +97,9 @@ data DeviceProperties = DeviceProperties
 #endif
     kernelExecTimeoutEnabled    :: !Bool,               -- ^ Whether there is a runtime limit on kernels
     integrated                  :: !Bool,               -- ^ As opposed to discrete
-#if CUDA_VERSION >= 4000
     canMapHostMemory            :: !Bool,               -- ^ Device can use pinned memory
+#if CUDA_VERSION >= 4000
     unifiedAddressing           :: !Bool                -- ^ Device shares a unified address space with the host
-#else
-    canMapHostMemory            :: !Bool                -- ^ Device can use pinned memory
 #endif
   }
   deriving (Show)
