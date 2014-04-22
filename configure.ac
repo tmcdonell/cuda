@@ -11,11 +11,11 @@ AC_CANONICAL_TARGET
 # prefix to the include and library search directories. Additionally, set nvcc
 # as the C preprocessor for c2hs (only, or it won't try to link cudart)
 #
-AC_ARG_WITH([compiler], [  --with-compiler=HC      use HC as the Haskell compiler], 
+AC_ARG_WITH([compiler], [  --with-compiler=HC      use HC as the Haskell compiler],
             [GHC=$withval],  [AC_PATH_PROG(GHC, ghc)])
-AC_ARG_WITH([nvcc],     [  --with-nvcc=NVCC        use NVCC as the CUDA compiler],    
+AC_ARG_WITH([nvcc],     [  --with-nvcc=NVCC        use NVCC as the CUDA compiler],
             [NVCC=$withval], [AC_PATH_PROG(NVCC, nvcc, [], [$PATH:/usr/local/cuda/bin])])
-AC_ARG_WITH([gcc],      [  --with-gcc=CC           use CC as the C compiler],       
+AC_ARG_WITH([gcc],      [  --with-gcc=CC           use CC as the C compiler],
             [CC=$withval])
 
 # If NVCC is detected in the path, set the location of the toolkit relative to
