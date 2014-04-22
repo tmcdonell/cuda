@@ -31,15 +31,16 @@ fi
 
 # Location of the toolkit binaries and libraries
 #
+cuda_frameworks=""
 cuda_inc_path="${cuda_prefix}/include"
 CPPFLAGS+=" -I${cuda_inc_path} "
-cuda_frameworks=""
 
 case $target_os in
   darwin*)
     cuda_lib_path="${cuda_prefix}/lib"
     cuda_frameworks="CUDA"
-    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} -F/Library/Frameworks -framework ${cuda_frameworks}"
+    LDFLAGS+=" -F/Library/Frameworks -framework ${cuda_frameworks}"
+    #LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
     #CPPFLAGS+=" -arch ${target_cpu} "
     ;;
   *)
