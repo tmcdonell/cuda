@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
@@ -262,7 +263,7 @@ data AttachFlag
 {-# INLINEABLE mallocManagedArray #-}
 mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
 #if CUDA_VERSION < 6000
-mallocManagedArray _      = requireSDK 6.0 "mallocManagedArray"
+mallocManagedArray _ _    = requireSDK 6.0 "mallocManagedArray"
 #else
 mallocManagedArray !flags = doMalloc undefined
   where
