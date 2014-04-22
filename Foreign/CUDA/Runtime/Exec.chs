@@ -15,8 +15,8 @@
 module Foreign.CUDA.Runtime.Exec (
 
   -- * Kernel Execution
-  FunAttributes(..), FunParam(..), CacheConfig(..),
-  attributes, setConfig, setParams, setCacheConfig, launch
+  Fun, FunAttributes(..), FunParam(..), CacheConfig(..),
+  attributes, setConfig, setParams, setCacheConfig, launch, launchKernel,
 
 ) where
 
@@ -42,6 +42,19 @@ typedef struct cudaFuncAttributes cudaFuncAttributes;
 --------------------------------------------------------------------------------
 -- Data Types
 --------------------------------------------------------------------------------
+
+-- |
+-- A @__global__@ device function.
+--
+-- Note that the use of a string naming a function was deprecated in CUDA 4.1
+-- and removed in CUDA 5.0.
+--
+#if CUDART_VERSION >= 5000
+type Fun = FunPtr ()
+#else
+type Fun = String
+#endif
+
 
 --
 -- Function Attributes
@@ -109,13 +122,13 @@ data FunParam where
 -- itemises the requirements to successfully launch the given kernel.
 --
 {-# INLINEABLE attributes #-}
-attributes :: String -> IO FunAttributes
+attributes :: Fun -> IO FunAttributes
 attributes !fn = resultIfOk =<< cudaFuncGetAttributes fn
 
 {-# INLINE cudaFuncGetAttributes #-}
 {# fun unsafe cudaFuncGetAttributes
-  { alloca-       `FunAttributes' peek*
-  , withCString_* `String'              } -> `Status' cToEnum #}
+  { alloca-  `FunAttributes' peek*
+  , withFun* `Fun'                 } -> `Status' cToEnum #}
 
 
 -- |
@@ -151,6 +164,7 @@ setConfig (!gx,!gy) (!bx,!by,!bz) !sharedMem !mst =
 -- Set the argument parameters that will be passed to the next kernel
 -- invocation. This is used in conjunction with 'setConfig' to control kernel
 -- execution.
+--
 {-# INLINEABLE setParams #-}
 setParams :: [FunParam] -> IO ()
 setParams = foldM_ k 0
@@ -200,7 +214,7 @@ setParams = foldM_ k 0
 -- synchronisation point for streamed kernel launches
 --
 {-# INLINEABLE setCacheConfig #-}
-setCacheConfig :: String -> CacheConfig -> IO ()
+setCacheConfig :: Fun -> CacheConfig -> IO ()
 #if CUDART_VERSION < 3000
 setCacheConfig _ _       = requireSDK 3.0 "setCacheConfig"
 #else
@@ -208,32 +222,53 @@ setCacheConfig !fn !pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 
 {-# INLINE cudaFuncSetCacheConfig #-}
 {# fun unsafe cudaFuncSetCacheConfig
-  { withCString_* `String'
-  , cFromEnum    `CacheConfig' } -> `Status' cToEnum #}
+  { withFun*  `Fun'
+  , cFromEnum `CacheConfig' } -> `Status' cToEnum #}
 #endif
 
 
 -- |
--- Invoke the named kernel on the device, which must have been declared
--- @__global__@. This must be preceded by a call to 'setConfig' and (if
--- appropriate) 'setParams'.
+-- Invoke the @__global__@ kernel function on the device. This must be preceded
+-- by a call to 'setConfig' and (if appropriate) 'setParams'.
 --
 {-# INLINEABLE launch #-}
-launch :: String -> IO ()
+launch :: Fun -> IO ()
 launch !fn = nothingIfOk =<< cudaLaunch fn
 
 {-# INLINE cudaLaunch #-}
 {# fun unsafe cudaLaunch
-  { withCString_* `String' } -> `Status' cToEnum #}
+  { withFun* `Fun' } -> `Status' cToEnum #}
 
+
+-- |
+-- Invoke a kernel on a @(gx * gy)@ grid of blocks, where each block contains
+-- @(tx * ty * tz)@ threads and has access to a given number of bytes of shared
+-- memory. The launch may also be associated with a specific 'Stream'.
+--
+{-# INLINEABLE launchKernel #-}
+launchKernel
+    :: Fun              -- ^ Device function symbol
+    -> (Int,Int)        -- ^ grid dimensions
+    -> (Int,Int,Int)    -- ^ thread block shape
+    -> Int64            -- ^ shared memory per block (bytes)
+    -> Maybe Stream     -- ^ (optional) execution stream
+    -> [FunParam]
+    -> IO ()
+launchKernel !fn !grid !block !sm !mst !args = do
+  setConfig grid block sm mst
+  setParams args
+  launch fn
 
 --------------------------------------------------------------------------------
 -- Internals
 --------------------------------------------------------------------------------
 
--- CUDA 5.0 changed the types of some attributes from char* to void*
+-- CUDA 5.0 changed the type of a kernel function from char* to void*
 --
-{-# INLINE withCString_ #-}
-withCString_ :: String -> (Ptr a -> IO b) -> IO b
-withCString_ !str !fn = withCString str (fn . castPtr)
+withFun :: Fun -> (Ptr a -> IO b) -> IO b
+#if CUDART_VERSION >= 5000
+withFun fn action = action (castFunPtrToPtr fn)
+#else
+withFun           = withCString
+#endif
 
