@@ -39,7 +39,7 @@ case $target_os in
   darwin*)
     cuda_lib_path="${cuda_prefix}/lib"
     cuda_frameworks="CUDA"
-    LDFLAGS+=" -F/Library/Frameworks -framework ${cuda_frameworks}"
+    LDFLAGS+=" -F/Library/Frameworks "
     #LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
     #CPPFLAGS+=" -arch ${target_cpu} "
     ;;
@@ -121,8 +121,7 @@ AC_SEARCH_LIBS(cudaRuntimeGetVersion, cudart, [], [AC_MSG_ERROR(could not find C
 # Populate the buildinfo, with the search paths and any target specific options
 #
 cuda_ccflags="$CPPFLAGS "
-cuda_ldflags="$LDFLAGS $LIBS "
-
+cuda_ldflags="$LDFLAGS "
 
 for x in $cuda_ccflags; do
     cuda_ghcflags+="-optc${x} "
@@ -130,11 +129,15 @@ done
 for x in $cuda_ldflags; do
     cuda_ghcflags+="-optl${x} "
 done
+for x in $LIBS; do
+    cuda_libraries+="${x#-l} "
+done
 
 AC_SUBST([cuda_ghcflags])
 AC_SUBST([cuda_ccflags])
 AC_SUBST([cuda_ldflags])
 AC_SUBST([cuda_c2hsflags])
 AC_SUBST([cuda_lib_path])
+AC_SUBST([cuda_libraries])
 AC_SUBST([cuda_frameworks])
 AC_OUTPUT
