@@ -24,7 +24,7 @@ import Foreign.Storable
 --------------------------------------------------------------------------------
 
 -- |
--- A reference to data stored on the device
+-- A reference to data stored on the device.
 --
 newtype DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
   deriving (Eq,Ord)
@@ -118,7 +118,17 @@ advanceDevPtr = doAdvance undefined
 --------------------------------------------------------------------------------
 
 -- |
--- A reference to page-locked host memory
+-- A reference to page-locked host memory.
+--
+-- A 'HostPtr' is just a plain 'Ptr', but the memory has been allocated by the
+-- CUDA runtime into page locked memory. This means that the data can be copied
+-- to the GPU via DMA (direct memory access). Note that the use of the system
+-- function `mlock` is not sufficient here --- the CUDA version ensures that
+-- the /physical/ addresses stay this same, not just the virtual address.
+--
+-- To copy data into a 'HostPtr' array, you may use for example 'withHostPtr'
+-- together with 'Foreign.Marshal.Array.copyArray' or
+-- 'Foreign.Marshal.Array.moveArray'.
 --
 newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
   deriving (Eq,Ord)
