@@ -141,3 +141,4 @@ AC_SUBST([cuda_lib_path])
 AC_SUBST([cuda_libraries])
 AC_SUBST([cuda_frameworks])
 AC_OUTPUT
+
