@@ -29,7 +29,7 @@ module Foreign.CUDA.Driver.Marshal (
   -- * Marshalling
   peekArray, peekArrayAsync, peekListArray,
   pokeArray, pokeArrayAsync, pokeListArray,
-  copyArrayAsync,
+  copyArray, copyArrayAsync,
   copyArrayPeer, copyArrayPeerAsync,
 
   -- * Combined Allocation and Marshalling
@@ -386,13 +386,13 @@ pokeListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeArray len p dptr
 
 -- |
 -- Copy the given number of elements from the first device array (source) to the
--- second (destination). The copied areas may not overlap. This operation is
--- asynchronous with respect to the host, but will never overlap with kernel
+-- second device (destination). The copied areas may not overlap. This operation
+-- is asynchronous with respect to the host, but will never overlap with kernel
 -- execution.
 --
-{-# INLINEABLE copyArrayAsync #-}
-copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
-copyArrayAsync !n = docopy undefined
+{-# INLINEABLE copyArray #-}
+copyArray :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
+copyArray !n = docopy undefined
   where
     docopy :: Storable a' => a' -> DevicePtr a' -> DevicePtr a' -> IO ()
     docopy x src dst = nothingIfOk =<< cuMemcpyDtoD dst src (n * sizeOf x)
@@ -402,6 +402,27 @@ copyArrayAsync !n = docopy undefined
   { useDeviceHandle `DevicePtr a'
   , useDeviceHandle `DevicePtr a'
   ,                 `Int'         } -> `Status' cToEnum #}
+
+
+-- |
+-- Copy the given number of elements from the first device array (source) to the
+-- second device array (destination). The copied areas may not overlap. The
+-- operation is asynchronous with respect to the host, and can be asynchronous
+-- to other device operations by associating it with a particular stream.
+--
+{-# INLINEABLE copyArrayAsync #-}
+copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Stream -> IO ()
+copyArrayAsync !n !src !dst !mst = docopy undefined src
+  where
+    docopy :: Storable a' => a' -> DevicePtr a' -> IO ()
+    docopy x _ = nothingIfOk =<< cuMemcpyDtoDAsync dst src (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
+
+{-# INLINE cuMemcpyDtoDAsync #-}
+{# fun unsafe cuMemcpyDtoDAsync
+  { useDeviceHandle `DevicePtr a'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  , useStream       `Stream'      } -> `Status' cToEnum #}
 
 
 -- |

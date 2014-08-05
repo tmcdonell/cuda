@@ -91,6 +91,11 @@ CUresult CUDAAPI cuMemcpyDtoD(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size
     return cuMemcpyDtoD_v2(dstDevice, srcDevice, ByteCount);
 }
 
+CUresult CUDAAPI cuMemcpyDtoDAsync(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream)
+{
+    return cuMemcpyDtoDAsync_v2(dstDevice, srcDevice, ByteCount, hStream);
+}
+
 CUresult CUDAAPI cuMemcpyHtoDAsync(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream)
 {
     return cuMemcpyHtoDAsync_v2(dstDevice, srcHost, ByteCount, hStream);
