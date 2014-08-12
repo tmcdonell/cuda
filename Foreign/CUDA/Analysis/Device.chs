@@ -150,6 +150,7 @@ deviceResources = resources . computeCapability
       Compute 2 0 -> DeviceResources 32 1536  8 48  32 49152 128 32768  64 2  63 Warp   -- Fermi GF100
       Compute 2 1 -> DeviceResources 32 1536  8 48  48 49152 128 32768  64 2  63 Warp   -- Fermi GF10x
       Compute 3 0 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4  63 Warp   -- Kepler GK10x
+      Compute 3 2 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 255 Warp   -- Jetson TK1 (speculative)
       Compute 3 5 -> DeviceResources 32 2048 16 64 192 49152 256 65536 256 4 255 Warp   -- Kepler GK11x
       Compute 5 0 -> DeviceResources 32 2048 32 64 128 65536 256 65536 256 4 255 Warp   -- Maxwell GM10x
 
@@ -162,6 +163,6 @@ deviceResources = resources . computeCapability
       -- is likely the user code is as well.
       --
       _           -> trace warning $ resources (Compute 3 0)
-        where warning = unlines [ "*** Warning: unknown CUDA device compute capability: " ++ show compute
+        where warning = unlines [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
                                 , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
 
