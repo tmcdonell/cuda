@@ -6,10 +6,16 @@
 
 
 cudaError_t
-cudaConfigureCallSimple(int gx, int gy, int bx, int by, int bz, size_t sharedMem, cudaStream_t stream)
+cudaConfigureCallSimple
+(
+    int gridX,  int gridY,
+    int blockX, int blockY, int blockZ,
+    size_t sharedMem,
+    cudaStream_t stream
+)
 {
-    dim3 gridDim  = {gx,gy,1};
-    dim3 blockDim = {bx,by,bz};
+    dim3 gridDim  = {gridX, gridY, 1};
+    dim3 blockDim = {blockX,blockY,blockZ};
 
     return cudaConfigureCall(gridDim, blockDim, sharedMem, stream);
 }
@@ -21,16 +27,233 @@ cudaGetErrorStringWrapper(cudaError_t error)
 }
 
 CUresult
-cuTexRefSetAddress2DSimple(CUtexref tex, CUarray_format fmt, int chn, CUdeviceptr dptr, int width, int height, int pitch)
+cuTexRefSetAddress2DSimple
+(
+    CUtexref tex,
+    CUarray_format format,
+    unsigned int numChannels,
+    CUdeviceptr dptr,
+    size_t width,
+    size_t height,
+    size_t pitch
+)
 {
     CUDA_ARRAY_DESCRIPTOR desc;
-    desc.Format      = fmt;
-    desc.NumChannels = chn;
+    desc.Format      = format;
+    desc.NumChannels = numChannels;
     desc.Width       = width;
     desc.Height      = height;
 
     return cuTexRefSetAddress2D(tex, &desc, dptr, pitch);
 }
+
+CUresult
+cuMemcpy2DHtoD
+(
+    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    void* srcHost,         unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (host)
+    // srcStart = (void*)((char*)srcHost + srcY * srcPitch + srcXInBytes)
+    desc.srcMemoryType  = CU_MEMORYTYPE_HOST;
+    desc.srcHost        = srcHost;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (device)
+    // dstStart = dstDevice + dstY * dstPitch + dstXInBytes
+    desc.dstMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.dstDevice      = dstDevice;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2D(&desc);
+}
+
+CUresult
+cuMemcpy2DHtoDAsync
+(
+    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    void* srcHost,         unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height,
+    CUstream hStream
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (host)
+    // srcStart = (void*)((char*)srcHost + srcY * srcPitch + srcXInBytes)
+    desc.srcMemoryType  = CU_MEMORYTYPE_HOST;
+    desc.srcHost        = srcHost;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (device)
+    // dstStart = dstDevice + dstY * dstPitch + dstXInBytes
+    desc.dstMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.dstDevice      = dstDevice;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2DAsync(&desc, hStream);
+}
+
+CUresult
+cuMemcpy2DDtoH
+(
+    void* dstHost,         unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (device)
+    // srcStart = srcDevice + srcY * srcPitch + srcXInBytes
+    desc.srcMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.srcDevice      = srcDevice;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (host)
+    // dstStart = (void*)((char*)dstHost + dstY * dstPitch + dstXInBytes)
+    desc.dstMemoryType  = CU_MEMORYTYPE_HOST;
+    desc.dstHost        = dstHost;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2D(&desc);
+}
+
+CUresult
+cuMemcpy2DDtoHAsync
+(
+    void* dstHost,         unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height,
+    CUstream hStream
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (device)
+    // srcStart = srcDevice + srcY * srcPitch + srcXInBytes
+    desc.srcMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.srcDevice      = srcDevice;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (host)
+    // dstStart = (void*)((char*)dstHost + dstY * dstPitch + dstXInBytes)
+    desc.dstMemoryType  = CU_MEMORYTYPE_HOST;
+    desc.dstHost        = dstHost;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2DAsync(&desc, hStream);
+}
+
+CUresult
+cuMemcpy2DDtoD
+(
+    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (device)
+    // srcStart = srcDevice + srcY * srcPitch + srcXInBytes
+    desc.srcMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.srcDevice      = srcDevice;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (device)
+    // dstStart = dstDevice + dstY * dstPitch + dstXInBytes
+    desc.dstMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.dstDevice      = dstDevice;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2D(&desc);
+}
+
+CUresult
+cuMemcpy2DDtoDAsync
+(
+    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
+    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
+    unsigned int widthInBytes,
+    unsigned int height,
+    CUstream hStream
+)
+{
+    CUDA_MEMCPY2D desc;
+
+    // source array (device)
+    // srcStart = srcDevice + srcY * srcPitch + srcXInBytes
+    desc.srcMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.srcDevice      = srcDevice;
+    desc.srcXInBytes    = srcXInBytes;
+    desc.srcY           = srcY;
+    desc.srcPitch       = srcPitch;
+
+    // destination array (device)
+    // dstStart = dstDevice + dstY * dstPitch + dstXInBytes
+    desc.dstMemoryType  = CU_MEMORYTYPE_DEVICE;
+    desc.dstDevice      = dstDevice;
+    desc.dstXInBytes    = dstXInBytes;
+    desc.dstY           = dstY;
+    desc.dstPitch       = dstPitch;
+
+    // transfer description
+    desc.WidthInBytes   = widthInBytes;
+    desc.Height         = height;
+
+    return cuMemcpy2DAsync(&desc, hStream);
+}
+
 
 #if CUDA_VERSION >= 3020
 /*

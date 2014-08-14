@@ -27,9 +27,9 @@ module Foreign.CUDA.Driver.Marshal (
   mallocManagedArray,
 
   -- * Marshalling
-  peekArray, peekArrayAsync, peekListArray,
-  pokeArray, pokeArrayAsync, pokeListArray,
-  copyArray, copyArrayAsync,
+  peekArray, peekArrayAsync, peekArray2D, peekArray2DAsync, peekListArray,
+  pokeArray, pokeArrayAsync, pokeArray2D, pokeArray2DAsync, pokeListArray,
+  copyArray, copyArrayAsync, copyArray2D, copyArray2DAsync,
   copyArrayPeer, copyArrayPeerAsync,
 
   -- * Combined Allocation and Marshalling
@@ -284,6 +284,9 @@ mallocManagedArray !flags = doMalloc undefined
 -- Marshalling
 --------------------------------------------------------------------------------
 
+-- Device -> Host
+-- --------------
+
 -- |
 -- Copy a number of elements from the device to host memory. This is a
 -- synchronous operation
@@ -324,6 +327,105 @@ peekArrayAsync !n !dptr !hptr !mst = doPeek undefined dptr
 
 
 -- |
+-- Copy a 2D array from the device to the host.
+--
+{-# INLINEABLE peekArray2D #-}
+peekArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> Ptr a                    -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> IO ()
+peekArray2D !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy = doPeek undefined dptr
+  where
+    doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPeek x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+      in
+      nothingIfOk =<< cuMemcpy2DDtoH hptr hw' hx' hy dptr dw' dx' dy w' h
+
+{-# INLINE cuMemcpy2DDtoH #-}
+{# fun unsafe cuMemcpy2DDtoH
+  { castPtr         `Ptr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  }
+  -> `Status' cToEnum #}
+
+
+-- |
+-- Copy a 2D array from the device to the host asynchronously, possibly
+-- associated with a particular execution stream. The destination host memory
+-- must be page-locked.
+--
+{-# INLINEABLE peekArray2DAsync #-}
+peekArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> HostPtr a                -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> Maybe Stream             -- ^ stream to associate to
+    -> IO ()
+peekArray2DAsync !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy !mst = doPeek undefined dptr
+  where
+    doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPeek x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+          st    = fromMaybe (Stream nullPtr) mst
+      in
+      nothingIfOk =<< cuMemcpy2DDtoHAsync hptr hw' hx' hy dptr dw' dx' dy w' h st
+
+{-# INLINE cuMemcpy2DDtoHAsync #-}
+{# fun unsafe cuMemcpy2DDtoHAsync
+  { useHP           `HostPtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useStream       `Stream'
+  }
+  -> `Status' cToEnum #}
+  where
+    useHP = castPtr . useHostPtr
+
+
+-- |
 -- Copy a number of elements from the device into a new Haskell list. Note that
 -- this requires two memory copies: firstly from the device into a heap
 -- allocated array, and from there marshalled into a list.
@@ -335,6 +437,9 @@ peekListArray !n !dptr =
     peekArray   n dptr p
     F.peekArray n p
 
+
+-- Host -> Device
+-- --------------
 
 -- |
 -- Copy a number of elements onto the device. This is a synchronous operation
@@ -375,6 +480,105 @@ pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
 
 
 -- |
+-- Copy a 2D array from the host to the device.
+--
+{-# INLINEABLE pokeArray2D #-}
+pokeArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> Ptr a                    -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> IO ()
+pokeArray2D !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy = doPoke undefined dptr
+  where
+    doPoke :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPoke x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+      in
+      nothingIfOk =<< cuMemcpy2DHtoD dptr dw' dx' dy hptr hw' hx' hy w' h
+
+{-# INLINE cuMemcpy2DHtoD #-}
+{# fun unsafe cuMemcpy2DHtoD
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , castPtr         `Ptr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  }
+  -> `Status' cToEnum #}
+
+
+-- |
+-- Copy a 2D array from the host to the device asynchronously, possibly
+-- associated with a particular execution stream. The source host memory must be
+-- page-locked.
+--
+{-# INLINEABLE pokeArray2DAsync #-}
+pokeArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> HostPtr a                -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> Maybe Stream             -- ^ stream to associate to
+    -> IO ()
+pokeArray2DAsync !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy !mst = doPoke undefined dptr
+  where
+    doPoke :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doPoke x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+          st    = fromMaybe (Stream nullPtr) mst
+      in
+      nothingIfOk =<< cuMemcpy2DHtoDAsync dptr dw' dx' dy hptr hw' hx' hy w' h st
+
+{-# INLINE cuMemcpy2DHtoDAsync #-}
+{# fun unsafe cuMemcpy2DHtoDAsync
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useHP           `HostPtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useStream       `Stream'
+  }
+  -> `Status' cToEnum #}
+  where
+    useHP = castPtr . useHostPtr
+
+
+-- |
 -- Write a list of storable elements into a device array. The device array must
 -- be sufficiently large to hold the entire list. This requires two marshalling
 -- operations.
@@ -383,6 +587,9 @@ pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
 pokeListArray :: Storable a => [a] -> DevicePtr a -> IO ()
 pokeListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeArray len p dptr
 
+
+-- Device -> Device
+-- ----------------
 
 -- |
 -- Copy the given number of elements from the first device array (source) to the
@@ -424,6 +631,111 @@ copyArrayAsync !n !src !dst !mst = docopy undefined src
   ,                 `Int'
   , useStream       `Stream'      } -> `Status' cToEnum #}
 
+
+-- |
+-- Copy a 2D array from the first device array (source) to the second device
+-- array (destination). The copied areas must not overlap. This operation is
+-- asynchronous with respect to the host, but will never overlap with kernel
+-- execution.
+--
+{-# INLINEABLE copyArray2D #-}
+copyArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> IO ()
+copyArray2D !w !h !src !hw !hx !hy !dst !dw !dx !dy = doCopy undefined dst
+  where
+    doCopy :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doCopy x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+      in
+      nothingIfOk =<< cuMemcpy2DDtoD dst dw' dx' dy src hw' hx' hy w' h
+
+{-# INLINE cuMemcpy2DDtoD #-}
+{# fun unsafe cuMemcpy2DDtoD
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  }
+  -> `Status' cToEnum #}
+
+
+-- |
+-- Copy a 2D array from the first device array (source) to the second device
+-- array (destination). The copied areas may not overlap. The operation is
+-- asynchronous with respect to the host, and can be asynchronous to other
+-- device operations by associating it with a particular execution stream.
+--
+{-# INLINEABLE copyArray2DAsync #-}
+copyArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Int                      -- ^ source x-coordinate
+    -> Int                      -- ^ source y-coordinate
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Int                      -- ^ destination x-coordinate
+    -> Int                      -- ^ destination y-coordinate
+    -> Maybe Stream             -- ^ stream to associate to
+    -> IO ()
+copyArray2DAsync !w !h !src !hw !hx !hy !dst !dw !dx !dy !mst = doCopy undefined dst
+  where
+    doCopy :: Storable a' => a' -> DevicePtr a' -> IO ()
+    doCopy x _ =
+      let bytes = sizeOf x
+          w'    = w  * bytes
+          hw'   = hw * bytes
+          hx'   = hx * bytes
+          dw'   = dw * bytes
+          dx'   = dx * bytes
+          st    = fromMaybe (Stream nullPtr) mst
+      in
+      nothingIfOk =<< cuMemcpy2DDtoDAsync dst dw' dx' dy src hw' hx' hy w' h st
+
+{-# INLINE cuMemcpy2DDtoDAsync #-}
+{# fun unsafe cuMemcpy2DDtoDAsync
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  ,                 `Int'
+  , useStream       `Stream'
+  }
+  -> `Status' cToEnum #}
+
+
+
+-- Context -> Context
+-- ------------------
 
 -- |
 -- Copies an array from device memory in one context to device memory in another
