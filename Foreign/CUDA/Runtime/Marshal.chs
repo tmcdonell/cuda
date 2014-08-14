@@ -25,9 +25,9 @@ module Foreign.CUDA.Runtime.Marshal (
   mallocManagedArray,
 
   -- * Marshalling
-  peekArray, peekArrayAsync, peekListArray,
-  pokeArray, pokeArrayAsync, pokeListArray,
-  copyArray, copyArrayAsync,
+  peekArray, peekArrayAsync, peekArray2D, peekArray2DAsync, peekListArray,
+  pokeArray, pokeArrayAsync, pokeArray2D, pokeArray2DAsync, pokeListArray,
+  copyArray, copyArrayAsync, copyArray2D, copyArray2DAsync,
 
   -- * Combined Allocation and Marshalling
   newListArray,  newListArrayLen,
@@ -49,6 +49,7 @@ import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Data.Int
+import Data.Maybe
 import Control.Exception
 
 import Foreign.C
@@ -246,6 +247,44 @@ peekArrayAsync !n !dptr !hptr !mst =
 
 
 -- |
+-- Copy a 2D memory area from the device to the host. This is a synchronous
+-- operation.
+--
+{-# INLINEABLE peekArray2D #-}
+peekArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> Ptr a                    -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> IO ()
+peekArray2D !w !h !dptr !dw !hptr !hw =
+  memcpy2D hptr hw (useDevicePtr dptr) dw w h DeviceToHost
+
+
+-- |
+-- Copy a 2D memory area from the device to the host asynchronously, possibly
+-- associated with a particular stream. The destination array must be page
+-- locked.
+--
+{-# INLINEABLE peekArray2DAsync #-}
+peekArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> HostPtr a                -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Maybe Stream
+    -> IO ()
+peekArray2DAsync !w !h !dptr !dw !hptr !hw !mst =
+  memcpy2DAsync (useHostPtr hptr) hw (useDevicePtr dptr) dw w h DeviceToHost mst
+
+
+-- |
 -- Copy a number of elements from the device into a new Haskell list. Note that
 -- this requires two memory copies: firstly from the device into a heap
 -- allocated array, and from there marshalled into a list
@@ -277,6 +316,41 @@ pokeArrayAsync !n !hptr !dptr !mst =
 
 
 -- |
+-- Copy a 2D memory area onto the device. This is a synchronous operation.
+--
+{-# INLINEABLE pokeArray2D #-}
+pokeArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> Ptr a                    -- ^ source array
+    -> Int                      -- ^ source array width
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> IO ()
+pokeArray2D !w !h !hptr !dw !dptr !hw =
+  memcpy2D (useDevicePtr dptr) dw hptr hw w h HostToDevice
+
+
+-- |
+-- Copy a 2D memory area onto the device asynchronously, possibly associated
+-- with a particular stream. The source array must be page locked.
+--
+{-# INLINEABLE pokeArray2DAsync #-}
+pokeArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> HostPtr a                -- ^ source array
+    -> Int                      -- ^ source array width
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Maybe Stream
+    -> IO ()
+pokeArray2DAsync !w !h !hptr !hw !dptr !dw !mst =
+  memcpy2DAsync (useDevicePtr dptr) dw (useHostPtr hptr) hw w h HostToDevice mst
+
+-- |
 -- Write a list of storable elements into a device array. The array must be
 -- sufficiently large to hold the entire list. This requires two marshalling
 -- operations
@@ -288,8 +362,9 @@ pokeListArray !xs !dptr = F.withArrayLen xs $ \len p -> pokeArray len p dptr
 
 -- |
 -- Copy the given number of elements from the first device array (source) to the
--- second (destination). The copied areas may not overlap. This is a synchronous
--- operation.
+-- second (destination). The copied areas may not overlap. This operation is
+-- asynchronous with respect to host, but will not overlap other device
+-- operations.
 --
 {-# INLINEABLE copyArray #-}
 copyArray :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
@@ -299,13 +374,54 @@ copyArray !n !src !dst = memcpy (useDevicePtr dst) (useDevicePtr src) n DeviceTo
 -- |
 -- Copy the given number of elements from the first device array (source) to the
 -- second (destination). The copied areas may not overlap. This operation is
--- asynchronous with respect to host, but will never overlap with kernel
--- execution.
+-- asynchronous with respect to the host, and may be associated with a
+-- particular stream.
 --
 {-# INLINEABLE copyArrayAsync #-}
 copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Stream -> IO ()
 copyArrayAsync !n !src !dst !mst =
   memcpyAsync (useDevicePtr dst) (useDevicePtr src) n DeviceToDevice mst
+
+
+-- |
+-- Copy a 2D memory area from the first device array (source) to the second
+-- (destination). The copied areas may not overlap. This operation is
+-- asynchronous with respect to the host, but will not overlap other device
+-- operations.
+--
+{-# INLINEABLE copyArray2D #-}
+copyArray2D
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> IO ()
+copyArray2D !w !h !src !sw !dst !dw =
+  memcpy2D (useDevicePtr dst) dw (useDevicePtr src) sw w h DeviceToDevice
+
+
+-- |
+-- Copy a 2D memory area from the first device array (source) to the second
+-- device array (destination). The copied areas may not overlay. This operation
+-- is asynchronous with respect to the host, and may be associated with a
+-- particular stream.
+--
+{-# INLINEABLE copyArray2DAsync #-}
+copyArray2DAsync
+    :: Storable a
+    => Int                      -- ^ width to copy (elements)
+    -> Int                      -- ^ height to copy (elements)
+    -> DevicePtr a              -- ^ source array
+    -> Int                      -- ^ source array width
+    -> DevicePtr a              -- ^ destination array
+    -> Int                      -- ^ destination array width
+    -> Maybe Stream
+    -> IO ()
+copyArray2DAsync !w !h !src !sw !dst !dw !mst =
+  memcpy2DAsync (useDevicePtr dst) dw (useDevicePtr src) sw w h DeviceToDevice mst
 
 
 --
@@ -356,7 +472,7 @@ memcpyAsync !dst !src !n !kind !mst = doMemcpy undefined dst
     doMemcpy :: Storable a' => a' -> Ptr a' -> IO ()
     doMemcpy x _ =
       let bytes = fromIntegral n * fromIntegral (sizeOf x) in
-      nothingIfOk =<< cudaMemcpyAsync dst src bytes kind (maybe defaultStream id mst)
+      nothingIfOk =<< cudaMemcpyAsync dst src bytes kind (fromMaybe defaultStream mst)
 
 {-# INLINE cudaMemcpyAsync #-}
 {# fun unsafe cudaMemcpyAsync
@@ -365,6 +481,88 @@ memcpyAsync !dst !src !n !kind !mst = doMemcpy undefined dst
   , cIntConv  `Int64'
   , cFromEnum `CopyDirection'
   , useStream `Stream'        } -> `Status' cToEnum #}
+
+
+-- |
+-- Copy a 2D memory area between the host and device. This is a synchronous
+-- operation.
+--
+{-# INLINEABLE memcpy2D #-}
+memcpy2D :: Storable a
+         => Ptr a               -- ^ destination
+         -> Int                 -- ^ width of destination array
+         -> Ptr a               -- ^ source
+         -> Int                 -- ^ width of source array
+         -> Int                 -- ^ width to copy
+         -> Int                 -- ^ height to copy
+         -> CopyDirection
+         -> IO ()
+memcpy2D !dst !dw !src !sw !w !h !kind = doCopy undefined dst
+  where
+    doCopy :: Storable a' => a' -> Ptr a' -> IO ()
+    doCopy x _ =
+      let bytes = fromIntegral (sizeOf x)
+          dw'   = fromIntegral dw * bytes
+          sw'   = fromIntegral sw * bytes
+          w'    = fromIntegral w  * bytes
+          h'    = fromIntegral h
+      in
+      nothingIfOk =<< cudaMemcpy2D dst dw' src sw' w' h' kind
+
+{-# INLINE cudaMemcpy2D #-}
+{# fun unsafe cudaMemcpy2D
+  { castPtr   `Ptr a'
+  ,           `Int64'
+  , castPtr   `Ptr a'
+  ,           `Int64'
+  ,           `Int64'
+  ,           `Int64'
+  , cFromEnum `CopyDirection'
+  }
+  -> `Status' cToEnum #}
+
+
+-- |
+-- Copy a 2D memory area between the host and device asynchronously, possibly
+-- associated with a particular stream. The host-side memory must be
+-- page-locked.
+--
+{-# INLINEABLE memcpy2DAsync #-}
+memcpy2DAsync :: Storable a
+              => Ptr a          -- ^ destination
+              -> Int            -- ^ width of destination array
+              -> Ptr a          -- ^ source
+              -> Int            -- ^ width of source array
+              -> Int            -- ^ width to copy
+              -> Int            -- ^ height to copy
+              -> CopyDirection
+              -> Maybe Stream
+              -> IO ()
+memcpy2DAsync !dst !dw !src !sw !w !h !kind !mst = doCopy undefined dst
+  where
+    doCopy :: Storable a' => a' -> Ptr a' -> IO ()
+    doCopy x _ =
+      let bytes = fromIntegral (sizeOf x)
+          dw'   = fromIntegral dw * bytes
+          sw'   = fromIntegral sw * bytes
+          w'    = fromIntegral w  * bytes
+          h'    = fromIntegral h
+          st    = fromMaybe defaultStream mst
+      in
+      nothingIfOk =<< cudaMemcpy2DAsync dst dw' src sw' w' h' kind st
+
+{-# INLINE cudaMemcpy2DAsync #-}
+{# fun unsafe cudaMemcpy2DAsync
+  { castPtr   `Ptr a'
+  ,           `Int64'
+  , castPtr   `Ptr a'
+  ,           `Int64'
+  ,           `Int64'
+  ,           `Int64'
+  , cFromEnum `CopyDirection'
+  , useStream `Stream'
+  }
+  -> `Status' cToEnum #}
 
 
 --------------------------------------------------------------------------------
