@@ -13,7 +13,7 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
-    This release is for version 6.0 of the CUDA toolkit.
+    This release is for version 6.5 of the CUDA toolkit.
 
 License:                BSD3
 License-file:           LICENSE
