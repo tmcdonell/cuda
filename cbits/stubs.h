@@ -210,6 +210,12 @@ CUresult CUDAAPI cuStreamDestroy(CUstream hStream);
 CUresult CUDAAPI cuEventDestroy(CUevent hEvent);
 #endif
 
+#if CUDA_VERSION >= 6050
+#undef cuMemHostRegister
+
+CUresult CUDAAPI cuMemHostRegister(void *p, size_t bytesize, unsigned int Flags);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -348,8 +348,8 @@ CUresult CUDAAPI cuTexRefSetAddress(size_t *ByteOffset, CUtexref hTexRef, CUdevi
 {
     return cuTexRefSetAddress_v2(ByteOffset, hTexRef, dptr, bytes);
 }
-
 #endif
+
 #if CUDA_VERSION >= 4000
 CUresult CUDAAPI cuCtxDestroy(CUcontext ctx)
 {
@@ -375,5 +375,12 @@ CUresult CUDAAPI cuEventDestroy(CUevent hEvent)
 {
     return cuEventDestroy_v2(hEvent);
 }
-
 #endif
+
+#if CUDA_VERSION >= 6050
+CUresult CUDAAPI cuMemHostRegister(void *p, size_t bytesize, unsigned int Flags)
+{
+    return cuMemHostRegister_v2(p, bytesize, Flags);
+}
+#endif
+
