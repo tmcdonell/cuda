@@ -14,6 +14,10 @@ Description:
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
     This release is for version 6.5 of the CUDA toolkit.
+    .
+    [/NOTE:/]
+    .
+    Due to a bug in nvcc, you must use c2hs-0.17.2. See tmcdonell/cuda#18.
 
 License:                BSD3
 License-file:           LICENSE
