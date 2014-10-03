@@ -5,6 +5,12 @@
 #ifndef C_STUBS_H
 #define C_STUBS_H
 
+#if defined(mingw32_TARGET_OS)
+#include <host_defines.h>
+#undef CUDARTAPI
+#define CUDARTAPI __stdcall
+#endif
+
 /*
  * We need to work around some shortcomings in the C parser of c2hs by disabling advanced attributes etc on Apple platforms.
  */

@@ -28,7 +28,7 @@ module Foreign.CUDA.Runtime.Device (
 
 ) where
 
-#include <cuda_runtime_api.h>
+#include "cbits/stubs.h"
 {# context lib="cudart" #}
 
 -- Friends

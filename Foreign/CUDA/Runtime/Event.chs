@@ -20,7 +20,7 @@ module Foreign.CUDA.Runtime.Event (
 
 ) where
 
-#include <cuda_runtime_api.h>
+#include "cbits/stubs.h"
 {# context lib="cudart" #}
 
 -- Friends

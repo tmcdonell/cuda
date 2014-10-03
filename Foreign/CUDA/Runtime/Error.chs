@@ -31,7 +31,6 @@ import Control.Exception
 import System.IO.Unsafe
 
 #include "cbits/stubs.h"
-#include <cuda_runtime_api.h>
 {# context lib="cudart" #}
 
 
