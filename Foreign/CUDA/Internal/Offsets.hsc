@@ -11,7 +11,7 @@ module Foreign.CUDA.Internal.Offsets where
 -- Runtime API
 --------------------------------------------------------------------------------
 
-#include <cuda_runtime_api.h>
+#include "cbits/stubs.h"
 
 devNameOffset, devMaxThreadDimOffset, devMaxGridSizeOffset :: Int
 

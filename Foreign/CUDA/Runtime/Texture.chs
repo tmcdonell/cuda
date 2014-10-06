@@ -29,7 +29,7 @@ import Data.Int
 import Foreign
 import Foreign.C
 
-#include <cuda_runtime_api.h>
+#include "cbits/stubs.h"
 {# context lib="cudart" #}
 
 #c
