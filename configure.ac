@@ -35,6 +35,7 @@ if test "$NVCC" != ""; then
   case $target in
     *mingw* )
       cuda_c2hsflags="--cppopts=-E --cppopts=-arch=sm_20 --cppopts="-D${target_os}_TARGET_OS=1" "
+      CPPFLAGS+=" "-D${target_os}_TARGET_OS=1" "
       ;;
     * )
       cuda_c2hsflags="--cpp="$NVCC" --cppopts=-E --cppopts=-arch=sm_20 "
@@ -50,7 +51,7 @@ fi
 #
 cuda_frameworks=""
 cuda_inc_path="${cuda_prefix}/include"
-CPPFLAGS+=" -I${cuda_inc_path} "-D${target_os}_TARGET_OS=1" "
+CPPFLAGS+=" -I${cuda_inc_path} "
 
 case $target_os in
   darwin*)
