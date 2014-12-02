@@ -31,11 +31,11 @@ main = do
 statDevice :: DeviceProperties -> IO ()
 statDevice dev@DeviceProperties{..} =
   let
-      DeviceResources{..}       = deviceResources dev
+      DeviceResources{..} = deviceResources dev
 
-      pad v     = take width $ v ++ repeat ' '
-      width     = maximum $ map (length . fst) props
-      table     = nest 2 $ vcat $ map (\(k,v) -> text (pad k) <+> v) props
+      pad v             = take width $ v ++ repeat ' '
+      width             = maximum $ map (length . fst) props
+      table             = nest 2 $ vcat $ map (\(k,v) -> text (pad k) <+> v) props
 
       grid (x,y)        = int x <+> char 'x' <+> int y
       cube (x,y,z)      = int x <+> char 'x' <+> int y <+> char 'x' <+> int z
@@ -55,9 +55,9 @@ statDevice dev@DeviceProperties{..} =
         ,("Maximum threads per block:",          int maxThreadsPerBlock)
         ,("Maximum grid dimensions:",            cube maxGridSize)
         ,("Maximum block dimensions:",           cube maxBlockSize)
-        ,("GPU clock rate:",                     text $ showFreq clockRate)
-        ,("Memory clock rate:",                  text $ showFreq memClockRate)
-        ,("Memory bus width:",                   text $ showFreq memBusWidth)
+        ,("GPU clock rate:",                     text . showFreq $ clockRate * 1000)
+        ,("Memory clock rate:",                  text . showFreq $ memClockRate * 1000)
+        ,("Memory bus width:",                   int memBusWidth <> text "-bit")
         ,("L2 cache size:",                      text $ showBytes cacheMemL2)
         ,("Maximum texture dimensions",          empty)
         ,("  1D:",                               int maxTextureDim1D)
