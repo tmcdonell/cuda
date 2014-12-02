@@ -85,8 +85,7 @@ Library
   ghc-prof-options:     -fprof-auto -fprof-cafs
 
 
-Test-suite deviceQuery
-  Type:                 exitcode-stdio-1.0
+Executable nvidia-device-query
   Main-is:              DeviceQuery.hs
   hs-source-dirs:       examples/src/deviceQueryDrv
 

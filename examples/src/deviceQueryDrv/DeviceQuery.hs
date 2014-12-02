@@ -1,5 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
+module Main where
+
 import Numeric
 import Control.Monad
 import Text.Printf
