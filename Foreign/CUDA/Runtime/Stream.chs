@@ -95,7 +95,7 @@ block :: Stream -> IO ()
 block !s = nothingIfOk =<< cudaStreamSynchronize s
 
 {-# INLINE cudaStreamSynchronize #-}
-{# fun unsafe cudaStreamSynchronize
+{# fun cudaStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
 
 

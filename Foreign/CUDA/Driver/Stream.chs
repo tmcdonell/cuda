@@ -104,6 +104,6 @@ block :: Stream -> IO ()
 block !st = nothingIfOk =<< cuStreamSynchronize st
 
 {-# INLINE cuStreamSynchronize #-}
-{# fun unsafe cuStreamSynchronize
+{# fun cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
 

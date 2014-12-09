@@ -283,11 +283,11 @@ sync :: IO ()
 #if CUDART_VERSION < 4000
 {-# INLINE cudaThreadSynchronize #-}
 sync = nothingIfOk =<< cudaThreadSynchronize
-{# fun unsafe cudaThreadSynchronize { } -> `Status' cToEnum #}
+{# fun cudaThreadSynchronize { } -> `Status' cToEnum #}
 #else
 {-# INLINE cudaDeviceSynchronize #-}
 sync = nothingIfOk =<< cudaDeviceSynchronize
-{# fun unsafe cudaDeviceSynchronize { } -> `Status' cToEnum #}
+{# fun cudaDeviceSynchronize { } -> `Status' cToEnum #}
 #endif
 
 -- |

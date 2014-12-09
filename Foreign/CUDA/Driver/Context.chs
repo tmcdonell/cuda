@@ -235,7 +235,7 @@ sync :: IO ()
 sync = nothingIfOk =<< cuCtxSynchronize
 
 {-# INLINE cuCtxSynchronize #-}
-{# fun unsafe cuCtxSynchronize
+{# fun cuCtxSynchronize
   { } -> `Status' cToEnum #}
 
 

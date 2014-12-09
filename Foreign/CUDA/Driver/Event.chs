@@ -165,6 +165,6 @@ block :: Event -> IO ()
 block !ev = nothingIfOk =<< cuEventSynchronize ev
 
 {-# INLINE cuEventSynchronize #-}
-{# fun unsafe cuEventSynchronize
+{# fun cuEventSynchronize
   { useEvent `Event' } -> `Status' cToEnum #}
 

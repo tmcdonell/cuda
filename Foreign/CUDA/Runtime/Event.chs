@@ -170,6 +170,6 @@ block :: Event -> IO ()
 block !ev = nothingIfOk =<< cudaEventSynchronize ev
 
 {-# INLINE cudaEventSynchronize #-}
-{# fun unsafe cudaEventSynchronize
+{# fun cudaEventSynchronize
   { useEvent `Event' } -> `Status' cToEnum #}
 
