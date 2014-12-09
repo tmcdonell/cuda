@@ -17,7 +17,9 @@ Description:
     .
     [/NOTE:/]
     .
-    Due to a bug in nvcc, you must use c2hs-0.17.2. See tmcdonell/cuda#18.
+    Due to a bug in nvcc, this package is not compatible with c2hs-0.18.* or
+    c2hs-0.19.*. See tmcdonell/cuda#18.
+    .
 
 License:                BSD3
 License-file:           LICENSE
