@@ -26,11 +26,12 @@ module Foreign.CUDA.Driver.Event (
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream                       ( Stream(..) )
+import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
 
 -- System
 import Foreign
 import Foreign.C
+import Data.Maybe
 import Control.Monad                                    ( liftM )
 import Control.Exception                                ( throwIO )
 
@@ -127,9 +128,7 @@ query !ev =
 {-# INLINEABLE record #-}
 record :: Event -> Maybe Stream -> IO ()
 record !ev !mst =
-  nothingIfOk =<< case mst of
-    Just st -> cuEventRecord ev st
-    Nothing -> cuEventRecord ev (Stream nullPtr)
+  nothingIfOk =<< cuEventRecord ev (fromMaybe defaultStream mst)
 
 {-# INLINE cuEventRecord #-}
 {# fun unsafe cuEventRecord
@@ -149,9 +148,7 @@ wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
 wait _ _ _           = requireSDK 3.2 "wait"
 #else
 wait !ev !mst !flags =
-  nothingIfOk =<< case mst of
-    Just st -> cuStreamWaitEvent st ev flags
-    Nothing -> cuStreamWaitEvent (Stream nullPtr) ev flags
+  nothingIfOk =<< cuStreamWaitEvent (fromMaybe defaultStream mst) ev flags
 
 {-# INLINE cuStreamWaitEvent #-}
 {# fun unsafe cuStreamWaitEvent

@@ -51,8 +51,8 @@ module Foreign.CUDA.Driver.Marshal (
 -- Friends
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream               (Stream(..))
-import Foreign.CUDA.Driver.Context              (Context(..))
+import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
+import Foreign.CUDA.Driver.Context                      ( Context(..) )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -65,7 +65,7 @@ import Control.Exception
 import Foreign.C
 import Foreign.Ptr
 import Foreign.Storable
-import qualified Foreign.Marshal                as F
+import qualified Foreign.Marshal                        as F
 
 #c
 typedef enum CUmemhostalloc_option_enum {
@@ -314,7 +314,7 @@ peekArrayAsync :: Storable a => Int -> DevicePtr a -> HostPtr a -> Maybe Stream 
 peekArrayAsync !n !dptr !hptr !mst = doPeek undefined dptr
   where
     doPeek :: Storable a' => a' -> DevicePtr a' -> IO ()
-    doPeek x _ = nothingIfOk =<< cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
+    doPeek x _ = nothingIfOk =<< cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (fromMaybe defaultStream mst)
 
 {-# INLINE cuMemcpyDtoHAsync #-}
 {# fun cuMemcpyDtoHAsync
@@ -402,7 +402,7 @@ peekArray2DAsync !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy !mst = doPeek undefin
           hx'   = hx * bytes
           dw'   = dw * bytes
           dx'   = dx * bytes
-          st    = fromMaybe (Stream nullPtr) mst
+          st    = fromMaybe defaultStream mst
       in
       nothingIfOk =<< cuMemcpy2DDtoHAsync hptr hw' hx' hy dptr dw' dx' dy w' h st
 
@@ -467,7 +467,7 @@ pokeArrayAsync :: Storable a => Int -> HostPtr a -> DevicePtr a -> Maybe Stream 
 pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
   where
     dopoke :: Storable a' => a' -> DevicePtr a' -> IO ()
-    dopoke x _ = nothingIfOk =<< cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
+    dopoke x _ = nothingIfOk =<< cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (fromMaybe defaultStream mst)
 
 {-# INLINE cuMemcpyHtoDAsync #-}
 {# fun cuMemcpyHtoDAsync
@@ -555,7 +555,7 @@ pokeArray2DAsync !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy !mst = doPoke undefin
           hx'   = hx * bytes
           dw'   = dw * bytes
           dx'   = dx * bytes
-          st    = fromMaybe (Stream nullPtr) mst
+          st    = fromMaybe defaultStream mst
       in
       nothingIfOk =<< cuMemcpy2DHtoDAsync dptr dw' dx' dy hptr hw' hx' hy w' h st
 
@@ -622,7 +622,7 @@ copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Strea
 copyArrayAsync !n !src !dst !mst = docopy undefined src
   where
     docopy :: Storable a' => a' -> DevicePtr a' -> IO ()
-    docopy x _ = nothingIfOk =<< cuMemcpyDtoDAsync dst src (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
+    docopy x _ = nothingIfOk =<< cuMemcpyDtoDAsync dst src (n * sizeOf x) (fromMaybe defaultStream mst)
 
 {-# INLINE cuMemcpyDtoDAsync #-}
 {# fun unsafe cuMemcpyDtoDAsync
@@ -712,7 +712,7 @@ copyArray2DAsync !w !h !src !hw !hx !hy !dst !dw !dx !dy !mst = doCopy undefined
           hx'   = hx * bytes
           dw'   = dw * bytes
           dx'   = dx * bytes
-          st    = fromMaybe (Stream nullPtr) mst
+          st    = fromMaybe defaultStream mst
       in
       nothingIfOk =<< cuMemcpy2DDtoDAsync dst dw' dx' dy src hw' hx' hy w' h st
 
@@ -787,7 +787,7 @@ copyArrayPeerAsync !n !src !srcCtx !dst !dstCtx !st = go undefined src dst
   where
     go :: Storable b => b -> DevicePtr b -> DevicePtr b -> IO ()
     go x _ _ = nothingIfOk =<< cuMemcpyPeerAsync dst dstCtx src srcCtx (n * sizeOf x) stream
-    stream   = fromMaybe (Stream nullPtr) st
+    stream   = fromMaybe defaultStream st
 
 {-# INLINE cuMemcpyPeerAsync #-}
 {# fun unsafe cuMemcpyPeerAsync
@@ -912,7 +912,7 @@ memsetAsync !dptr !n !val !mst = case sizeOf val of
     4 -> nothingIfOk =<< cuMemsetD32Async dptr val n stream
     _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
     where
-      stream = fromMaybe (Stream nullPtr) mst
+      stream = fromMaybe defaultStream mst
 
 {-# INLINE cuMemsetD8Async #-}
 {# fun unsafe cuMemsetD8Async

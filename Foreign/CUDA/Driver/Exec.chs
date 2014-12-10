@@ -28,14 +28,14 @@ module Foreign.CUDA.Driver.Exec (
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Context              (Cache(..))
-import Foreign.CUDA.Driver.Stream               (Stream(..))
+import Foreign.CUDA.Driver.Context                      ( Cache(..) )
+import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
 
 -- System
 import Foreign
 import Foreign.C
 import Data.Maybe
-import Control.Monad                            (zipWithM_)
+import Control.Monad                                    ( zipWithM_ )
 
 
 #if CUDA_VERSION >= 4000
@@ -163,9 +163,7 @@ setCacheConfigFun !fn !pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 {-# INLINEABLE launch #-}
 launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
 launch !fn (!w,!h) mst =
-  nothingIfOk =<< case mst of
-    Nothing -> cuLaunchGridAsync fn w h (Stream nullPtr)
-    Just st -> cuLaunchGridAsync fn w h st
+  nothingIfOk =<< cuLaunchGridAsync fn w h (fromMaybe defaultStream mst)
 
 {-# INLINE cuLaunchGridAsync #-}
 {# fun unsafe cuLaunchGridAsync
@@ -206,7 +204,7 @@ launchKernel !fn (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !mst !args
   $ \pa -> withArray pa
   $ \pp -> cuLaunchKernel fn gx gy gz tx ty tz sm st pp nullPtr
   where
-    !st = fromMaybe (Stream nullPtr) mst
+    !st = fromMaybe defaultStream mst
 
     withFP :: FunParam -> (Ptr FunParam -> IO b) -> IO b
     withFP !p !f = case p of
@@ -235,7 +233,7 @@ launchKernel' !fn (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !mst !args
     buffer      = wordPtrToPtr 0x01     -- CU_LAUNCH_PARAM_BUFFER_POINTER
     size        = wordPtrToPtr 0x02     -- CU_LAUNCH_PARAM_BUFFER_SIZE
     bytes       = foldl (\a x -> a + sizeOf x) 0 args
-    st          = fromMaybe (Stream nullPtr) mst
+    st          = fromMaybe defaultStream mst
 
     -- can't use the standard 'withArray' because 'mallocArray' will pass
     -- 'undefined' to 'sizeOf' when determining how many bytes to allocate, but

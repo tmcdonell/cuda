@@ -15,7 +15,7 @@ module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
   Stream(..), StreamFlag,
-  create, destroy, finished, block
+  create, destroy, finished, block, defaultStream
 
 ) where
 
@@ -107,4 +107,13 @@ block !st = nothingIfOk =<< cuStreamSynchronize st
 {-# INLINE cuStreamSynchronize #-}
 {# fun cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
+
+
+-- |
+-- The main execution stream. No operations overlap with operations in the
+-- default stream.
+--
+{-# INLINE defaultStream #-}
+defaultStream :: Stream
+defaultStream = Stream nullPtr
 
