@@ -32,6 +32,7 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign
 import Foreign.C
 import Control.Monad                                    ( liftM )
+import Control.Exception                                ( throwIO )
 import Data.Maybe                                       ( fromMaybe )
 
 
@@ -120,7 +121,7 @@ query !ev =
   case rv of
     Success  -> return True
     NotReady -> return False
-    _        -> resultIfOk (rv,undefined)
+    _        -> throwIO (ExitCode rv)
 
 {-# INLINE cudaEventQuery #-}
 {# fun unsafe cudaEventQuery

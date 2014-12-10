@@ -29,7 +29,8 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                            (liftM)
+import Control.Monad                                    ( liftM )
+import Control.Exception                                ( throwIO )
 
 
 --------------------------------------------------------------------------------
@@ -89,7 +90,7 @@ finished !st =
   case rv of
     Success  -> return True
     NotReady -> return False
-    _        -> resultIfOk (rv,undefined)
+    _        -> throwIO (ExitCode rv)
 
 {-# INLINE cuStreamQuery #-}
 {# fun unsafe cuStreamQuery

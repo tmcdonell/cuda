@@ -26,12 +26,13 @@ module Foreign.CUDA.Driver.Event (
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream               (Stream(..))
+import Foreign.CUDA.Driver.Stream                       ( Stream(..) )
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                            (liftM)
+import Control.Monad                                    ( liftM )
+import Control.Exception                                ( throwIO )
 
 
 --------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ query !ev =
   case rv of
     Success  -> return True
     NotReady -> return False
-    _        -> resultIfOk (rv,undefined)
+    _        -> throwIO (ExitCode rv)
 
 {-# INLINE cuEventQuery #-}
 {# fun unsafe cuEventQuery
