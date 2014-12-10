@@ -139,7 +139,9 @@ record !ev !mst =
 
 -- |
 -- Makes all future work submitted to the (optional) stream wait until the given
--- event reports completion before beginning execution. Requires cuda-3.2.
+-- event reports completion before beginning execution. Synchronisation is
+-- performed on the device, including when the event and stream are from
+-- different device contexts. Requires cuda-3.2.
 --
 {-# INLINEABLE wait #-}
 wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
