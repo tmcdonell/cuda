@@ -299,7 +299,7 @@ peekArray !n !dptr !hptr = doPeek undefined dptr
     doPeek x _ = nothingIfOk =<< cuMemcpyDtoH hptr dptr (n * sizeOf x)
 
 {-# INLINE cuMemcpyDtoH #-}
-{# fun unsafe cuMemcpyDtoH
+{# fun cuMemcpyDtoH
   { castPtr         `Ptr a'
   , useDeviceHandle `DevicePtr a'
   ,                 `Int'         } -> `Status' cToEnum #}
@@ -317,7 +317,7 @@ peekArrayAsync !n !dptr !hptr !mst = doPeek undefined dptr
     doPeek x _ = nothingIfOk =<< cuMemcpyDtoHAsync hptr dptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
 
 {-# INLINE cuMemcpyDtoHAsync #-}
-{# fun unsafe cuMemcpyDtoHAsync
+{# fun cuMemcpyDtoHAsync
   { useHP           `HostPtr a'
   , useDeviceHandle `DevicePtr a'
   ,                 `Int'
@@ -357,7 +357,7 @@ peekArray2D !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy = doPeek undefined dptr
       nothingIfOk =<< cuMemcpy2DDtoH hptr hw' hx' hy dptr dw' dx' dy w' h
 
 {-# INLINE cuMemcpy2DDtoH #-}
-{# fun unsafe cuMemcpy2DDtoH
+{# fun cuMemcpy2DDtoH
   { castPtr         `Ptr a'
   ,                 `Int'
   ,                 `Int'
@@ -407,7 +407,7 @@ peekArray2DAsync !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy !mst = doPeek undefin
       nothingIfOk =<< cuMemcpy2DDtoHAsync hptr hw' hx' hy dptr dw' dx' dy w' h st
 
 {-# INLINE cuMemcpy2DDtoHAsync #-}
-{# fun unsafe cuMemcpy2DDtoHAsync
+{# fun cuMemcpy2DDtoHAsync
   { useHP           `HostPtr a'
   ,                 `Int'
   ,                 `Int'
@@ -452,7 +452,7 @@ pokeArray !n !hptr !dptr = doPoke undefined dptr
     doPoke x _ = nothingIfOk =<< cuMemcpyHtoD dptr hptr (n * sizeOf x)
 
 {-# INLINE cuMemcpyHtoD #-}
-{# fun unsafe cuMemcpyHtoD
+{# fun cuMemcpyHtoD
   { useDeviceHandle `DevicePtr a'
   , castPtr         `Ptr a'
   ,                 `Int'         } -> `Status' cToEnum #}
@@ -470,7 +470,7 @@ pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
     dopoke x _ = nothingIfOk =<< cuMemcpyHtoDAsync dptr hptr (n * sizeOf x) (fromMaybe (Stream nullPtr) mst)
 
 {-# INLINE cuMemcpyHtoDAsync #-}
-{# fun unsafe cuMemcpyHtoDAsync
+{# fun cuMemcpyHtoDAsync
   { useDeviceHandle `DevicePtr a'
   , useHP           `HostPtr a'
   ,                 `Int'
@@ -510,7 +510,7 @@ pokeArray2D !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy = doPoke undefined dptr
       nothingIfOk =<< cuMemcpy2DHtoD dptr dw' dx' dy hptr hw' hx' hy w' h
 
 {-# INLINE cuMemcpy2DHtoD #-}
-{# fun unsafe cuMemcpy2DHtoD
+{# fun cuMemcpy2DHtoD
   { useDeviceHandle `DevicePtr a'
   ,                 `Int'
   ,                 `Int'
@@ -560,7 +560,7 @@ pokeArray2DAsync !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy !mst = doPoke undefin
       nothingIfOk =<< cuMemcpy2DHtoDAsync dptr dw' dx' dy hptr hw' hx' hy w' h st
 
 {-# INLINE cuMemcpy2DHtoDAsync #-}
-{# fun unsafe cuMemcpy2DHtoDAsync
+{# fun cuMemcpy2DHtoDAsync
   { useDeviceHandle `DevicePtr a'
   ,                 `Int'
   ,                 `Int'

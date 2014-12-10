@@ -447,7 +447,7 @@ memcpy !dst !src !n !dir = doMemcpy undefined dst
       nothingIfOk =<< cudaMemcpy dst src (fromIntegral n * fromIntegral (sizeOf x)) dir
 
 {-# INLINE cudaMemcpy #-}
-{# fun unsafe cudaMemcpy
+{# fun cudaMemcpy
   { castPtr   `Ptr a'
   , castPtr   `Ptr a'
   , cIntConv  `Int64'
@@ -475,7 +475,7 @@ memcpyAsync !dst !src !n !kind !mst = doMemcpy undefined dst
       nothingIfOk =<< cudaMemcpyAsync dst src bytes kind (fromMaybe defaultStream mst)
 
 {-# INLINE cudaMemcpyAsync #-}
-{# fun unsafe cudaMemcpyAsync
+{# fun cudaMemcpyAsync
   { castPtr   `Ptr a'
   , castPtr   `Ptr a'
   , cIntConv  `Int64'
@@ -510,7 +510,7 @@ memcpy2D !dst !dw !src !sw !w !h !kind = doCopy undefined dst
       nothingIfOk =<< cudaMemcpy2D dst dw' src sw' w' h' kind
 
 {-# INLINE cudaMemcpy2D #-}
-{# fun unsafe cudaMemcpy2D
+{# fun cudaMemcpy2D
   { castPtr   `Ptr a'
   ,           `Int64'
   , castPtr   `Ptr a'
@@ -552,7 +552,7 @@ memcpy2DAsync !dst !dw !src !sw !w !h !kind !mst = doCopy undefined dst
       nothingIfOk =<< cudaMemcpy2DAsync dst dw' src sw' w' h' kind st
 
 {-# INLINE cudaMemcpy2DAsync #-}
-{# fun unsafe cudaMemcpy2DAsync
+{# fun cudaMemcpy2DAsync
   { castPtr   `Ptr a'
   ,           `Int64'
   , castPtr   `Ptr a'
