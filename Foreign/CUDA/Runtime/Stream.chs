@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Stream
--- Copyright : (c) [2009..2012] Trevor L. McDonell
+-- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
 -- Stream management routines

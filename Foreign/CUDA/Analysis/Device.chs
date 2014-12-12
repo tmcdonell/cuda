@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Analysis.Device
--- Copyright : (c) [2009..2012] Trevor L. McDonell
+-- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
 -- Common device functions

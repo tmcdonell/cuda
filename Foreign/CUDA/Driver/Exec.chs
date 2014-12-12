@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
--- Copyright : (c) [2009..2012] Trevor L. McDonell
+-- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
 -- Kernel execution control for low-level driver interface

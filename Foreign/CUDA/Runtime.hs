@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime
--- Copyright : (c) [2009..2012] Trevor L. McDonell
+-- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
 -- Top level bindings to the C-for-CUDA runtime API

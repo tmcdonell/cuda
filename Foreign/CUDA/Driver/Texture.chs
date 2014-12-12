@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Texture
--- Copyright : (c) [2009..2012] Trevor L. McDonell
+-- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
 -- Texture management for low-level driver interface
