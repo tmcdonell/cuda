@@ -24,7 +24,7 @@ module Foreign.CUDA.Runtime.Exec (
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Runtime.Stream
+import Foreign.CUDA.Runtime.Stream                      ( Stream(..), defaultStream )
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
