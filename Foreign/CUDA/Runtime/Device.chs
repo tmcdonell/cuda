@@ -3,6 +3,7 @@
 {-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Device
