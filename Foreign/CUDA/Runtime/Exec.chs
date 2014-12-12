@@ -74,6 +74,7 @@ instance Storable FunAttributes where
   sizeOf _    = {# sizeof cudaFuncAttributes #}
   alignment _ = alignment (undefined :: Ptr ())
 
+  poke _ _    = error "Can not poke Foreign.CUDA.Runtime.FunAttributes"
   peek p      = do
     cs <- cIntConv `fmap` {#get cudaFuncAttributes.constSizeBytes#} p
     ls <- cIntConv `fmap` {#get cudaFuncAttributes.localSizeBytes#} p

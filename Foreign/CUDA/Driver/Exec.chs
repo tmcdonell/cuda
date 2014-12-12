@@ -84,6 +84,8 @@ instance Storable FunParam where
   poke p (FArg f)       = poke (castPtr p) f
   poke p (VArg v)       = poke (castPtr p) v
 
+  peek _                = error "Can not peek Foreign.CUDA.Driver.FunParam"
+
 
 --------------------------------------------------------------------------------
 -- Execution Control
