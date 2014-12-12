@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
@@ -50,6 +51,8 @@ newtype Stream = Stream { useStream :: {# type CUstream #}}
 --
 data StreamFlag
 instance Enum StreamFlag where
+  toEnum   x = case x of {}
+  fromEnum x = case x of {}
 
 --------------------------------------------------------------------------------
 -- Stream management

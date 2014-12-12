@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
@@ -58,6 +59,8 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 --
 data WaitFlag
 instance Enum WaitFlag where
+  toEnum   x = case x of {}
+  fromEnum x = case x of {}
 
 
 --------------------------------------------------------------------------------

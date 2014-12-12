@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
@@ -321,6 +322,8 @@ reset = nothingIfOk =<< cudaThreadExit
 --
 data PeerFlag
 instance Enum PeerFlag where
+  toEnum   x = case x of {}
+  fromEnum x = case x of {}
 
 -- |
 -- Queries if the first device can directly access the memory of the second. If
