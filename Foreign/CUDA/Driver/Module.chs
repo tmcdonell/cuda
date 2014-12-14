@@ -13,7 +13,7 @@
 module Foreign.CUDA.Driver.Module (
 
   -- * Module Management
-  Module, JITOption(..), JITTarget(..), JITResult(..),
+  Module, JITOption(..), JITTarget(..), JITResult(..), JITFallback(..),
 
   -- ** Querying module inhabitants
   getFun, getPtr, getTex,
@@ -100,7 +100,8 @@ data JITResult = JITResult
     with prefix="CU_TARGET" deriving (Eq, Show) #}
 
 {# enum CUjit_fallback as JITFallback
-    { underscoreToCase }
+    { underscoreToCase
+    , CU_PREFER_PTX as PTX }
     with prefix="CU_PREFER" deriving (Eq, Show) #}
 
 
