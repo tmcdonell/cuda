@@ -33,14 +33,14 @@ module Foreign.CUDA.Driver.Context (
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Driver.Device       (Device(..))
+import Foreign.CUDA.Driver.Device                       ( Device(..) )
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                    (liftM)
+import Control.Monad                                    ( liftM )
 
 
 --------------------------------------------------------------------------------

@@ -53,7 +53,7 @@ module Foreign.CUDA.Internal.C2HS (
 
 import Foreign
 import Foreign.C
-import Control.Monad        (liftM)
+import Control.Monad                                    ( liftM )
 
 
 -- Composite marshalling functions

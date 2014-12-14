@@ -46,13 +46,13 @@
 --------------------------------------------------------------------------------
 
 
-module Foreign.CUDA.Analysis.Occupancy
-  (
+module Foreign.CUDA.Analysis.Occupancy (
+
     Occupancy(..),
     occupancy, optimalBlockSize, optimalBlockSizeBy, maxResidentBlocks,
     incPow2, incWarp, decPow2, decWarp
-  )
-  where
+
+) where
 
 import Data.Ord
 import Data.List

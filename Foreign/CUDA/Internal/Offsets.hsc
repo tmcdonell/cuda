@@ -1,10 +1,11 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-
- - Structure field offset constants.
- - Too difficult to extract using C->Haskell )=
- -}
+--
+-- Structure field offset constants.
+-- Too difficult to extract using C->Haskell )=
+--
 
-module Foreign.CUDA.Internal.Offsets where
+module Foreign.CUDA.Internal.Offsets
+  where
 
 
 --------------------------------------------------------------------------------

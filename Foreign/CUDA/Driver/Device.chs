@@ -34,7 +34,7 @@ import Foreign.CUDA.Internal.Offsets
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad            (liftM)
+import Control.Monad                                    ( liftM )
 
 
 --------------------------------------------------------------------------------

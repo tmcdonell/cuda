@@ -34,7 +34,7 @@ import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Marshal              (peekDeviceHandle)
+import Foreign.CUDA.Driver.Marshal                      ( peekDeviceHandle )
 import Foreign.CUDA.Driver.Texture
 import Foreign.CUDA.Internal.C2HS
 
@@ -43,15 +43,15 @@ import Foreign
 import Foreign.C
 import Unsafe.Coerce
 
-import Control.Monad                            (liftM)
-import Control.Exception                        (throwIO)
-import Data.Maybe                               (mapMaybe)
-import Data.ByteString.Char8                    (ByteString)
-import qualified Data.ByteString.Char8          as B
-import qualified Data.ByteString.Internal       as B
+import Control.Monad                                    ( liftM )
+import Control.Exception                                ( throwIO )
+import Data.Maybe                                       ( mapMaybe )
+import Data.ByteString.Char8                            ( ByteString )
+import qualified Data.ByteString.Char8                  as B
+import qualified Data.ByteString.Internal               as B
 
 #if CUDA_VERSION < 5050
-import Debug.Trace                              (trace)
+import Debug.Trace                                      ( trace )
 #endif
 
 --------------------------------------------------------------------------------
