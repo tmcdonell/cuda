@@ -75,16 +75,6 @@ typedef enum CUmemhostalloc_option_enum {
 } CUmemhostalloc_option;
 #endc
 
-#if CUDA_VERSION >= 6000
-#c
-typedef enum CUmemAttachFlags_option_enum {
-    CU_MEM_ATTACH_OPTION_GLOBAL = CU_MEM_ATTACH_GLOBAL,
-    CU_MEM_ATTACH_OPTION_HOST   = CU_MEM_ATTACH_HOST,
-    CU_MEM_ATTACH_OPTION_SINGLE = CU_MEM_ATTACH_SINGLE
-} CUmemAttachFlags_option;
-#endc
-#endif
-
 
 --------------------------------------------------------------------------------
 -- Host Allocation
@@ -248,12 +238,12 @@ free !dp = nothingIfOk =<< cuMemFree dp
 -- |
 -- Options for unified memory allocations
 --
-#if CUDA_VERSION >= 6000
-{# enum CUmemAttachFlags_option as AttachFlag
+#if CUDA_VERSION < 6000
+data AttachFlag
+#else
+{# enum CUmemAttach_flags as AttachFlag
     { underscoreToCase }
     with prefix="CU_MEM_ATTACH_OPTION" deriving (Eq, Show) #}
-#else
-data AttachFlag
 #endif
 
 -- |
