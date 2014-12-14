@@ -80,12 +80,14 @@ instance Storable Texture where
 #c
 typedef enum CUtexture_flag_enum {
   CU_TEXTURE_FLAG_READ_AS_INTEGER        = CU_TRSF_READ_AS_INTEGER,
-  CU_TEXTURE_FLAG_NORMALIZED_COORDINATES = CU_TRSF_NORMALIZED_COORDINATES
+  CU_TEXTURE_FLAG_NORMALIZED_COORDINATES = CU_TRSF_NORMALIZED_COORDINATES,
+  CU_TEXTURE_FLAG_SRGB                   = CU_TRSF_SRGB
 } CUtexture_flag;
 #endc
 
 {# enum CUtexture_flag as ReadMode
-  { underscoreToCase }
+  { underscoreToCase
+  , CU_TEXTURE_FLAG_SRGB as SRGB }
   with prefix="CU_TEXTURE_FLAG" deriving (Eq, Show) #}
 
 -- |
