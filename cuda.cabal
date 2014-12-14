@@ -50,6 +50,7 @@ Extra-source-files:     configure
 Library
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
+                        Foreign.CUDA.Types
                         Foreign.CUDA.Analysis
                         Foreign.CUDA.Analysis.Device
                         Foreign.CUDA.Analysis.Occupancy

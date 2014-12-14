@@ -25,8 +25,8 @@ module Foreign.CUDA.Runtime.Event (
 {# context lib="cudart" #}
 
 -- Friends
+import Foreign.CUDA.Types
 import Foreign.CUDA.Runtime.Error
-import Foreign.CUDA.Runtime.Stream                      ( Stream(..), defaultStream )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -35,39 +35,6 @@ import Foreign.C
 import Control.Monad                                    ( liftM )
 import Control.Exception                                ( throwIO )
 import Data.Maybe                                       ( fromMaybe )
-
-
-#c
-typedef enum cudaEvent_option_enum {
-//  CUDA_EVENT_OPTION_DEFAULT       = cuduEventDefault,
-    CUDA_EVENT_OPTION_BLOCKING_SYNC = cudaEventBlockingSync
-} cudaEvent_option;
-#endc
-
---------------------------------------------------------------------------------
--- Data Types
---------------------------------------------------------------------------------
-
--- |
--- Events
---
-newtype Event = Event { useEvent :: {# type cudaEvent_t #}}
-  deriving (Eq, Show)
-
--- |
--- Event creation flags
---
-{# enum cudaEvent_option_enum as EventFlag
-    { underscoreToCase }
-    with prefix="CUDA_EVENT_OPTION" deriving (Eq,Show) #}
-
--- |
--- Possible option flags for waiting for events
---
-data WaitFlag
-instance Enum WaitFlag where
-  toEnum   x = case x of {}
-  fromEnum x = case x of {}
 
 
 --------------------------------------------------------------------------------

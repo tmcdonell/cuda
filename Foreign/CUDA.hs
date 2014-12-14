@@ -9,11 +9,11 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA
-  (
-    module Foreign.CUDA.Runtime
-  )
-  where
+module Foreign.CUDA (
+
+  module Foreign.CUDA.Runtime
+
+) where
 
 import Foreign.CUDA.Runtime
 

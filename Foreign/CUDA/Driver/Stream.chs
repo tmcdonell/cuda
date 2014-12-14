@@ -24,6 +24,7 @@ module Foreign.CUDA.Driver.Stream (
 {# context lib="cuda" #}
 
 -- Friends
+import Foreign.CUDA.Types
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
@@ -33,26 +34,6 @@ import Foreign.C
 import Control.Monad                                    ( liftM )
 import Control.Exception                                ( throwIO )
 
-
---------------------------------------------------------------------------------
--- Data Types
---------------------------------------------------------------------------------
-
--- |
--- A processing stream
---
-newtype Stream = Stream { useStream :: {# type CUstream #}}
-  deriving (Eq, Show)
-
-
--- |
--- Possible option flags for stream initialisation. Dummy instance until the API
--- exports actual option values.
---
-data StreamFlag
-instance Enum StreamFlag where
-  toEnum   x = case x of {}
-  fromEnum x = case x of {}
 
 --------------------------------------------------------------------------------
 -- Stream management
@@ -69,7 +50,8 @@ create !flags = resultIfOk =<< cuStreamCreate flags
 {# fun unsafe cuStreamCreate
   { alloca-         `Stream'       peekStream*
   , combineBitMasks `[StreamFlag]'             } -> `Status' cToEnum #}
-  where peekStream = liftM Stream . peek
+  where
+    peekStream = liftM Stream . peek
 
 -- |
 -- Destroy a stream
@@ -110,13 +92,4 @@ block !st = nothingIfOk =<< cuStreamSynchronize st
 {-# INLINE cuStreamSynchronize #-}
 {# fun cuStreamSynchronize
   { useStream `Stream' } -> `Status' cToEnum #}
-
-
--- |
--- The main execution stream. No operations overlap with operations in the
--- default stream.
---
-{-# INLINE defaultStream #-}
-defaultStream :: Stream
-defaultStream = Stream nullPtr
 

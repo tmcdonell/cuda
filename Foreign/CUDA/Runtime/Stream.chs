@@ -22,6 +22,7 @@ module Foreign.CUDA.Runtime.Stream (
 {# context lib="cudart" #}
 
 -- Friends
+import Foreign.CUDA.Types
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
@@ -30,17 +31,6 @@ import Foreign
 import Foreign.C
 import Control.Monad                                    ( liftM )
 import Control.Exception                                ( throwIO )
-
-
---------------------------------------------------------------------------------
--- Data Types
---------------------------------------------------------------------------------
-
--- |
--- A processing stream
---
-newtype Stream = Stream { useStream :: {# type cudaStream_t #}}
-  deriving (Eq, Show)
 
 
 --------------------------------------------------------------------------------
@@ -103,13 +93,13 @@ block !s = nothingIfOk =<< cudaStreamSynchronize s
 -- |
 -- The main execution stream (0)
 --
-{-# INLINE defaultStream #-}
-defaultStream :: Stream
-#if CUDART_VERSION < 3010
-defaultStream = Stream 0
-#else
-defaultStream = Stream nullPtr
-#endif
+-- {-# INLINE defaultStream #-}
+-- defaultStream :: Stream
+-- #if CUDART_VERSION < 3010
+-- defaultStream = Stream 0
+-- #else
+-- defaultStream = Stream nullPtr
+-- #endif
 
 --------------------------------------------------------------------------------
 -- Internal
@@ -122,5 +112,4 @@ peekStream = liftM Stream . peekIntConv
 #else
 peekStream = liftM Stream . peek
 #endif
-
 

@@ -5,16 +5,41 @@
 -- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
--- A common interface for host and device pointers. While it is possible mix the
--- Driver and Runtime environments with CUDA versions >= 3.0, it is still a good
--- idea to pick one interface and stick to it.
+-- Data pointers on the host and device. These can be shared freely between the
+-- CUDA runtime and Driver APIs.
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Ptr
-  where
+module Foreign.CUDA.Ptr (
 
--- System
+  -- * Device pointers
+  DevicePtr(..),
+  withDevicePtr,
+  devPtrToWordPtr,
+  wordPtrToDevPtr,
+  nullDevPtr,
+  castDevPtr,
+  plusDevPtr,
+  alignDevPtr,
+  minusDevPtr,
+  advanceDevPtr,
+
+  -- * Host pointers
+  HostPtr(..),
+  withHostPtr,
+  nullHostPtr,
+  castHostPtr,
+  plusHostPtr,
+  alignHostPtr,
+  minusHostPtr,
+  advanceHostPtr,
+
+) where
+
+-- friends
+import Foreign.CUDA.Types
+
+-- system
 import Foreign.Ptr
 import Foreign.Storable
 
@@ -22,22 +47,6 @@ import Foreign.Storable
 --------------------------------------------------------------------------------
 -- Device Pointer
 --------------------------------------------------------------------------------
-
--- |
--- A reference to data stored on the device.
---
-newtype DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
-  deriving (Eq,Ord)
-
-instance Show (DevicePtr a) where
-  showsPrec n (DevicePtr p) = showsPrec n p
-
-instance Storable (DevicePtr a) where
-  sizeOf _    = sizeOf    (undefined :: Ptr a)
-  alignment _ = alignment (undefined :: Ptr a)
-  peek p      = DevicePtr `fmap` peek (castPtr p)
-  poke p v    = poke (castPtr p) (useDevicePtr v)
-
 
 -- |
 -- Look at the contents of device memory. This takes an IO action that will be
@@ -116,32 +125,6 @@ advanceDevPtr = doAdvance undefined
 --------------------------------------------------------------------------------
 -- Host Pointer
 --------------------------------------------------------------------------------
-
--- |
--- A reference to page-locked host memory.
---
--- A 'HostPtr' is just a plain 'Ptr', but the memory has been allocated by the
--- CUDA runtime into page locked memory. This means that the data can be copied
--- to the GPU via DMA (direct memory access). Note that the use of the system
--- function `mlock` is not sufficient here --- the CUDA version ensures that
--- the /physical/ addresses stay this same, not just the virtual address.
---
--- To copy data into a 'HostPtr' array, you may use for example 'withHostPtr'
--- together with 'Foreign.Marshal.Array.copyArray' or
--- 'Foreign.Marshal.Array.moveArray'.
---
-newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
-  deriving (Eq,Ord)
-
-instance Show (HostPtr a) where
-  showsPrec n (HostPtr p) = showsPrec n p
-
-instance Storable (HostPtr a) where
-  sizeOf _    = sizeOf    (undefined :: Ptr a)
-  alignment _ = alignment (undefined :: Ptr a)
-  peek p      = HostPtr `fmap` peek (castPtr p)
-  poke p v    = poke (castPtr p) (useHostPtr v)
-
 
 -- |
 -- Apply an IO action to the memory reference living inside the host pointer

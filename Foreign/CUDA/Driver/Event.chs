@@ -25,9 +25,9 @@ module Foreign.CUDA.Driver.Event (
 {# context lib="cuda" #}
 
 -- Friends
+import Foreign.CUDA.Types
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
 
 -- System
 import Foreign
@@ -35,32 +35,6 @@ import Foreign.C
 import Data.Maybe
 import Control.Monad                                    ( liftM )
 import Control.Exception                                ( throwIO )
-
-
---------------------------------------------------------------------------------
--- Data Types
---------------------------------------------------------------------------------
-
--- |
--- Events
---
-newtype Event = Event { useEvent :: {# type CUevent #}}
-  deriving (Eq, Show)
-
--- |
--- Event creation flags
---
-{# enum CUevent_flags as EventFlag
-    { underscoreToCase }
-    with prefix="CU_EVENT" deriving (Eq, Show) #}
-
--- |
--- Possible option flags for waiting for events
---
-data WaitFlag
-instance Enum WaitFlag where
-  toEnum   x = case x of {}
-  fromEnum x = case x of {}
 
 
 --------------------------------------------------------------------------------
