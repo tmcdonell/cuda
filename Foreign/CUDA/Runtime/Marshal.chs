@@ -93,7 +93,8 @@ typedef enum cudaMemAttachFlags_option_enum {
 -- Allocate a section of linear memory on the host which is page-locked and
 -- directly accessible from the device. The storage is sufficient to hold the
 -- given number of elements of a storable type. The runtime system automatically
--- accelerates calls to functions such as 'memcpy' to page-locked memory.
+-- accelerates calls to functions such as 'peekArrayAsync' and 'pokeArrayAsync'
+-- that refer to page-locked memory.
 --
 -- Note that since the amount of pageable memory is thusly reduced, overall
 -- system performance may suffer. This is best used sparingly to allocate
