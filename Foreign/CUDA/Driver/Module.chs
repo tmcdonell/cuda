@@ -312,8 +312,18 @@ peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
 
 {-# INLINE c_strnlen' #-}
+#if defined(WIN32)
+c_strnlen' :: CString -> CSize -> IO CSize
+c_strnlen' str size = do
+  str' <- peekCStringLen (str, fromIntegral size)
+  return $ stringLen 0 str'
+  where stringLen acc []        = acc
+        stringLen acc ('\0':xs) = acc
+        stringLen acc (_:xs)    = stringLen (acc+1) xs
+#else
 foreign import ccall unsafe "string.h strnlen" c_strnlen'
   :: CString -> CSize -> IO CSize
+#endif
 
 {-# INLINE c_strnlen #-}
 c_strnlen :: CString -> Int -> IO Int
