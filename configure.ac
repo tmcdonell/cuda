@@ -34,7 +34,7 @@ if test "$NVCC" != ""; then
 
   case $target in
     *mingw* )
-      cuda_c2hsflags="--cppopts=-E --cppopts=-arch=sm_20 --cppopts="-D${target_os}_TARGET_OS=1" "
+      cuda_c2hsflags="-cpp="$NVCC" --cppopts=-E --cppopts=-arch=sm_20 --cppopts="-D${target_os}_TARGET_OS=1" "
       CPPFLAGS+=" "-D${target_os}_TARGET_OS=1" "
       ;;
     * )
@@ -185,4 +185,3 @@ AC_SUBST([cuda_libraries])
 AC_SUBST([cuda_frameworks])
 AC_SUBST([cuda_ghci_libs])
 AC_OUTPUT
-
