@@ -10,6 +10,8 @@
     allows them to be safely called from Haskell threads without blocking the
     entire HEC.
 
+  * Add compute-capability data for 3.7, 5.2 devices.
+
 0.6.5.1
 
   * Build fix for Mac OS X 10.10 (Yosemite)
