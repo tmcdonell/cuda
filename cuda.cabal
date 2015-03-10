@@ -39,13 +39,14 @@ Extra-tmp-files:        cuda.buildinfo
                         config.log
                         autom4te.cache
 
-Extra-source-files:     configure
-                        configure.ac
+Extra-source-files:     cbits/stubs.h
+                        changelog.md
                         config.guess
                         config.sub
-                        install-sh
+                        configure
+                        configure.ac
                         cuda.buildinfo.in
-                        cbits/stubs.h
+                        install-sh
 
 Library
   Exposed-Modules:      Foreign.CUDA
