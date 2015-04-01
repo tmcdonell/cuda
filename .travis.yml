@@ -8,12 +8,10 @@ env:
 #    - CUDA=6.5-14
 #    - CUDA=6.0-37
 
-script:
-    - cabal configure && cabal build
-
 before_script:
-    - echo "Installing C2HS"
+    - cabal install alex        # really only required for ghc-7.8
     - cabal install c2hs
+
     - echo "Installing CUDA library"
     - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
     - sudo dpkg -i cuda-repo-ubuntu1204_${CUDA}_amd64.deb
@@ -22,4 +20,10 @@ before_script:
     - export CUDA_HOME=/usr/local/cuda-${CUDA%%-*}
     - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64
     - export PATH=${CUDA_HOME}/bin:${PATH}
+
+script:
+    - cabal configure && cabal build
+
+after_script:
+    - nvidia-device-query
 
