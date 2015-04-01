@@ -5,7 +5,7 @@ ghc:
 
 env:
     - CUDA=7.0-28
-#    - CUDA=6.5-14
+    - CUDA=6.5-14
 #    - CUDA=6.0-37
 
 before_script:
