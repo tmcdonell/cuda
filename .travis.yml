@@ -2,7 +2,7 @@ language: haskell
 ghc:
     - 7.6
     - 7.8
-    - 7.10
+#    - 7.10
 
 env:
     - CUDA=7.0-28
@@ -12,7 +12,7 @@ env:
 before_script:
     - export GHCVER=$(ghc --numeric-version)
     - | # GHC-7.8 and later require a newer version of happy and alex
-        if [ $(bc -l <<< "${GHCVER%.*} >= 7.8") -eq 1 ]; then
+        if [ ${GHCVER%.*} != 7.6 ]; then
             cabal install happy
             cabal install alex
         fi
