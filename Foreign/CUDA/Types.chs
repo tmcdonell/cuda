@@ -1,6 +1,9 @@
 {-# LANGUAGE BangPatterns   #-}
-{-# LANGUAGE EmptyCase      #-}
+{-# LANGUAGE CPP            #-}
 {-# LANGUAGE EmptyDataDecls #-}
+#if MIN_VERSION_base(4,7,0)
+{-# LANGUAGE EmptyCase      #-}
+#endif
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Types
@@ -103,8 +106,10 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 --
 data WaitFlag
 instance Enum WaitFlag where
+#if MIN_VERSION_base(4,7,0)
   toEnum   x = case x of {}
   fromEnum x = case x of {}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -127,8 +132,10 @@ newtype Stream = Stream { useStream :: {# type CUstream #}}
 --
 data StreamFlag
 instance Enum StreamFlag where
+#if MIN_VERSION_base(4,7,0)
   toEnum   x = case x of {}
   fromEnum x = case x of {}
+#endif
 
 -- |
 -- The main execution stream. No operations overlap with operations in the

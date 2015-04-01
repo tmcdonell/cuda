@@ -1,8 +1,10 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
-{-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+#if MIN_VERSION_base(4,7,0)
+{-# LANGUAGE EmptyCase                #-}
+#endif
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context
@@ -88,8 +90,10 @@ data Cache
 --
 data PeerFlag
 instance Enum PeerFlag where
+#if MIN_VERSION_base(4,7,0)
   toEnum   x = case x of {}
   fromEnum x = case x of {}
+#endif
 
 
 #if CUDA_VERSION >= 4000

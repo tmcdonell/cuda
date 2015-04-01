@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns             #-}
-{-# LANGUAGE EmptyCase                #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------

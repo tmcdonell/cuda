@@ -120,6 +120,10 @@ else
     AC_MSG_RESULT(no)
 fi
 
+# Also include any cabal generated macros in the CPP configuration step
+#
+cuda_c2hsflags+="--cppopts=-include=dist/build/autogen/cabal_macros.h "
+
 # Make sure both the driver and runtime are found
 #
 longerror='
