@@ -23,7 +23,7 @@ before_script:
     - export PATH=${CUDA_HOME}/bin:${PATH}
 
 script:
-    - cabal configure && cabal build
+    - cabal install
 
 after_script:
     - nvidia-device-query
