@@ -1,7 +1,8 @@
 language: haskell
 ghc:
-    - 7.8
     - 7.6
+    - 7.8
+    - 7.10
 
 env:
     - CUDA=7.0-28
