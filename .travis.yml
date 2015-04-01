@@ -9,6 +9,7 @@ env:
 #    - CUDA=6.0-37
 
 before_script:
+    - cabal install happy       # really only required for ghc-7.8
     - cabal install alex        # really only required for ghc-7.8
     - cabal install c2hs
 
