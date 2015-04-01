@@ -13,7 +13,6 @@ script:
 
 before_script:
     - echo "Installing C2HS"
-    - cabal update
     - cabal install c2hs
     - echo "Installing CUDA library"
     - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
