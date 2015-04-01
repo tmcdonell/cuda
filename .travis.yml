@@ -9,8 +9,12 @@ env:
 #    - CUDA=6.0-37
 
 before_script:
-    - cabal install happy       # really only required for ghc-7.8
-    - cabal install alex        # really only required for ghc-7.8
+    - export GHCVER=$(ghc --numeric-version)
+    - | # GHC-7.8 and later require a newer version of happy and alex
+        if [ $(bc -l <<< "${GHCVER%.*} >= 7.8") -eq 1 ]; then
+            cabal install happy
+            cabal install alex
+        fi
     - cabal install c2hs
 
     - echo "Installing CUDA library"
