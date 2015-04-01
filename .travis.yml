@@ -1,4 +1,3 @@
-language: haskell
 env:
     - CUDA=7.0-28 GHC=7.6.3
     - CUDA=7.0-28 GHC=7.8.4
@@ -16,15 +15,22 @@ before_script:
     - travis_retry sudo apt-get update -qq
     - |
         if [ $(ghc --numeric-version) != ${GHC} ]; then
-            travis_retry sudo apt-get install ghc-${GHC}
+            travis_retry sudo apt-get install -y ghc-${GHC}
             export PATH=/opt/ghc/${GHC}/bin:${PATH}
         fi
-    - | # GHC-7.8 and later require a newer version of happy and alex
-        if [ ${GHC%.*} != 7.6 ]; then
-            travis_retry sudo apt-get install happy-1.19.4 alex-3.1.3
-            export PATH=/opt/alex/3.1.3/bin:/opt/happy/1.19.4/bin:${PATH}
-        fi
-    - cabal install c2hs
+    - travis_retry sudo apt-get install -y c2hs
+    - cabal update
+    - ghc --version
+    - cabal --version
+
+    # If we want to build c2hs from source, ghc-7.8 and later will require newer
+    # versions of happy and alex
+    #    - |
+    #        if [ ${GHC%.*} != 7.6 ]; then
+    #            travis_retry sudo apt-get install -y happy-1.19.4 alex-3.1.3
+    #            export PATH=/opt/alex/3.1.3/bin:/opt/happy/1.19.4/bin:${PATH}
+    #        fi
+    #    - cabal install c2hs
 
     - echo "Installing CUDA library"
     - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
@@ -36,11 +42,7 @@ before_script:
     - export PATH=${CUDA_HOME}/bin:${PATH}
 
 script:
+    - cabal install --only-dependencies
     - cabal configure -v2
     - cabal build
-    - cabal install
-
-after_script:
-    - nvidia-device-query
-    - ls -l /usr/local/ghc/
 
