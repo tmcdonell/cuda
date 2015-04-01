@@ -1,0 +1,23 @@
+language: haskell
+ghc:
+    - 7.6
+    - 7.8
+
+env:
+    - CUDA=7.0-28
+#    - CUDA=6.5-14
+#    - CUDA=6.0-37
+
+script:
+    - cabal configure && cabal build
+
+before_script:
+    - echo "Installing CUDA library"
+    - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
+    - dpkg -i cuda-repo-ubuntu1204_${CUDA}_amd64.deb
+    - sudo apt-get update -qq
+    - sudo apt-get install -y cuda
+    - export CUDA_HOME=/usr/local/cuda-${CUDA%%-*}
+    - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64
+    - export PATH=${CUDA_HOME}/bin:${PATH}
+
