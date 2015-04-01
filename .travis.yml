@@ -53,3 +53,6 @@ script:
 after_script:
     - ./dist/build/nvidia-device-query/nvidia-device-query
 
+after_failure:
+    - dmesg
+
