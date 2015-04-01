@@ -1,13 +1,16 @@
+language: haskell
 env:
     - CUDA=7.0-28 GHC=7.6.3
-    - CUDA=7.0-28 GHC=7.8.4
-    - CUDA=7.0-28 GHC=7.10.1
-    - CUDA=6.5-14 GHC=7.6.3
-    - CUDA=6.5-14 GHC=7.8.4
-    - CUDA=6.5-14 GHC=7.10.1
+#    - CUDA=7.0-28 GHC=7.8.4
+#    - CUDA=7.0-28 GHC=7.10.1
+#    - CUDA=6.5-14 GHC=7.6.3
+#    - CUDA=6.5-14 GHC=7.8.4
+#    - CUDA=6.5-14 GHC=7.10.1
 #    - CUDA=6.0-37
 
 before_script:
+    - which -a cabal
+
     # If travis doesn't have the version of GHC that we want, get it from hvr's PPA
     - echo "Setting up GHC"
     - export PATH=/usr/local/ghc/$(ghc_find ${GHC%.*})/bin:${PATH}
