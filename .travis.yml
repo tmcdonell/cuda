@@ -9,9 +9,6 @@ env:
 #    - CUDA=6.0-37
 
 before_install:
-    - true
-
-install:
     # If travis doesn't have the version of GHC that we want, get it from hvr's PPA
     - echo "Setting up GHC"
     - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
@@ -23,9 +20,6 @@ install:
             export PATH=/opt/ghc/${GHC}/bin:${PATH}
         fi
     - travis_retry sudo apt-get install -y c2hs
-    - ghc --version
-    - cabal --version
-    - cabal update
 
     # If we want to build c2hs from source, ghc-7.8 and later will require newer
     # versions of happy and alex
@@ -45,9 +39,14 @@ install:
     - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64
     - export PATH=${CUDA_HOME}/bin:${PATH}
 
+install:
+    - ghc --version
+    - cabal --version
+    - nvcc --version
+    - cabal install --only-dependencies --enable-tests
+
 script:
-    - cabal install --only-dependencies
-    - cabal configure -v2
+    - cabal configure -v2 -flib-Werror
     - cabal build
 
 after_script:
