@@ -1,7 +1,7 @@
 Haskell FFI Bindings to CUDA
 ============================
 
-![Build status](https://travis-ci.org/tmcdonell/cuda.svg?branch=master)
+[![Build status](https://travis-ci.org/tmcdonell/cuda.svg?branch=master)](https://travis-ci.org/tmcdonell/cuda)
 
 The CUDA library provides a direct, general purpose C-like SPMD programming
 model for NVIDIA graphics cards (G8x series onwards). This is a collection of
