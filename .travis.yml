@@ -1,12 +1,17 @@
 language: haskell
 env:
-    - CUDA=7.0-28 GHC=7.6.3
-    - CUDA=7.0-28 GHC=7.8.4
-    - CUDA=7.0-28 GHC=7.10.1
     - CUDA=6.5-14 GHC=7.6.3
     - CUDA=6.5-14 GHC=7.8.4
     - CUDA=6.5-14 GHC=7.10.1
+    - CUDA=7.0-28 GHC=7.6.3
+    - CUDA=7.0-28 GHC=7.8.4
+    - CUDA=7.0-28 GHC=7.10.1
+    - CUDA=7.0-28 GHC=head
 #    - CUDA=6.0-37
+
+matrix:
+    allow_failures:
+        - env: CUDA=7.0-28 GHC=head
 
 before_install:
     # If travis doesn't have the version of GHC that we want, get it from hvr's PPA
@@ -18,6 +23,11 @@ before_install:
         if [ $(ghc --numeric-version) != ${GHC} ]; then
             travis_retry sudo apt-get install -y ghc-${GHC}
             export PATH=/opt/ghc/${GHC}/bin:${PATH}
+        fi
+    - |
+        if [ ${GHC} = "head" ]; then
+            travis_retry sudo apt-get install -y cabal-install-head
+            export PATH=/opt/cabal/head/bin:${PATH}
         fi
     - travis_retry sudo apt-get install -y c2hs
 
