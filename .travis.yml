@@ -60,8 +60,22 @@ install:
     - cabal install --only-dependencies --enable-tests
 
 script:
+    # Check the build
     - cabal configure -v2 -flib-Werror
     - cabal build
+#    - cabal test --show-details=always
+
+    # Check the source distribution can be generated, built, and installed
+    - cabal sdist
+    - |
+        export SRC_TGZ=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
+        cd dist
+        if [ -f "$SRC_TGZ" ]; then
+            cabal install --force-reinstalls ${SRC_TGZ}
+        else
+            echo "'$SRC_TGZ': not found"
+            exit 1
+        fi
 
 after_failure:
     - dmesg
