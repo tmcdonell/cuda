@@ -25,20 +25,20 @@ before_install:
             travis_retry sudo apt-get install -y ghc-${GHC}
             export PATH=/opt/ghc/${GHC}/bin:${PATH}
         fi
-    - |
-        if [ ${GHC} = "head" ]; then
-            travis_retry sudo apt-get install -y cabal-install-head
-            export PATH=/opt/cabal/head/bin:${PATH}
-        fi
+    # - |
+    #     if [ ${GHC} = "head" ]; then
+    #         travis_retry sudo apt-get install -y cabal-install-head
+    #         export PATH=/opt/cabal/head/bin:${PATH}
+    #     fi
 
     # If we want to build c2hs from source, ghc-7.8 and later will require newer
     # versions of happy and alex
-    #    - |
-    #        if [ ${GHC%.*} != 7.6 ]; then
-    #            travis_retry sudo apt-get install -y happy-1.19.4 alex-3.1.3
-    #            export PATH=/opt/alex/3.1.3/bin:/opt/happy/1.19.4/bin:${PATH}
-    #        fi
-    #    - cabal install c2hs
+    # - |
+    #     if [ ${GHC%.*} != 7.6 ]; then
+    #         travis_retry sudo apt-get install -y happy-1.19.4 alex-3.1.3
+    #         export PATH=/opt/alex/3.1.3/bin:/opt/happy/1.19.4/bin:${PATH}
+    #     fi
+    # - cabal install c2hs
 
     - echo "Installing CUDA library"
     - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
