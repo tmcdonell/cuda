@@ -1,3 +1,7 @@
+0.6.6.2
+
+  * Build fix
+
 0.6.6.1
 
   * Build fixes for ghc-7.6 and ghc-7.10
