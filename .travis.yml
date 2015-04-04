@@ -63,6 +63,7 @@ script:
     # Check the build
     - cabal configure -v2 -flib-Werror
     - cabal build
+    - cabal haddock
 #    - cabal test --show-details=always
 
     # Check the source distribution can be generated, built, and installed
