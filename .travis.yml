@@ -29,7 +29,6 @@ before_install:
         if [ ${GHC} = "head" ]; then
             travis_retry sudo apt-get install -y cabal-install-head
             export PATH=/opt/cabal/head/bin:${PATH}
-            cabal update
         fi
 
     # If we want to build c2hs from source, ghc-7.8 and later will require newer
