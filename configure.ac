@@ -86,6 +86,22 @@ case $target_os in
 esac
 LDFLAGS+=" -L${cuda_lib_path} "
 
+# Check what version of GHC we have. Depending on the version, we can enable
+# certain extensions. We can't just use the macros from the cabal_macros.h file
+# as would usually be done, because this file will be in different locations
+# depending on whether we are a regular or sandbox build.
+#
+AC_MSG_CHECKING(ghc version)
+target_ghc_version=`${GHC} --numeric-version`
+AC_MSG_RESULT(${target_ghc_version})
+
+GHC_VERSION_MAJOR=${target_ghc_version%%.*}
+GHC_VERSION_MINOR=${target_ghc_version#*.}
+GHC_VERSION_MINOR=${GHC_VERSION_MINOR%%.*}
+
+if test ${GHC_VERSION_MAJOR} -gt 7 -o ${GHC_VERSION_MAJOR} -eq 7 -a ${GHC_VERSION_MINOR} -ge 8 ; then
+    cuda_c2hsflags+="--cppopts=-DUSE_EMPTY_CASE "
+fi
 
 # The CUDA headers need to be interpreted relative to the architecture GHC is
 # compiled for, which might be different from the architecture of the host
@@ -119,10 +135,6 @@ if test "$BLOCKS" != ""; then
 else
     AC_MSG_RESULT(no)
 fi
-
-# Also include any cabal generated macros in the CPP configuration step
-#
-cuda_c2hsflags+="--cppopts=-include=dist/build/autogen/cabal_macros.h "
 
 # Make sure both the driver and runtime are found
 #

@@ -2,7 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-#if MIN_VERSION_base(4,7,0)
+#ifdef USE_EMPTY_CASE
 {-# LANGUAGE EmptyCase                #-}
 #endif
 --------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ data Cache
 --
 data PeerFlag
 instance Enum PeerFlag where
-#if MIN_VERSION_base(4,7,0)
+#ifdef USE_EMPTY_CASE
   toEnum   x = case x of {}
   fromEnum x = case x of {}
 #endif

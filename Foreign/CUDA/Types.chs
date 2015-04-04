@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns   #-}
 {-# LANGUAGE CPP            #-}
 {-# LANGUAGE EmptyDataDecls #-}
-#if MIN_VERSION_base(4,7,0)
+#ifdef USE_EMPTY_CASE
 {-# LANGUAGE EmptyCase      #-}
 #endif
 --------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 --
 data WaitFlag
 instance Enum WaitFlag where
-#if MIN_VERSION_base(4,7,0)
+#ifdef USE_EMPTY_CASE
   toEnum   x = case x of {}
   fromEnum x = case x of {}
 #endif
@@ -132,7 +132,7 @@ newtype Stream = Stream { useStream :: {# type CUstream #}}
 --
 data StreamFlag
 instance Enum StreamFlag where
-#if MIN_VERSION_base(4,7,0)
+#ifdef USE_EMPTY_CASE
   toEnum   x = case x of {}
   fromEnum x = case x of {}
 #endif
