@@ -99,6 +99,8 @@ GHC_VERSION_MAJOR=${target_ghc_version%%.*}
 GHC_VERSION_MINOR=${target_ghc_version#*.}
 GHC_VERSION_MINOR=${GHC_VERSION_MINOR%%.*}
 
+# We could replace this with 'ghc --supported-languages' + grep.
+#
 if test ${GHC_VERSION_MAJOR} -gt 7 -o ${GHC_VERSION_MAJOR} -eq 7 -a ${GHC_VERSION_MINOR} -ge 8 ; then
     cuda_c2hsflags+="--cppopts=-DUSE_EMPTY_CASE "
 fi
