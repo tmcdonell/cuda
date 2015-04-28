@@ -39,6 +39,7 @@ module Foreign.CUDA.Internal.C2HS (
   -- * Composite marshalling functions
   withCStringLenIntConv, peekCStringLenIntConv, withIntConv, withFloatConv,
   peekIntConv, peekFloatConv, withBool, peekBool, withEnum, peekEnum,
+  peekArrayWith,
 
   -- * Conditional results using 'Maybe'
   nothingIf, nothingIfNull,
@@ -90,6 +91,13 @@ withBool = with . fromBool
 
 peekBool :: (Integral a, Storable a) => Ptr a -> IO Bool
 peekBool = liftM toBool . peek
+
+
+-- Read and marshal array elements
+--
+
+peekArrayWith :: Storable a => (a -> b) -> Int -> Ptr a -> IO [b]
+peekArrayWith f n p = map f `fmap` peekArray n p
 
 
 -- Passing enums by reference

@@ -22,7 +22,6 @@ module Foreign.CUDA.Runtime.Texture (
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Internal.Offsets
 
 -- System
 import Data.Int
@@ -111,17 +110,20 @@ instance Storable Texture where
   alignment _ = alignment (undefined :: Ptr ())
 
   peek p = do
-    norm    <- cToBool     `fmap` {# get textureReference.normalized #} p
-    fmt     <- cToEnum     `fmap` {# get textureReference.filterMode #} p
-    [x,y,z] <- map cToEnum `fmap` (peekArray 3 (p `plusPtr` texRefAddressModeOffset :: Ptr CInt))
-    dsc     <- peekByteOff p texRefChannelDescOffset
+    norm    <- cToBool `fmap` {# get textureReference.normalized #} p
+    fmt     <- cToEnum `fmap` {# get textureReference.filterMode #} p
+    dsc     <- peek . castPtr          =<< {# get textureReference.channelDesc #} p
+    [x,y,z] <- peekArrayWith cToEnum 3 =<< {# get textureReference.addressMode #} p
     return $ Texture norm fmt (x,y,z) dsc
 
   poke p (Texture norm fmt (x,y,z) dsc) = do
     {# set textureReference.normalized #} p (cFromBool norm)
     {# set textureReference.filterMode #} p (cFromEnum fmt)
-    pokeArray (p `plusPtr` texRefAddressModeOffset :: Ptr CInt) (map cFromEnum [x,y,z])
-    pokeByteOff p texRefChannelDescOffset dsc
+    withArray (map cFromEnum [x,y,z]) ({# set textureReference.addressMode #} p)
+
+    -- c2hs is returning the wrong type for structs-within-structs
+    dscptr <- {# get textureReference.channelDesc #} p
+    poke (castPtr dscptr) dsc
 
 
 --------------------------------------------------------------------------------

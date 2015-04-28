@@ -39,7 +39,6 @@ module Foreign.CUDA.Runtime.Device (
 import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Internal.Offsets
 
 -- System
 import Foreign
@@ -86,6 +85,7 @@ instance Storable DeviceProperties where
 
   poke _ _    = error "no instance for Foreign.Storable.poke DeviceProperties"
   peek p      = do
+    n  <- peekCString   =<<   {#get cudaDeviceProp.name#} p
     gm <- cIntConv     `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
     sm <- cIntConv     `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
     rb <- cIntConv     `fmap` {#get cudaDeviceProp.regsPerBlock#} p
@@ -123,17 +123,11 @@ instance Storable DeviceProperties where
     ua <- cToBool      `fmap` {#get cudaDeviceProp.unifiedAddressing#} p
 #endif
 
-    --
-    -- C->Haskell returns the wrong type when accessing static arrays in
-    -- structs, returning the dereferenced element but with a Ptr type. Work
-    -- around this with manual pointer arithmetic...
-    --
-    n            <- peekCString (p `plusPtr` devNameOffset)
-    (t1:t2:t3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxThreadDimOffset :: Ptr CInt)
-    (g1:g2:g3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxGridSizeOffset  :: Ptr CInt)
+    [t1,t2,t3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxThreadsDim#} p
+    [g1,g2,g3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxGridSize#} p
 #if CUDART_VERSION >= 3000
-    (u21:u22:_)     <- map cIntConv `fmap` peekArray 2 (p `plusPtr` devMaxTexture2DOffset :: Ptr CInt)
-    (u31:u32:u33:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxTexture3DOffset :: Ptr CInt)
+    [u21,u22]     <- peekArrayWith cIntConv 2 =<< {#get cudaDeviceProp.maxTexture2D#} p
+    [u31,u32,u33] <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxTexture3D#} p
 #endif
 
     return DeviceProperties

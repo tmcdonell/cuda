@@ -31,7 +31,6 @@ module Foreign.CUDA.Driver.Device (
 import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Internal.Offsets
 
 -- System
 import Foreign
@@ -92,8 +91,8 @@ instance Storable CUDevProp where
     cl <- cIntConv `fmap` {#get CUdevprop.clockRate#} p
     ta <- cIntConv `fmap` {#get CUdevprop.textureAlign#} p
 
-    (t1:t2:t3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxThreadDimOffset' :: Ptr CInt)
-    (g1:g2:g3:_) <- map cIntConv `fmap` peekArray 3 (p `plusPtr` devMaxGridSizeOffset'  :: Ptr CInt)
+    [t1,t2,t3] <- peekArrayWith cIntConv 3 =<< {#get CUdevprop.maxThreadsDim#} p
+    [g1,g2,g3] <- peekArrayWith cIntConv 3 =<< {#get CUdevprop.maxGridSize#} p
 
     return CUDevProp
       {
