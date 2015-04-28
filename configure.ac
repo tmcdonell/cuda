@@ -58,7 +58,7 @@ case $target_os in
     cuda_lib_path="${cuda_prefix}/lib"
     cuda_frameworks="CUDA"
     LDFLAGS+=" -F/Library/Frameworks "
-    #LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
+    LDFLAGS+=" -Xlinker -rpath ${cuda_lib_path} "
     #CPPFLAGS+=" -arch ${target_cpu} "
     ;;
   mingw*)
