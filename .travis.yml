@@ -15,8 +15,8 @@ env:
 #    - CUDA=6.0-37
 
 matrix:
-    allow_failures:
-        - env: CUDA=7.0-28 GHC=head
+  allow_failures:
+    - env: CUDA=7.0-28 GHC=head
 
 before_install:
     # If travis doesn't have the version of GHC that we want, get it from hvr's PPA
