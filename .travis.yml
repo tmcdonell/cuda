@@ -59,7 +59,7 @@ before_install:
     - export PATH=${CUDA_HOME}/bin:${PATH}
 
 install:
-    - ghc --version
+    - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
     - cabal --version
     - c2hs --version
     - nvcc --version
