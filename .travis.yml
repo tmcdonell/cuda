@@ -44,6 +44,7 @@ before_install:
             export PATH=/opt/alex/${ALEX}/bin:/opt/happy/${HAPPY}/bin:${PATH}
         fi
     - cabal install c2hs
+    - cabal install cabal
 
     - echo "Installing CUDA library"
     - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
