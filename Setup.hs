@@ -327,7 +327,7 @@ getHookedBuildInfo verbosity = do
   else do
     doesGeneratedBuildInfoExists <- doesFileExist generatedBuldinfoFilepath
     if doesGeneratedBuildInfoExists then do
-      notice verbosity $ "The default buildinfo from file " ++ generatedBuldinfoFilepath ++ " will be used. To overwrite this, provide a custom " ++ customBuildinfoFilepath ++ " path."
+      notice verbosity $ "The default buildinfo from file " ++ generatedBuldinfoFilepath ++ " will be used. To overwrite this, provide a custom " ++ customBuildinfoFilepath ++ " file."
       readHookedBuildInfo verbosity generatedBuldinfoFilepath
     else die $ "Unexpected failure. Neither the default " ++ generatedBuldinfoFilepath ++ " nor custom " ++ customBuildinfoFilepath ++ " do exist."
 
