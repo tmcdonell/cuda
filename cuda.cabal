@@ -42,7 +42,6 @@ Extra-tmp-files:        cuda.buildinfo
 
 Extra-source-files:     cbits/stubs.h
                         changelog.md
-                        install-sh
 
 Library
   Exposed-Modules:      Foreign.CUDA
