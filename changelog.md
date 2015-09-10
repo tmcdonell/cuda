@@ -1,3 +1,7 @@
+0.6.7.0
+
+  * Add support for building on Windows (thanks to mwu-tow)
+
 0.6.6.2
 
   * Build fix

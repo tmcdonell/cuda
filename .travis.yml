@@ -34,6 +34,7 @@ before_install:
         if [ ${CABAL} ]; then
             travis_retry sudo apt-get install -y cabal-install-${CABAL}
             export PATH=/opt/cabal/${CABAL}/bin:${PATH}
+            cabal install cabal --constraint="cabal>=${CABAL}"
         fi
 
     # If we want to build c2hs from source, ghc-7.8 and later will require newer

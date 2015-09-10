@@ -1,7 +1,4 @@
-/config.log
-/config.status
 /cuda.buildinfo
-/configure
+/cuda.buildinfo.generated
 *.i
 dist/
-autom4te.cache/
