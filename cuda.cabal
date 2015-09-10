@@ -29,16 +29,15 @@ Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
--- Cabal 1.22 is needed because of Distribution.PackageDescription.extraGHCiLibs 
-Cabal-version:          >= 1.22 
+-- Cabal 1.22 is needed because of Distribution.PackageDescription.extraGHCiLibs
+Cabal-version:          >= 1.22
 Tested-with:            GHC >= 7.6
 
 Build-type:             Custom
 
-Extra-tmp-files:        cuda.buildinfo
+Extra-tmp-files:        cuda.buildinfo.generated
                         config.status
                         config.log
-                        autom4te.cache
 
 Extra-source-files:     cbits/stubs.h
                         changelog.md
