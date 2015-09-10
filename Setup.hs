@@ -31,6 +31,7 @@ newtype CudaPath = CudaPath {
 
 
 -- Windows compatibility function.
+--
 -- CUDA toolkit uses different names for import libraries and their respective DLLs.
 -- Eg. `cudart.lib` imports functions from `cudart32_70` (on 32-bit architecture and 7.0 version of toolkit).
 -- The ghci linker fails to resolve this. Therefore, it needs to be given the DLL filenames
@@ -41,6 +42,7 @@ newtype CudaPath = CudaPath {
 -- Internally it assumes that nm tool is present in PATH. This should be always true, as nm is distributed along with GHC.
 --
 -- The function is meant to be used on Windows. Other platforms may or may not work.
+--
 importLibraryToDllFileName :: FilePath -> IO (Maybe FilePath)
 importLibraryToDllFileName importLibPath = do
   -- Sample output nm generates on cudart.lib
@@ -57,11 +59,13 @@ importLibraryToDllFileName importLibPath = do
   return $ find (isInfixOf ("" <.> dllExtension)) (lines nmOutput)
 
 -- Windows compatibility function.
+--
 -- The function is used to populate the extraGHCiLibs list on Windows platform.
 -- It takes libraries directory and .lib filenames and returns their corresponding dll filename.
 -- (Both filenames are stripped from extensions)
 --
 -- Eg: "C:\cuda\toolkit\lib\x64" -> ["cudart", "cuda"] -> ["cudart64_65", "ncuda"]
+--
 additionalGhciLibraries :: FilePath -> [FilePath] -> IO [FilePath]
 additionalGhciLibraries libdir importLibs = do
   let libsAbsolutePaths = map (\libname -> libdir </> libname <.> "lib") importLibs
@@ -70,7 +74,9 @@ additionalGhciLibraries libdir importLibs = do
   return dllNames
 
 -- OSX compatibility function
+--
 -- Returns [] or ["U__BLOCKS__"]
+--
 getAppleBlocksOption :: IO [String]
 getAppleBlocksOption = do
   let handler = (\_ -> return "") :: IOError -> IO String
@@ -103,6 +109,7 @@ getCudaLibraries = ["cudart", "cuda"]
 
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
+--
 cudaLibraryBuildInfo :: CudaPath -> Platform -> Version -> IO HookedBuildInfo
 cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
   let cudaLibraryPath = getCudaLibraryPath cudaPath platform
@@ -151,61 +158,73 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
   return (Just adjustedBuildInfo, [])
 
 -- Checks whether given location looks like a valid CUDA toolkit directory
+--
 validateLocation :: Verbosity -> FilePath -> IO Bool
 validateLocation verbosity path = do
   -- TODO: Ideally this should check also for cudart.lib and whether cudart exports relevant symbols.
   -- This should be achievable with some `nm` trickery
   let testedPath = path </> "include" </> "cuda.h"
-  ret <- doesFileExist testedPath
-  notice verbosity $ printf "The path %s was %s." path $ if ret then "accepted" else "rejected, because file " ++ testedPath ++ " does not exist"
-  return ret
+  exists <- doesFileExist testedPath
+  info verbosity $
+    if exists
+      then printf "Path accepted: %s\n" path
+      else printf "Path rejected: %s\nDoes not exist: %s\n" path testedPath
+  return exists
 
 -- Evaluates IO to obtain the path, handling any possible exceptions.
 -- If path is evaluable and points to valid CUDA toolkit returns True.
+--
 validateIOLocation :: Verbosity -> IO FilePath -> IO Bool
-validateIOLocation verbosity iopath = do
-  let handler = (\e -> do notice verbosity ("Note: failed to resolve location: " ++ show e); return False) :: IOError -> IO Bool
+validateIOLocation verbosity iopath =
+  let handler :: IOError -> IO Bool
+      handler err = do
+        info verbosity (show err)
+        return False
+  in
   catch (iopath >>= validateLocation verbosity) handler
 
 -- Function iterates over action yielding possible locations, evaluating them
 -- and returning the first valid one. Retuns Nothing if no location matches.
+--
 findFirstValidLocation :: Verbosity -> [(IO FilePath, String)] -> IO (Maybe FilePath)
-findFirstValidLocation _ [] = return Nothing
-findFirstValidLocation verbosity (mx:mxs) = do
-  info verbosity $ "Checking candidate location: " ++ snd mx
-  headMatches <- validateIOLocation  verbosity $ fst mx
-  if headMatches
-    then do x <- fst mx
-            return $ Just x
-    else findFirstValidLocation verbosity mxs
+findFirstValidLocation _         []                          = return Nothing
+findFirstValidLocation verbosity ((locate,description):rest) = do
+  info verbosity $ printf "checking for %s\n" description
+  found <- validateIOLocation verbosity locate
+  if found
+    then Just `fmap` locate
+    else findFirstValidLocation verbosity rest
 
 nvccProgramName :: String
 nvccProgramName = "nvcc"
 
 -- NOTE: this function throws an exception when there is no `nvcc` in PATH.
 -- The exception contains meaningful message.
+--
 findProgramLocationThrowing :: String -> IO FilePath
 findProgramLocationThrowing execName = do
   location <- findProgramLocation normal execName
   case location of
     Just validLocation -> return validLocation
-    Nothing -> ioError $ mkIOError doesNotExistErrorType ("findProgramLocation failed to found `"++ execName ++"`") Nothing Nothing
+    Nothing -> ioError $ mkIOError doesNotExistErrorType ("not found: " ++ execName) Nothing Nothing
 
 -- Returns pairs (action yielding candidate path, String description of that location)
+--
 candidateCudaLocation :: [(IO FilePath, String)]
 candidateCudaLocation =
   [ env "CUDA_PATH"
-  , (nvccLocation, "nvcc compiler visible in PATH")
-  , hardcodedPath "/usr/local/cuda"
+  -- , (nvccLocation, "nvcc compiler in PATH")
+  , defaultPath "/usr/local/cuda"
   ]
   where
-    env s = (getEnv s, "environment variable `" ++ s ++ "`")
-    hardcodedPath p = (return p, "hardcoded location `" ++ p ++ "`")
+    env s         = (getEnv s, printf "environment variable %s" s)
+    defaultPath p = (return p, printf "default location %s" p)
+    --
     nvccLocation :: IO FilePath
     nvccLocation = do
       nvccPath <- findProgramLocationThrowing nvccProgramName
       -- The obtained path is likely TOOLKIT/bin/nvcc
-      -- We want to extraxt the TOOLKIT part
+      -- We want to extract the TOOLKIT part
       let ret = takeDirectory $ takeDirectory nvccPath
       return ret
 
@@ -222,7 +241,7 @@ findCudaLocation verbosity = do
   firstValidLocation <- findFirstValidLocation verbosity candidateCudaLocation
   case firstValidLocation of
     Just validLocation -> do
-      notice verbosity $ "Found CUDA toolkit under the following path: " ++ validLocation
+      notice verbosity $ "Found CUDA toolkit at: " ++ validLocation
       return $ CudaPath validLocation
     Nothing -> die longError
 
@@ -247,6 +266,7 @@ longError = unlines
 
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
+--
 generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
 generateAndStoreBuildInfo verbosity platform (CompilerId ghcFlavor ghcVersion) path = do
   cudalocation <- findCudaLocation verbosity
@@ -318,6 +338,7 @@ storeHookedBuildInfo verbosity path hbi = do
 -- Outputs message informing about the other possibility.
 -- Calls die when neither of the files is available.
 -- (generated one should be always present, as it is created in the post-conf step)
+--
 getHookedBuildInfo :: Verbosity -> IO HookedBuildInfo
 getHookedBuildInfo verbosity = do
   doesCustomBuildInfoExists <- doesFileExist customBuildinfoFilepath
@@ -327,7 +348,8 @@ getHookedBuildInfo verbosity = do
   else do
     doesGeneratedBuildInfoExists <- doesFileExist generatedBuldinfoFilepath
     if doesGeneratedBuildInfoExists then do
-      notice verbosity $ "The default buildinfo from file " ++ generatedBuldinfoFilepath ++ " will be used. To overwrite this, provide a custom " ++ customBuildinfoFilepath ++ " file."
+      notice verbosity $ printf "Using build information from '%s'.\n" generatedBuldinfoFilepath
+      notice verbosity $ printf "Provide a '%s' file to override this behaviour.\n" customBuildinfoFilepath
       readHookedBuildInfo verbosity generatedBuldinfoFilepath
     else die $ "Unexpected failure. Neither the default " ++ generatedBuldinfoFilepath ++ " nor custom " ++ customBuildinfoFilepath ++ " do exist."
 
@@ -383,3 +405,4 @@ versionInt (Version { versionBranch = n1:n2:_ })
                  _ : _ : _ -> ""
                  _         -> "0"
     in s1 ++ middle ++ s2
+
