@@ -3,6 +3,7 @@ env:
   global:
     - HAPPY=1.19.5
     - ALEX=3.1.4
+    - CABAL=1.22
 
   matrix:
     - CUDA=6.5-14 GHC=7.6.3
@@ -44,8 +45,6 @@ before_install:
             export PATH=/opt/alex/${ALEX}/bin:/opt/happy/${HAPPY}/bin:${PATH}
         fi
     - cabal install c2hs
-    - cabal install cabal
-    - cabal install cabal-install
 
     - echo "Installing CUDA library"
     - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
