@@ -29,7 +29,7 @@ Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
-Cabal-version:          >= 1.8
+Cabal-version:          >= 1.22
 Tested-with:            GHC >= 7.6
 
 Build-type:             Custom
