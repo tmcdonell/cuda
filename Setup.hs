@@ -213,7 +213,7 @@ findProgramLocationThrowing execName = do
 candidateCudaLocation :: [(IO FilePath, String)]
 candidateCudaLocation =
   [ env "CUDA_PATH"
-  -- , (nvccLocation, "nvcc compiler in PATH")
+  , (nvccLocation, "nvcc compiler in PATH")
   , defaultPath "/usr/local/cuda"
   ]
   where
