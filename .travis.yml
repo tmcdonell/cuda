@@ -3,7 +3,6 @@ env:
   global:
     - HAPPY=1.19.5
     - ALEX=3.1.4
-    - CABAL=1.22
 
   matrix:
     - CUDA=6.5-14 GHC=7.6.3
