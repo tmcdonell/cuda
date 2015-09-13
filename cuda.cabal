@@ -39,7 +39,8 @@ Extra-tmp-files:        cuda.buildinfo.generated
                         config.log
 
 Extra-source-files:     cbits/stubs.h
-                        changelog.md
+                        CHANGELOG.markdown
+                        README.markdown
 
 Library
   Exposed-Modules:      Foreign.CUDA
