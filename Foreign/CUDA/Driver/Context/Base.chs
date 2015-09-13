@@ -7,15 +7,15 @@
 #endif
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Driver.Context
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Module    : Foreign.CUDA.Driver.Context.Base
+-- Copyright : [2009..2015] Trevor L. McDonell
 -- License   : BSD
 --
 -- Context management for low-level driver interface
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Context (
+module Foreign.CUDA.Driver.Context.Base (
 
   -- * Context Management
   Context(..), ContextFlag(..),
