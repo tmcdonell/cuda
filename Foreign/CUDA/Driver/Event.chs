@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
@@ -121,7 +122,7 @@ record !ev !mst =
 {-# INLINEABLE wait #-}
 wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
 #if CUDA_VERSION < 3020
-wait _ _ _           = requireSDK 3.2 "wait"
+wait _ _ _           = requireSDK 'wait 3.2
 #else
 wait !ev !mst !flags =
   nothingIfOk =<< cuStreamWaitEvent (fromMaybe defaultStream mst) ev flags

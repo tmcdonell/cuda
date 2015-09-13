@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Exec
@@ -216,7 +217,7 @@ setParams = foldM_ k 0
 {-# INLINEABLE setCacheConfig #-}
 setCacheConfig :: Fun -> CacheConfig -> IO ()
 #if CUDART_VERSION < 3000
-setCacheConfig _ _       = requireSDK 3.0 "setCacheConfig"
+setCacheConfig _ _       = requireSDK 'setCacheConfig 3.0
 #else
 setCacheConfig !fn !pref = nothingIfOk =<< cudaFuncSetCacheConfig fn pref
 

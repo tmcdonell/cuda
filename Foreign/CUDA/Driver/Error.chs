@@ -18,14 +18,17 @@ module Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Data.Typeable
 import Control.Exception
 import Control.Monad
+import Data.Typeable
 import Foreign.C
-import Foreign.Ptr
 import Foreign.Marshal
+import Foreign.Ptr
 import Foreign.Storable
+import Language.Haskell.TH
 import System.IO.Unsafe
+import Text.Printf
+
 
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
@@ -157,8 +160,8 @@ cudaError s = throwIO (UserError s)
 -- |
 -- A specially formatted error message
 --
-requireSDK :: Double -> String -> IO a
-requireSDK v s = cudaError ("'" ++ s ++ "' requires at least cuda-" ++ show v)
+requireSDK :: Name -> Double -> IO a
+requireSDK n v = cudaError $ printf "'%s' requires at least cuda-%3.1f\n" (show n) v
 
 
 --------------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 #ifdef USE_EMPTY_CASE
 {-# LANGUAGE EmptyCase                #-}
 #endif
@@ -167,7 +168,7 @@ destroy !ctx = nothingIfOk =<< cuCtxDestroy ctx
 {-# INLINEABLE get #-}
 get :: IO Context
 #if CUDA_VERSION < 4000
-get = requireSDK 4.0 "get"
+get = requireSDK 'get 4.0
 #else
 get = resultIfOk =<< cuCtxGetCurrent
 
@@ -184,7 +185,7 @@ get = resultIfOk =<< cuCtxGetCurrent
 {-# INLINEABLE set #-}
 set :: Context -> IO ()
 #if CUDA_VERSION < 4000
-set _    = requireSDK 4.0 "set"
+set _    = requireSDK 'set 4.0
 #else
 set !ctx = nothingIfOk =<< cuCtxSetCurrent ctx
 
@@ -258,7 +259,7 @@ sync = nothingIfOk =<< cuCtxSynchronize
 {-# INLINEABLE accessible #-}
 accessible :: Device -> Device -> IO Bool
 #if CUDA_VERSION < 4000
-accessible _ _        = requireSDK 4.0 "accessible"
+accessible _ _        = requireSDK 'accessible 4.0
 #else
 accessible !dev !peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
 
@@ -278,7 +279,7 @@ accessible !dev !peer = resultIfOk =<< cuDeviceCanAccessPeer dev peer
 {-# INLINEABLE add #-}
 add :: Context -> [PeerFlag] -> IO ()
 #if CUDA_VERSION < 4000
-add _ _         = requireSDK 4.0 "add"
+add _ _         = requireSDK 'add 4.0
 #else
 add !ctx !flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
 
@@ -296,7 +297,7 @@ add !ctx !flags = nothingIfOk =<< cuCtxEnablePeerAccess ctx flags
 {-# INLINEABLE remove #-}
 remove :: Context -> IO ()
 #if CUDA_VERSION < 4000
-remove _    = requireSDK 4.0 "remove"
+remove _    = requireSDK 'remave 4.0
 #else
 remove !ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 
@@ -316,7 +317,7 @@ remove !ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 {-# INLINEABLE getLimit #-}
 getLimit :: Limit -> IO Int
 #if CUDA_VERSION < 3010
-getLimit _  = requireSDK 3.1 "getLimit"
+getLimit _  = requireSDK 'getLimit 3.1
 #else
 getLimit !l = resultIfOk =<< cuCtxGetLimit l
 
@@ -333,7 +334,7 @@ getLimit !l = resultIfOk =<< cuCtxGetLimit l
 {-# INLINEABLE setLimit #-}
 setLimit :: Limit -> Int -> IO ()
 #if CUDA_VERSION < 3010
-setLimit _ _   = requireSDK 3.1 "setLimit"
+setLimit _ _   = requireSDK 'setLimit 3.1
 #else
 setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
 
@@ -351,7 +352,7 @@ setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
 {-# INLINEABLE setCacheConfig #-}
 setCacheConfig :: Cache -> IO ()
 #if CUDA_VERSION < 3020
-setCacheConfig _  = requireSDK 3.2 "setCacheConfig"
+setCacheConfig _  = requireSDK 'setCacheConfig 3.2
 #else
 setCacheConfig !c = nothingIfOk =<< cuCtxSetCacheConfig c
 

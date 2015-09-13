@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
@@ -145,7 +146,7 @@ freeHost !p = nothingIfOk =<< cuMemFreeHost p
 {-# INLINEABLE registerArray #-}
 registerArray :: Storable a => [AllocFlag] -> Int -> Ptr a -> IO (HostPtr a)
 #if CUDA_VERSION < 4000
-registerArray _ _ _     = requireSDK 4.0 "registerArray"
+registerArray _ _ _     = requireSDK 'registerArray 4.0
 #else
 registerArray !flags !n = go undefined
   where
@@ -170,7 +171,7 @@ registerArray !flags !n = go undefined
 {-# INLINEABLE unregisterArray #-}
 unregisterArray :: HostPtr a -> IO (Ptr a)
 #if CUDA_VERSION < 4000
-unregisterArray _           = requireSDK 4.0 "unregisterArray"
+unregisterArray _           = requireSDK 'unregisterArray 4.0
 #else
 unregisterArray (HostPtr !p) = do
   status <- cuMemHostUnregister p
@@ -254,7 +255,7 @@ data AttachFlag
 {-# INLINEABLE mallocManagedArray #-}
 mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
 #if CUDA_VERSION < 6000
-mallocManagedArray _ _    = requireSDK 6.0 "mallocManagedArray"
+mallocManagedArray _ _    = requireSDK 'mallocManagedArray 6.0
 #else
 mallocManagedArray !flags = doMalloc undefined
   where
@@ -742,7 +743,7 @@ copyArrayPeer :: Storable a
               -> DevicePtr a -> Context         -- ^ destination array and context
               -> IO ()
 #if CUDA_VERSION < 4000
-copyArrayPeer _ _ _ _ _                    = requireSDK 4.0 "copyArrayPeer"
+copyArrayPeer _ _ _ _ _                    = requireSDK 'copyArrayPeer 4.0
 #else
 copyArrayPeer !n !src !srcCtx !dst !dstCtx = go undefined src dst
   where
@@ -772,7 +773,7 @@ copyArrayPeerAsync :: Storable a
                    -> Maybe Stream              -- ^ stream to associate with
                    -> IO ()
 #if CUDA_VERSION < 4000
-copyArrayPeerAsync _ _ _ _ _ _                      = requireSDK 4.0 "copyArrayPeerAsync"
+copyArrayPeerAsync _ _ _ _ _ _                      = requireSDK 'copyArrayPeerAsync 4.0
 #else
 copyArrayPeerAsync !n !src !srcCtx !dst !dstCtx !st = go undefined src dst
   where
@@ -895,7 +896,7 @@ memset !dptr !n !val = case sizeOf val of
 {-# INLINEABLE memsetAsync #-}
 memsetAsync :: Storable a => DevicePtr a -> Int -> a -> Maybe Stream -> IO ()
 #if CUDA_VERSION < 3020
-memsetAsync _ _ _ _            = requireSDK 3.2 "memsetAsync"
+memsetAsync _ _ _ _            = requireSDK 'memsetAsync 3.2
 #else
 memsetAsync !dptr !n !val !mst = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8Async  dptr val n stream

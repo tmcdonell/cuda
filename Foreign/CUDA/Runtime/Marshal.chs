@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Marshal
@@ -206,7 +207,7 @@ data AttachFlag
 {-# INLINEABLE mallocManagedArray #-}
 mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
 #if CUDART_VERSION < 6000
-mallocManagedArray _ _    = requireSDK 6.0 "mallocManagedArray"
+mallocManagedArray _ _    = requireSDK 'mallocManagedArray 6.0
 #else
 mallocManagedArray !flags = doMalloc undefined
   where

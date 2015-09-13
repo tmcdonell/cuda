@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 #ifdef USE_EMPTY_CASE
 {-# LANGUAGE EmptyCase                #-}
@@ -332,7 +333,7 @@ instance Enum PeerFlag where
 {-# INLINEABLE accessible #-}
 accessible :: Device -> Device -> IO Bool
 #if CUDART_VERSION < 4000
-accessible _ _        = requireSDK 4.0 "accessible"
+accessible _ _        = requireSDK 'accessible 4.0
 #else
 accessible !dev !peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
 
@@ -351,7 +352,7 @@ accessible !dev !peer = resultIfOk =<< cudaDeviceCanAccessPeer dev peer
 {-# INLINEABLE add #-}
 add :: Device -> [PeerFlag] -> IO ()
 #if CUDART_VERSION < 4000
-add _ _         = requireSDK 4.0 "add"
+add _ _         = requireSDK 'add 4.0
 #else
 add !dev !flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
 
@@ -369,7 +370,7 @@ add !dev !flags = nothingIfOk =<< cudaDeviceEnablePeerAccess dev flags
 {-# INLINEABLE remove #-}
 remove :: Device -> IO ()
 #if CUDART_VERSION < 4000
-remove _    = requireSDK 4.0 "remove"
+remove _    = requireSDK 'remove 4.0
 #else
 remove !dev = nothingIfOk =<< cudaDeviceDisablePeerAccess dev
 
@@ -401,7 +402,7 @@ data Limit
 {-# INLINEABLE getLimit #-}
 getLimit :: Limit -> IO Int
 #if   CUDART_VERSION < 3010
-getLimit _  = requireSDK 3.1 "getLimit"
+getLimit _  = requireSDK 'getLimit 3.1
 #elif CUDART_VERSION < 4000
 getLimit !l = resultIfOk =<< cudaThreadGetLimit l
 
@@ -425,7 +426,7 @@ getLimit !l = resultIfOk =<< cudaDeviceGetLimit l
 {-# INLINEABLE setLimit #-}
 setLimit :: Limit -> Int -> IO ()
 #if   CUDART_VERSION < 3010
-setLimit _ _   = requireSDK 3.1 "setLimit"
+setLimit _ _   = requireSDK 'setLimit 3.1
 #elif CUDART_VERSION < 4000
 setLimit !l !n = nothingIfOk =<< cudaThreadSetLimit l n
 

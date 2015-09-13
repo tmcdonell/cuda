@@ -3,6 +3,7 @@
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
@@ -147,7 +148,7 @@ setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 {-# INLINEABLE setCacheConfigFun #-}
 setCacheConfigFun :: Fun -> Cache -> IO ()
 #if CUDA_VERSION < 3000
-setCacheConfigFun _ _       = requireSDK 3.0 "setCacheConfigFun"
+setCacheConfigFun _ _       = requireSDK 'setCacheConfigFun 3.0
 #else
 setCacheConfigFun !fn !pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
 
