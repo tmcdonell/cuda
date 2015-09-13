@@ -87,7 +87,7 @@ typedef enum CUmemhostalloc_option_enum {
 --
 {# enum CUmemhostalloc_option as AllocFlag
     { underscoreToCase }
-    with prefix="CU_MEMHOSTALLOC_OPTION" deriving (Eq, Show) #}
+    with prefix="CU_MEMHOSTALLOC_OPTION" deriving (Eq, Show, Bounded) #}
 
 -- |
 -- Allocate a section of linear memory on the host which is page-locked and
@@ -245,7 +245,7 @@ data AttachFlag
 #else
 {# enum CUmemAttach_flags as AttachFlag
     { underscoreToCase }
-    with prefix="CU_MEM_ATTACH_OPTION" deriving (Eq, Show) #}
+    with prefix="CU_MEM_ATTACH_OPTION" deriving (Eq, Show, Bounded) #}
 #endif
 
 -- |

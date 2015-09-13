@@ -77,7 +77,7 @@ type Device = Int
 -- Device execution flags
 --
 {# enum cudaDeviceFlags as DeviceFlag { }
-    with prefix="cudaDeviceFlag" deriving (Eq, Show) #}
+    with prefix="cudaDeviceFlag" deriving (Eq, Show, Bounded) #}
 
 
 instance Storable DeviceProperties where

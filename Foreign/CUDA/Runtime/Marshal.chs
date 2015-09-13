@@ -87,7 +87,7 @@ typedef enum cudaMemAttachFlags_option_enum {
 --
 {# enum cudaMemHostAlloc_option as AllocFlag
     { underscoreToCase }
-    with prefix="CUDA_MEMHOSTALLOC_OPTION" deriving (Eq, Show) #}
+    with prefix="CUDA_MEMHOSTALLOC_OPTION" deriving (Eq, Show, Bounded) #}
 
 
 -- |
@@ -195,7 +195,7 @@ free !p = nothingIfOk =<< cudaFree p
 #if CUDART_VERSION >= 6000
 {# enum cudaMemAttachFlags_option as AttachFlag
     { underscoreToCase }
-    with prefix="CUDA_MEM_ATTACH_OPTION" deriving (Eq, Show) #}
+    with prefix="CUDA_MEM_ATTACH_OPTION" deriving (Eq, Show, Bounded) #}
 #else
 data AttachFlag
 #endif

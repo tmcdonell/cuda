@@ -62,7 +62,7 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
 --
 {# enum CUctx_flags as ContextFlag
     { underscoreToCase }
-    with prefix="CU_CTX" deriving (Eq, Show) #}
+    with prefix="CU_CTX" deriving (Eq, Show, Bounded) #}
 
 -- |
 -- Device limits flags

@@ -99,7 +99,7 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 --
 {# enum CUevent_flags as EventFlag
     { underscoreToCase }
-    with prefix="CU_EVENT" deriving (Eq, Show) #}
+    with prefix="CU_EVENT" deriving (Eq, Show, Bounded) #}
 
 -- |
 -- Possible option flags for waiting for events
