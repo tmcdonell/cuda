@@ -36,6 +36,8 @@ import Foreign.CUDA.Internal.C2HS
 import Foreign
 import Foreign.C
 import Control.Monad                                    ( liftM )
+import Control.Applicative
+import Prelude
 
 
 --------------------------------------------------------------------------------
@@ -57,8 +59,10 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
 {# pointer *CUdevprop as ^ foreign -> CUDevProp nocode #}
 
 
+#if CUDA_VERSION < 5000
 --
--- Properties of the compute device (internal helper)
+-- Properties of the compute device (internal helper).
+-- Replaced by cuDeviceGetAttribute in CUDA-5.0 and later.
 --
 data CUDevProp = CUDevProp
   {
@@ -107,6 +111,7 @@ instance Storable CUDevProp where
         cuClockRate          = cl,
         cuTextureAlignment   = ta
       }
+#endif
 
 
 -- |
@@ -126,8 +131,10 @@ instance Enum InitFlag where
 --------------------------------------------------------------------------------
 
 -- |
--- Initialise the CUDA driver API. Must be called before any other driver
--- function.
+-- Initialise the CUDA driver API. This must be called before any other
+-- driver function.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__INITIALIZE.html#group__CUDA__INITIALIZE_1g0a2f1517e1bd8502c7194c3a8c134bc3>
 --
 {-# INLINEABLE initialise #-}
 initialise :: [InitFlag] -> IO ()
@@ -147,6 +154,13 @@ initialise !flags = nothingIfOk =<< cuInit flags
 --
 {-# INLINEABLE capability #-}
 capability :: Device -> IO Compute
+#if CUDA_VERSION >= 5000
+capability !dev =
+  Compute <$> attribute dev ComputeCapabilityMajor
+          <*> attribute dev ComputeCapabilityMinor
+#else
+-- Deprecated as of CUDA-5.0
+--
 capability !dev =
   (\(!s,!a,!b) -> resultIfOk (s,Compute a b)) =<< cuDeviceComputeCapability dev
 
@@ -155,10 +169,13 @@ capability !dev =
   { alloca-   `Int'    peekIntConv*
   , alloca-   `Int'    peekIntConv*
   , useDevice `Device'              } -> `Status' cToEnum #}
+#endif
 
 
 -- |
--- Return a device handle
+-- Return a handle to the compute device at the given ordinal.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g8bdd1cc7201304b01357b8034f6587cb>
 --
 {-# INLINEABLE device #-}
 device :: Int -> IO Device
@@ -172,7 +189,9 @@ device !d = resultIfOk =<< cuDeviceGet d
 
 
 -- |
--- Return the selected attribute for the given device
+-- Return the selected attribute for the given device.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g9c3e1414f0ad901d3278a4d6645fc266>
 --
 {-# INLINEABLE attribute #-}
 attribute :: Device -> DeviceAttribute -> IO Int
@@ -186,7 +205,9 @@ attribute !d !a = resultIfOk =<< cuDeviceGetAttribute a d
 
 
 -- |
--- Return the number of device with compute capability > 1.0
+-- Return the number of device with compute capability > 1.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g52b5ce05cb8c5fb6831b2c0ff2887c74>
 --
 {-# INLINEABLE count #-}
 count :: IO Int
@@ -198,7 +219,9 @@ count = resultIfOk =<< cuDeviceGetCount
 
 
 -- |
--- Name of the device
+-- The identifying name of the device.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1gef75aa30df95446a845f2a7b9fffbb7f>
 --
 {-# INLINEABLE name #-}
 name :: Device -> IO String
@@ -217,16 +240,45 @@ name !d = resultIfOk =<< cuDeviceGetName d
 -- |
 -- Return the properties of the selected device
 --
-
--- Annoyingly, the driver API requires several different functions to extract
--- all device properties that are part of a single structure in the runtime API
---
 {-# INLINEABLE props #-}
 props :: Device -> IO DeviceProperties
 props !d = do
-  p   <- resultIfOk =<< cuDeviceGetProperties d
 
-  -- And the remaining properties
+#if CUDA_VERSION < 5000
+  -- Old versions of the CUDA API used the separate cuDeviceGetProperties
+  -- function to probe some properties, and cuDeviceGetAttribute for
+  -- others. As of CUDA-5.0, the former was deprecated and its
+  -- functionality subsumed by the latter, which we use below.
+  --
+  p   <- resultIfOk =<< cuDeviceGetProperties d
+  let cm = cuTotalConstMem p
+      sm = cuSharedMemPerBlock p
+      rb = cuRegsPerBlock p
+      ws = cuWarpSize p
+      tb = cuMaxThreadsPerBlock p
+      bs = cuMaxBlockSize p
+      gs = cuMaxGridSize p
+      cl = cuClockRate p
+      mp = cuMemPitch p
+      ta = cuTextureAlignment p
+#else
+  cm  <- fromIntegral <$> attribute d TotalConstantMemory
+  sm  <- fromIntegral <$> attribute d SharedMemoryPerBlock
+  mp  <- fromIntegral <$> attribute d MaxPitch
+  ta  <- fromIntegral <$> attribute d TextureAlignment
+  cl  <- attribute d ClockRate
+  ws  <- attribute d WarpSize
+  rb  <- attribute d RegistersPerBlock
+  tb  <- attribute d MaxThreadsPerBlock
+  bs  <- (,,) <$> attribute d MaxBlockDimX
+              <*> attribute d MaxBlockDimY
+              <*> attribute d MaxBlockDimZ
+  gs  <- (,,) <$> attribute d MaxGridDimX
+              <*> attribute d MaxGridDimY
+              <*> attribute d MaxGridDimZ
+#endif
+
+  -- The rest of the properties.
   --
   n   <- name d
   cc  <- capability d
@@ -265,17 +317,17 @@ props !d = do
       deviceName                        = n,
       computeCapability                 = cc,
       totalGlobalMem                    = gm,
-      totalConstMem                     = cuTotalConstMem p,
-      sharedMemPerBlock                 = cuSharedMemPerBlock p,
-      regsPerBlock                      = cuRegsPerBlock p,
-      warpSize                          = cuWarpSize p,
-      maxThreadsPerBlock                = cuMaxThreadsPerBlock p,
-      maxBlockSize                      = cuMaxBlockSize p,
-      maxGridSize                       = cuMaxGridSize p,
-      clockRate                         = cuClockRate p,
+      totalConstMem                     = cm,
+      sharedMemPerBlock                 = sm,
+      regsPerBlock                      = rb,
+      warpSize                          = ws,
+      maxThreadsPerBlock                = tb,
+      maxBlockSize                      = bs,
+      maxGridSize                       = gs,
+      clockRate                         = cl,
       multiProcessorCount               = pc,
-      memPitch                          = cuMemPitch p,
-      textureAlignment                  = cuTextureAlignment p,
+      memPitch                          = mp,
+      textureAlignment                  = ta,
       computeMode                       = md,
       deviceOverlap                     = ov,
 #if CUDA_VERSION >= 3000
@@ -300,15 +352,19 @@ props !d = do
       canMapHostMemory                  = hm
     }
 
-
+#if CUDA_VERSION < 5000
+-- Deprecated as of CUDA-5.0
 {-# INLINE cuDeviceGetProperties #-}
 {# fun unsafe cuDeviceGetProperties
   { alloca-   `CUDevProp' peek*
   , useDevice `Device'          } -> `Status' cToEnum #}
+#endif
 
 
 -- |
--- Total memory available on the device (bytes)
+-- The total memory available on the device (bytes).
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1gc6a0d6551335a3780f9f3c967a0fde5d>
 --
 {-# INLINEABLE totalMem #-}
 totalMem :: Device -> IO Int64
