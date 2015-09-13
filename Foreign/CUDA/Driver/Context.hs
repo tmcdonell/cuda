@@ -12,10 +12,12 @@
 module Foreign.CUDA.Driver.Context (
 
   module Foreign.CUDA.Driver.Context.Base,
+  module Foreign.CUDA.Driver.Context.Config,
   module Foreign.CUDA.Driver.Context.Peer,
 
 ) where
 
 import Foreign.CUDA.Driver.Context.Base
+import Foreign.CUDA.Driver.Context.Config
 import Foreign.CUDA.Driver.Context.Peer
 

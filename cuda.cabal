@@ -61,6 +61,7 @@ Library
                         Foreign.CUDA.Driver
                         Foreign.CUDA.Driver.Context
                         Foreign.CUDA.Driver.Context.Base
+                        Foreign.CUDA.Driver.Context.Config
                         Foreign.CUDA.Driver.Context.Peer
                         Foreign.CUDA.Driver.Context.Primary
                         Foreign.CUDA.Driver.Device

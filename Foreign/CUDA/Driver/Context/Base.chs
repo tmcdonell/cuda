@@ -12,7 +12,7 @@
 -- Copyright : [2009..2015] Trevor L. McDonell
 -- License   : BSD
 --
--- Context management for low-level driver interface
+-- Context management for the low-level driver interface
 --
 --------------------------------------------------------------------------------
 
@@ -22,12 +22,8 @@ module Foreign.CUDA.Driver.Context.Base (
   Context(..), ContextFlag(..),
   create, destroy, device, pop, push, sync, get, set,
 
-  -- Deprecated
+  -- Deprecated in CUDA-4.0
   attach, detach,
-
-  -- * Cache Configuration
-  Cache(..), Limit(..),
-  getLimit, setLimit, setCacheConfig
 
 ) where
 
@@ -62,28 +58,6 @@ newtype Context = Context { useContext :: {# type CUcontext #}}
 {# enum CUctx_flags as ContextFlag
     { underscoreToCase }
     with prefix="CU_CTX" deriving (Eq, Show, Bounded) #}
-
--- |
--- Device limits flags
---
-#if CUDA_VERSION < 3010
-data Limit
-#else
-{# enum CUlimit_enum as Limit
-    { underscoreToCase }
-    with prefix="CU_LIMIT" deriving (Eq, Show) #}
-#endif
-
--- |
--- Device cache configuration preference
---
-#if CUDA_VERSION < 3000
-data Cache
-#else
-{# enum CUfunc_cache_enum as Cache
-    { underscoreToCase }
-    with prefix="CU_FUNC_CACHE" deriving (Eq, Show) #}
-#endif
 
 
 #if CUDA_VERSION >= 4000
@@ -202,6 +176,7 @@ set !ctx = nothingIfOk =<< cuCtxSetCurrent ctx
   { useContext `Context' } -> `Status' cToEnum #}
 #endif
 
+
 -- |
 -- Return the device of the currently active context
 --
@@ -263,59 +238,4 @@ sync = nothingIfOk =<< cuCtxSynchronize
 {-# INLINE cuCtxSynchronize #-}
 {# fun cuCtxSynchronize
   { } -> `Status' cToEnum #}
-
-
---------------------------------------------------------------------------------
--- Cache configuration
---------------------------------------------------------------------------------
-
--- |
--- Query compute 2.0 call stack limits. Requires cuda-3.1.
---
-{-# INLINEABLE getLimit #-}
-getLimit :: Limit -> IO Int
-#if CUDA_VERSION < 3010
-getLimit _  = requireSDK 'getLimit 3.1
-#else
-getLimit !l = resultIfOk =<< cuCtxGetLimit l
-
-{-# INLINE cuCtxGetLimit #-}
-{# fun unsafe cuCtxGetLimit
-  { alloca-   `Int' peekIntConv*
-  , cFromEnum `Limit'            } -> `Status' cToEnum #}
-#endif
-
--- |
--- Specify the size of the call stack, for compute 2.0 devices. Requires
--- cuda-3.1.
---
-{-# INLINEABLE setLimit #-}
-setLimit :: Limit -> Int -> IO ()
-#if CUDA_VERSION < 3010
-setLimit _ _   = requireSDK 'setLimit 3.1
-#else
-setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
-
-{-# INLINE cuCtxSetLimit #-}
-{# fun unsafe cuCtxSetLimit
-  { cFromEnum `Limit'
-  , cIntConv  `Int'   } -> `Status' cToEnum #}
-#endif
-
--- |
--- On devices where the L1 cache and shared memory use the same hardware
--- resources, this sets the preferred cache configuration for the current
--- context. This is only a preference. Requires cuda-3.2.
---
-{-# INLINEABLE setCacheConfig #-}
-setCacheConfig :: Cache -> IO ()
-#if CUDA_VERSION < 3020
-setCacheConfig _  = requireSDK 'setCacheConfig 3.2
-#else
-setCacheConfig !c = nothingIfOk =<< cuCtxSetCacheConfig c
-
-{-# INLINE cuCtxSetCacheConfig #-}
-{# fun unsafe cuCtxSetCacheConfig
-  { cFromEnum `Cache' } -> `Status' cToEnum #}
-#endif
 
