@@ -54,7 +54,7 @@ import Foreign.C
 {-# INLINEABLE status #-}
 status :: Device -> IO (Bool, [ContextFlag])
 #if CUDA_VERSION < 7000
-status _    = requireSDK 'staus 7.0
+status _    = requireSDK 'status 7.0
 #else
 status !dev =
   cuDevicePrimaryCtxGetState dev >>= \(rv, !flags, !active) ->
