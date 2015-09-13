@@ -20,11 +20,10 @@ module Foreign.CUDA.Driver.Context.Base (
 
   -- * Context Management
   Context(..), ContextFlag(..),
-  create, attach, detach, destroy, device, pop, push, sync, get, set,
+  create, destroy, device, pop, push, sync, get, set,
 
-  -- * Peer Access
-  PeerFlag,
-  accessible, add, remove,
+  -- Deprecated
+  attach, detach,
 
   -- * Cache Configuration
   Cache(..), Limit(..),
@@ -86,19 +85,9 @@ data Cache
     with prefix="CU_FUNC_CACHE" deriving (Eq, Show) #}
 #endif
 
--- |
--- Possible option values for direct peer memory access
---
-data PeerFlag
-instance Enum PeerFlag where
-#ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
-  fromEnum x = case x of {}
-#endif
-
 
 #if CUDA_VERSION >= 4000
-{-# DEPRECATED attach, detach "deprecated as of CUDA-4.0" #-}
+{-# DEPRECATED attach, detach "as of CUDA-4.0" #-}
 {-# DEPRECATED BlockingSync "use SchedBlockingSync instead" #-}
 #endif
 
@@ -108,7 +97,13 @@ instance Enum PeerFlag where
 --------------------------------------------------------------------------------
 
 -- |
--- Create a new CUDA context and associate it with the calling thread
+-- Create a new CUDA context and associate it with the calling thread. The
+-- context is created with a usage count of one, and the caller of 'create'
+-- must call 'destroy' when done using the context. If a context is already
+-- current to the thread, it is supplanted by the newly created context and
+-- must be restored by a subsequent call to 'pop'.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g65dc0012348bc84810e2103a40d8e2cf>
 --
 {-# INLINEABLE create #-}
 create :: Device -> [ContextFlag] -> IO Context
@@ -150,8 +145,13 @@ detach !ctx = nothingIfOk =<< cuCtxDetach ctx
 
 
 -- |
--- Destroy the specified context. This fails if the context is more than a
--- single attachment (including that from initial creation).
+-- Destroy the specified context, regardless of how many threads it is
+-- current to. The context will be 'pop'ed from the current thread's
+-- context stack, but if it is current on any other threads it will remain
+-- current to those threads, and attempts to access it will result in an
+-- error.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g27a365aebb0eb548166309f58a1e8b8e>
 --
 {-# INLINEABLE destroy #-}
 destroy :: Context -> IO ()
@@ -163,10 +163,14 @@ destroy !ctx = nothingIfOk =<< cuCtxDestroy ctx
 
 
 -- |
--- Return the context bound to the calling CPU thread. Requires cuda-4.0.
+-- Return the context bound to the calling CPU thread.
+--
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g8f13165846b73750693640fb3e8380d0>
 --
 {-# INLINEABLE get #-}
-get :: IO Context
+get :: IO (Maybe Context)
 #if CUDA_VERSION < 4000
 get = requireSDK 'get 4.0
 #else
@@ -174,13 +178,17 @@ get = resultIfOk =<< cuCtxGetCurrent
 
 {-# INLINE cuCtxGetCurrent #-}
 {# fun unsafe cuCtxGetCurrent
-  { alloca- `Context' peekCtx* } -> `Status' cToEnum #}
-  where peekCtx = liftM Context . peek
+  { alloca- `Maybe Context' peekCtx* } -> `Status' cToEnum #}
+  where peekCtx = liftM (nothingIfNull Context) . peek
 #endif
 
 
 -- |
--- Bind the specified context to the calling thread. Requires cuda-4.0.
+-- Bind the specified context to the calling thread.
+--
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1gbe562ee6258b4fcc272ca6478ca2a2f7>
 --
 {-# INLINEABLE set #-}
 set :: Context -> IO ()
@@ -197,6 +205,8 @@ set !ctx = nothingIfOk =<< cuCtxSetCurrent ctx
 -- |
 -- Return the device of the currently active context
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g4e84b109eba36cdaaade167f34ae881e>
+--
 {-# INLINEABLE device #-}
 device :: IO Device
 device = resultIfOk =<< cuCtxGetDevice
@@ -208,9 +218,10 @@ device = resultIfOk =<< cuCtxGetDevice
 
 
 -- |
--- Pop the current CUDA context from the CPU thread. The context must have a
--- single usage count (matching calls to 'attach' and 'detach'). If successful,
--- the new context is returned, and the old may be attached to a different CPU.
+-- Pop the current CUDA context from the CPU thread. The context may then
+-- be attached to a different CPU thread by calling 'push'.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g2fac188026a062d92e91a8687d0a7902>
 --
 {-# INLINEABLE pop #-}
 pop :: IO Context
@@ -223,8 +234,11 @@ pop = resultIfOk =<< cuCtxPopCurrent
 
 
 -- |
--- Push the given context onto the CPU's thread stack of current contexts. The
--- context must be floating (via 'pop'), i.e. not attached to any thread.
+-- Push the given context onto the CPU's thread stack of current contexts.
+-- The specified context becomes the CPU thread's current context, so all
+-- operations that operate on the current context are affected.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1gb02d4c850eb16f861fe5a29682cc90ba>
 --
 {-# INLINEABLE push #-}
 push :: Context -> IO ()
@@ -236,7 +250,11 @@ push !ctx = nothingIfOk =<< cuCtxPushCurrent ctx
 
 
 -- |
--- Block until the device has completed all preceding requests
+-- Block until the device has completed all preceding requests. If the
+-- context was created with the 'SchedBlockingSync' flag, the CPU thread
+-- will block until the GPU has finished its work.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g7a54725f28d34b8c6299f0c6ca579616>
 --
 {-# INLINEABLE sync #-}
 sync :: IO ()
