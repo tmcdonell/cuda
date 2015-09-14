@@ -70,6 +70,8 @@ Library
                         Foreign.CUDA.Driver.Exec
                         Foreign.CUDA.Driver.Marshal
                         Foreign.CUDA.Driver.Module
+                        Foreign.CUDA.Driver.Module.Base
+                        Foreign.CUDA.Driver.Module.Query
                         Foreign.CUDA.Driver.Stream
                         Foreign.CUDA.Driver.Texture
                         Foreign.CUDA.Driver.Utils

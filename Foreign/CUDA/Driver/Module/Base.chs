@@ -2,27 +2,28 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 --------------------------------------------------------------------------------
 -- |
--- Module    : Foreign.CUDA.Driver.Module
+-- Module    : Foreign.CUDA.Driver.Module.Base
 -- Copyright : [2009..2014] Trevor L. McDonell
 -- License   : BSD
 --
--- Module management for low-level driver interface
+-- Module loading for low-level driver interface
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Module (
+module Foreign.CUDA.Driver.Module.Base (
 
   -- * Module Management
-  Module, JITOption(..), JITTarget(..), JITResult(..), JITFallback(..),
-
-  -- ** Querying module inhabitants
-  getFun, getPtr, getTex,
+  Module(..),
+  JITOption(..), JITTarget(..), JITResult(..), JITFallback(..),
 
   -- ** Loading and unloading modules
   loadFile,
   loadData,   loadDataFromPtr,
   loadDataEx, loadDataFromPtrEx,
-  unload
+  unload,
+
+  -- Internal
+  jitOptionUnpack, jitTargetOfCompute,
 
 ) where
 
@@ -31,11 +32,7 @@ module Foreign.CUDA.Driver.Module (
 
 -- Friends
 import Foreign.CUDA.Analysis.Device
-import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Exec
-import Foreign.CUDA.Driver.Marshal                      ( peekDeviceHandle )
-import Foreign.CUDA.Driver.Texture
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -44,15 +41,10 @@ import Foreign.C
 import Unsafe.Coerce
 
 import Control.Monad                                    ( liftM )
-import Control.Exception                                ( throwIO )
-import Data.Maybe                                       ( mapMaybe )
 import Data.ByteString.Char8                            ( ByteString )
 import qualified Data.ByteString.Char8                  as B
 import qualified Data.ByteString.Internal               as B
 
-#if CUDA_VERSION < 5050
-import Debug.Trace                                      ( trace )
-#endif
 
 --------------------------------------------------------------------------------
 -- Data Types
@@ -63,7 +55,6 @@ import Debug.Trace                                      ( trace )
 --
 newtype Module = Module { useModule :: {# type CUmodule #}}
   deriving (Eq, Show)
-
 
 -- |
 -- Just-in-time compilation options
@@ -105,59 +96,16 @@ data JITResult = JITResult
     with prefix="CU_PREFER" deriving (Eq, Show) #}
 
 
+
 --------------------------------------------------------------------------------
 -- Module management
 --------------------------------------------------------------------------------
 
 -- |
--- Returns a function handle
---
-{-# INLINEABLE getFun #-}
-getFun :: Module -> String -> IO Fun
-getFun !mdl !fn = resultIfFound "function" fn =<< cuModuleGetFunction mdl fn
-
-{-# INLINE cuModuleGetFunction #-}
-{# fun unsafe cuModuleGetFunction
-  { alloca-      `Fun'    peekFun*
-  , useModule    `Module'
-  , withCString* `String'          } -> `Status' cToEnum #}
-  where peekFun = liftM Fun . peek
-
-
--- |
--- Return a global pointer, and size of the global (in bytes)
---
-{-# INLINEABLE getPtr #-}
-getPtr :: Module -> String -> IO (DevicePtr a, Int)
-getPtr !mdl !name = do
-  (!status,!dptr,!bytes) <- cuModuleGetGlobal mdl name
-  resultIfFound "global" name (status,(dptr,bytes))
-
-{-# INLINE cuModuleGetGlobal #-}
-{# fun unsafe cuModuleGetGlobal
-  { alloca-      `DevicePtr a' peekDeviceHandle*
-  , alloca-      `Int'         peekIntConv*
-  , useModule    `Module'
-  , withCString* `String'                        } -> `Status' cToEnum #}
-
-
--- |
--- Return a handle to a texture reference
---
-{-# INLINEABLE getTex #-}
-getTex :: Module -> String -> IO Texture
-getTex !mdl !name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
-
-{-# INLINE cuModuleGetTexRef #-}
-{# fun unsafe cuModuleGetTexRef
-  { alloca-      `Texture' peekTex*
-  , useModule    `Module'
-  , withCString* `String'           } -> `Status' cToEnum #}
-
-
--- |
 -- Load the contents of the specified file (either a ptx or cubin file) to
 -- create a new module, and load that module into the current context.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MODULE.html#group__CUDA__MODULE_1g366093bd269dafd0af21f1c7d18115d3>
 --
 {-# INLINEABLE loadFile #-}
 loadFile :: FilePath -> IO Module
@@ -176,6 +124,8 @@ loadFile !ptx = resultIfOk =<< cuModuleLoad ptx
 --
 -- Note that the 'ByteString' will be copied into a temporary staging area so
 -- that it can be passed to C.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MODULE.html#group__CUDA__MODULE_1g04ce266ce03720f479eab76136b90c0b>
 --
 {-# INLINEABLE loadData #-}
 loadData :: ByteString -> IO Module
@@ -205,6 +155,8 @@ loadDataFromPtr !img = resultIfOk =<< cuModuleLoadData img
 -- Note that the 'ByteString' will be copied into a temporary staging area so
 -- that it can be passed to C.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MODULE.html#group__CUDA__MODULE_1g9e8047e9dbf725f0cd7cafd18bfd4d12>
+--
 {-# INLINEABLE loadDataEx #-}
 loadDataEx :: ByteString -> [JITOption] -> IO JITResult
 loadDataEx !img !options =
@@ -217,6 +169,8 @@ loadDataEx !img !options =
 {-# INLINEABLE loadDataFromPtrEx #-}
 loadDataFromPtrEx :: Ptr Word8 -> [JITOption] -> IO JITResult
 loadDataFromPtrEx !img !options = do
+  let logSize = 2048
+
   fp_ilog <- B.mallocByteString logSize
 
   allocaArray logSize    $ \p_elog -> do
@@ -227,7 +181,10 @@ loadDataFromPtrEx !img !options = do
         , (JIT_INFO_LOG_BUFFER_SIZE_BYTES,  logSize)
         , (JIT_ERROR_LOG_BUFFER_SIZE_BYTES, logSize)
         , (JIT_INFO_LOG_BUFFER,  unsafeCoerce (p_ilog :: CString))
-        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString)) ] ++ mapMaybe unpack options
+        , (JIT_ERROR_LOG_BUFFER, unsafeCoerce (p_elog :: CString))
+        ]
+        ++
+        map jitOptionUnpack options
 
   withArray (map cFromEnum opt)    $ \p_opts -> do
   withArray (map unsafeCoerce val) $ \p_vals -> do
@@ -244,35 +201,6 @@ loadDataFromPtrEx !img !options = do
       errLog  <- peekCString p_elog
       cudaError (unlines [describe s, errLog])
 
-  where
-    logSize = 2048
-
-    unpack (MaxRegisters x)      = Just (JIT_MAX_REGISTERS,       x)
-    unpack (ThreadsPerBlock x)   = Just (JIT_THREADS_PER_BLOCK,   x)
-    unpack (OptimisationLevel x) = Just (JIT_OPTIMIZATION_LEVEL,  x)
-    unpack (Target x)            = Just (JIT_TARGET,              jitTargetOfCompute x)
-    unpack (FallbackStrategy x)  = Just (JIT_FALLBACK_STRATEGY,   fromEnum x)
-#if CUDA_VERSION >= 5050
-    unpack GenerateDebugInfo     = Just (JIT_GENERATE_DEBUG_INFO, fromEnum True)
-    unpack GenerateLineInfo      = Just (JIT_GENERATE_LINE_INFO,  fromEnum True)
-    unpack Verbose               = Just (JIT_LOG_VERBOSE,         fromEnum True)
-#else
-    unpack x                     = trace ("Warning: JITOption '" ++ show x ++ "' requires at least cuda-5.5") Nothing
-#endif
-
-    jitTargetOfCompute (Compute x y)
-      = fromEnum
-      $ case (x,y) of
-          (1,0) -> Compute10
-          (1,1) -> Compute11
-          (1,2) -> Compute12
-          (1,3) -> Compute13
-          (2,0) -> Compute20
-          (2,1) -> Compute21
-          (3,0) -> Compute30
-          (3,5) -> Compute35
-          _     -> error ("Unknown JIT Target for Compute " ++ show (Compute x y))
-
 
 {-# INLINE cuModuleLoadDataEx #-}
 {# fun unsafe cuModuleLoadDataEx
@@ -284,7 +212,9 @@ loadDataFromPtrEx !img !options = do
 
 
 -- |
--- Unload a module from the current context
+-- Unload a module from the current context.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MODULE.html#group__CUDA__MODULE_1g8ea3d716524369de3763104ced4ea57b>
 --
 {-# INLINEABLE unload #-}
 unload :: Module -> IO ()
@@ -299,17 +229,51 @@ unload !m = nothingIfOk =<< cuModuleUnload m
 -- Internal
 --------------------------------------------------------------------------------
 
-{-# INLINE resultIfFound #-}
-resultIfFound :: String -> String -> (Status, a) -> IO a
-resultIfFound kind name (!status,!result) =
-  case status of
-       Success  -> return result
-       NotFound -> cudaError (kind ++ ' ' : describe status ++ ": " ++ name)
-       _        -> throwIO (ExitCode status)
-
 {-# INLINE peekMod #-}
 peekMod :: Ptr {# type CUmodule #} -> IO Module
 peekMod = liftM Module . peek
+
+
+{-# INLINE jitOptionUnpack #-}
+jitOptionUnpack :: JITOption -> (JITOptionInternal, Int)
+jitOptionUnpack (MaxRegisters x)      = (JIT_MAX_REGISTERS,       x)
+jitOptionUnpack (ThreadsPerBlock x)   = (JIT_THREADS_PER_BLOCK,   x)
+jitOptionUnpack (OptimisationLevel x) = (JIT_OPTIMIZATION_LEVEL,  x)
+jitOptionUnpack (Target x)            = (JIT_TARGET,              fromEnum (jitTargetOfCompute x))
+jitOptionUnpack (FallbackStrategy x)  = (JIT_FALLBACK_STRATEGY,   fromEnum x)
+#if CUDA_VERSION >= 5050
+jitOptionUnpack GenerateDebugInfo     = (JIT_GENERATE_DEBUG_INFO, fromEnum True)
+jitOptionUnpack GenerateLineInfo      = (JIT_GENERATE_LINE_INFO,  fromEnum True)
+jitOptionUnpack Verbose               = (JIT_LOG_VERBOSE,         fromEnum True)
+#else
+jitOptionUnpack GenerateDebugInfo     = requireSDK 'GenerateDebugInfo 5.5
+jitOptionUnpack GenerateLineInfo      = requireSDK 'GenerateLineInfo 5.5
+jitOptionUnpack Verbose               = requireSDK 'Verbose 5.5
+#endif
+
+
+{-# INLINE jitTargetOfCompute #-}
+jitTargetOfCompute :: Compute -> JITTarget
+jitTargetOfCompute (Compute 1 0) = Compute10
+jitTargetOfCompute (Compute 1 1) = Compute11
+jitTargetOfCompute (Compute 1 2) = Compute12
+jitTargetOfCompute (Compute 1 3) = Compute13
+jitTargetOfCompute (Compute 2 0) = Compute20
+jitTargetOfCompute (Compute 2 1) = Compute21
+jitTargetOfCompute (Compute 3 0) = Compute30
+jitTargetOfCompute (Compute 3 5) = Compute35
+#if CUDA_VERSION >= 6000
+jitTargetOfCompute (Compute 3 2) = Compute32
+jitTargetOfCompute (Compute 5 0) = Compute50
+#endif
+#if CUDA_VERSION >= 6050
+jitTargetOfCompute (Compute 3 7) = Compute37
+#endif
+#if CUDA_VERSION >= 7000
+jitTargetOfCompute (Compute 5 2) = Compute52
+#endif
+jitTargetOfCompute compute       = error ("Unknown JIT Target for Compute " ++ show compute)
+
 
 {-# INLINE c_strnlen' #-}
 #if defined(WIN32)
@@ -317,9 +281,10 @@ c_strnlen' :: CString -> CSize -> IO CSize
 c_strnlen' str size = do
   str' <- peekCStringLen (str, fromIntegral size)
   return $ stringLen 0 str'
-  where stringLen acc []        = acc
-        stringLen acc ('\0':xs) = acc
-        stringLen acc (_:xs)    = stringLen (acc+1) xs
+  where
+    stringLen acc []       = acc
+    stringLen acc ('\0':_) = acc
+    stringLen acc (_:xs)   = stringLen (acc+1) xs
 #else
 foreign import ccall unsafe "string.h strnlen" c_strnlen'
   :: CString -> CSize -> IO CSize
