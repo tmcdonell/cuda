@@ -266,10 +266,11 @@ launchKernel !fn !grid !block !sm !mst !args = do
 
 -- CUDA 5.0 changed the type of a kernel function from char* to void*
 --
-withFun :: Fun -> (Ptr a -> IO b) -> IO b
 #if CUDART_VERSION >= 5000
+withFun :: Fun -> (Ptr a -> IO b) -> IO b
 withFun fn action = action (castFunPtrToPtr fn)
 #else
+withFun :: Fun -> (Ptr CChar -> IO a) -> IO a
 withFun           = withCString
 #endif
 
