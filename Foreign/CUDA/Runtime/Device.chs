@@ -123,58 +123,77 @@ instance Storable DeviceProperties where
     tc <- cToBool      `fmap` {#get cudaDeviceProp.tccDriver#} p
     ua <- cToBool      `fmap` {#get cudaDeviceProp.unifiedAddressing#} p
 #endif
-
     [t1,t2,t3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxThreadsDim#} p
     [g1,g2,g3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxGridSize#} p
 #if CUDART_VERSION >= 3000
     [u21,u22]     <- peekArrayWith cIntConv 2 =<< {#get cudaDeviceProp.maxTexture2D#} p
     [u31,u32,u33] <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxTexture3D#} p
 #endif
+#if CUDART_VERSION >= 5050
+    sp  <- cToBool     `fmap` {#get cudaDeviceProp.streamPrioritiesSupported#} p
+#endif
+#if CUDART_VERSION >= 6000
+    gl1 <- cToBool     `fmap` {#get cudaDeviceProp.globalL1CacheSupported#} p
+    ll1 <- cToBool     `fmap` {#get cudaDeviceProp.localL1CacheSupported#} p
+    mm  <- cToBool     `fmap` {#get cudaDeviceProp.managedMemory#} p
+    mg  <- cToBool     `fmap` {#get cudaDeviceProp.isMultiGpuBoard#} p
+    mid <- cIntConv    `fmap` {#get cudaDeviceProp.multiGpuBoardGroupID#} p
+#endif
 
     return DeviceProperties
       {
-        deviceName                      = n,
-        computeCapability               = Compute v1 v2,
-        totalGlobalMem                  = gm,
-        totalConstMem                   = cm,
-        sharedMemPerBlock               = sm,
-        regsPerBlock                    = rb,
-        warpSize                        = ws,
-        maxThreadsPerBlock              = tb,
-        maxBlockSize                    = (t1,t2,t3),
-        maxGridSize                     = (g1,g2,g3),
-        clockRate                       = cl,
-        multiProcessorCount             = pc,
-        memPitch                        = mp,
-        textureAlignment                = ta,
-        computeMode                     = md,
-        deviceOverlap                   = ov,
+        deviceName                      = n
+      , computeCapability               = Compute v1 v2
+      , totalGlobalMem                  = gm
+      , totalConstMem                   = cm
+      , sharedMemPerBlock               = sm
+      , regsPerBlock                    = rb
+      , warpSize                        = ws
+      , maxThreadsPerBlock              = tb
+      , maxBlockSize                    = (t1,t2,t3)
+      , maxGridSize                     = (g1,g2,g3)
+      , clockRate                       = cl
+      , multiProcessorCount             = pc
+      , memPitch                        = mp
+      , textureAlignment                = ta
+      , computeMode                     = md
+      , deviceOverlap                   = ov
+      , kernelExecTimeoutEnabled        = ke
+      , integrated                      = tg
+      , canMapHostMemory                = hm
 #if CUDART_VERSION >= 3000
-        concurrentKernels               = ck,
-        maxTextureDim1D                 = u1,
-        maxTextureDim2D                 = (u21,u22),
-        maxTextureDim3D                 = (u31,u32,u33),
+      , concurrentKernels               = ck
+      , maxTextureDim1D                 = u1
+      , maxTextureDim2D                 = (u21,u22)
+      , maxTextureDim3D                 = (u31,u32,u33)
 #endif
 #if CUDART_VERSION >= 3010
-        eccEnabled                      = ee,
+      , eccEnabled                      = ee
 #endif
 #if CUDART_VERSION >= 3000 && CUDART_VERSION < 3010
-        -- not visible from runtime API < 3.1
-        eccEnabled                      = False,
+        -- not visible from CUDA runtime API 3.0
+      , eccEnabled                      = False
 #endif
 #if CUDART_VERSION >= 4000
-        asyncEngineCount                = ae,
-        cacheMemL2                      = l2,
-        maxThreadsPerMultiProcessor     = tm,
-        memBusWidth                     = mw,
-        memClockRate                    = mc,
-        tccDriverEnabled                = tc,
-        unifiedAddressing               = ua,
-        pciInfo                         = PCI pb pd pm,
+      , asyncEngineCount                = ae
+      , cacheMemL2                      = l2
+      , maxThreadsPerMultiProcessor     = tm
+      , memBusWidth                     = mw
+      , memClockRate                    = mc
+      , tccDriverEnabled                = tc
+      , unifiedAddressing               = ua
+      , pciInfo                         = PCI pb pd pm
 #endif
-        kernelExecTimeoutEnabled        = ke,
-        integrated                      = tg,
-        canMapHostMemory                = hm
+#if CUDA_VERSION >= 5050
+      , streamPriorities                = sp
+#endif
+#if CUDA_VERSION >= 6000
+      , globalL1Cache                   = gl1
+      , localL1Cache                    = ll1
+      , managedMemory                   = mm
+      , multiGPUBoard                   = mg
+      , multiGPUBoardGroupID            = mid
+#endif
       }
 
 

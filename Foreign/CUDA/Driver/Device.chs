@@ -311,45 +311,65 @@ props !d = do
   ua  <- toBool `fmap` attribute d UnifiedAddressing
   tcc <- toBool `fmap` attribute d TccDriver
 #endif
+#if CUDA_VERSION >= 5050
+  sp  <- toBool `fmap` attribute d StreamPrioritiesSupported
+#endif
+#if CUDA_VERSION >= 6000
+  gl1 <- toBool `fmap` attribute d GlobalL1CacheSupported
+  ll1 <- toBool `fmap` attribute d LocalL1CacheSupported
+  mm  <- toBool `fmap` attribute d ManagedMemory
+  mg  <- toBool `fmap` attribute d MultiGpuBoard
+  mid <- attribute d MultiGpuBoardGroupId
+#endif
 
   return DeviceProperties
     {
-      deviceName                        = n,
-      computeCapability                 = cc,
-      totalGlobalMem                    = gm,
-      totalConstMem                     = cm,
-      sharedMemPerBlock                 = sm,
-      regsPerBlock                      = rb,
-      warpSize                          = ws,
-      maxThreadsPerBlock                = tb,
-      maxBlockSize                      = bs,
-      maxGridSize                       = gs,
-      clockRate                         = cl,
-      multiProcessorCount               = pc,
-      memPitch                          = mp,
-      textureAlignment                  = ta,
-      computeMode                       = md,
-      deviceOverlap                     = ov,
+      deviceName                        = n
+    , computeCapability                 = cc
+    , totalGlobalMem                    = gm
+    , totalConstMem                     = cm
+    , sharedMemPerBlock                 = sm
+    , regsPerBlock                      = rb
+    , warpSize                          = ws
+    , maxThreadsPerBlock                = tb
+    , maxBlockSize                      = bs
+    , maxGridSize                       = gs
+    , clockRate                         = cl
+    , multiProcessorCount               = pc
+    , memPitch                          = mp
+    , textureAlignment                  = ta
+    , computeMode                       = md
+    , deviceOverlap                     = ov
+    , kernelExecTimeoutEnabled          = ke
+    , integrated                        = tg
+    , canMapHostMemory                  = hm
 #if CUDA_VERSION >= 3000
-      concurrentKernels                 = ck,
-      eccEnabled                        = ee,
-      maxTextureDim1D                   = u1,
-      maxTextureDim2D                   = (u21,u22),
-      maxTextureDim3D                   = (u31,u32,u33),
+    , concurrentKernels                 = ck
+    , eccEnabled                        = ee
+    , maxTextureDim1D                   = u1
+    , maxTextureDim2D                   = (u21,u22)
+    , maxTextureDim3D                   = (u31,u32,u33)
 #endif
 #if CUDA_VERSION >= 4000
-      asyncEngineCount                  = ae,
-      cacheMemL2                        = l2,
-      maxThreadsPerMultiProcessor       = tm,
-      memBusWidth                       = mw,
-      memClockRate                      = mc,
-      pciInfo                           = PCI pb pd pm,
-      tccDriverEnabled                  = tcc,
-      unifiedAddressing                 = ua,
+    , asyncEngineCount                  = ae
+    , cacheMemL2                        = l2
+    , maxThreadsPerMultiProcessor       = tm
+    , memBusWidth                       = mw
+    , memClockRate                      = mc
+    , pciInfo                           = PCI pb pd pm
+    , tccDriverEnabled                  = tcc
+    , unifiedAddressing                 = ua
 #endif
-      kernelExecTimeoutEnabled          = ke,
-      integrated                        = tg,
-      canMapHostMemory                  = hm
+#if CUDA_VERSION >= 5050
+    , streamPriorities                  = sp
+#endif
+#if CUDA_VERSION >= 6000
+    , globalL1Cache                     = gl1
+    , localL1Cache                      = ll1
+    , managedMemory                     = mm
+    , multiGPUBoard                     = mg
+    , multiGPUBoardGroupID              = mid
+#endif
     }
 
 #if CUDA_VERSION < 5000
