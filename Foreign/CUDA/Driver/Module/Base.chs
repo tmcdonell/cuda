@@ -186,10 +186,10 @@ loadDataFromPtrEx !img !options = do
         ++
         map jitOptionUnpack options
 
-  withArray (map cFromEnum opt)    $ \p_opts -> do
-  withArray (map unsafeCoerce val) $ \p_vals -> do
+  withArrayLen (map cFromEnum opt)    $ \i p_opts -> do
+  withArray    (map unsafeCoerce val) $ \  p_vals -> do
 
-  (s,mdl) <- cuModuleLoadDataEx img (length opt) p_opts p_vals
+  (s,mdl) <- cuModuleLoadDataEx img i p_opts p_vals
 
   case s of
     Success     -> do
