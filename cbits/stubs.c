@@ -382,5 +382,20 @@ CUresult CUDAAPI cuMemHostRegister(void *p, size_t bytesize, unsigned int Flags)
 {
     return cuMemHostRegister_v2(p, bytesize, Flags);
 }
+
+CUresult CUDAAPI cuLinkCreate(unsigned int numOptions, CUjit_option *options, void **optionValues, CUlinkState *stateOut)
+{
+    return cuLinkCreate_v2(numOptions, options, optionValues, stateOut);
+}
+
+CUresult CUDAAPI cuLinkAddData(CUlinkState state, CUjitInputType type, void *data, size_t size, const char *name, unsigned int numOptions, CUjit_option *options, void **optionValues)
+{
+    return cuLinkAddData_v2(state, type, data, size, name, numOptions, options, optionValues);
+}
+
+CUresult CUDAAPI cuLinkAddFile(CUlinkState state, CUjitInputType type, const char *path, unsigned int numOptions, CUjit_option *options, void **optionValues)
+{
+    return cuLinkAddFile_v2(state, type, path, numOptions, options, optionValues);
+}
 #endif
 

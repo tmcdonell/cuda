@@ -11,7 +11,7 @@
 #define CUDARTAPI __stdcall
 #endif
 
-// #define __cdecl 
+// #define __cdecl
 
 /*
  * We need to work around some shortcomings in the C parser of c2hs by disabling advanced attributes etc on Apple platforms.
@@ -221,8 +221,14 @@ CUresult CUDAAPI cuEventDestroy(CUevent hEvent);
 
 #if CUDA_VERSION >= 6050
 #undef cuMemHostRegister
+#undef cuLinkCreate
+#undef cuLinkAddData
+#undef cuLinkAddFile
 
 CUresult CUDAAPI cuMemHostRegister(void *p, size_t bytesize, unsigned int Flags);
+CUresult CUDAAPI cuLinkCreate(unsigned int numOptions, CUjit_option *options, void **optionValues, CUlinkState *stateOut);
+CUresult CUDAAPI cuLinkAddData(CUlinkState state, CUjitInputType type, void *data, size_t size, const char *name, unsigned int numOptions, CUjit_option *options, void **optionValues);
+CUresult CUDAAPI cuLinkAddFile(CUlinkState state, CUjitInputType type, const char *path, unsigned int numOptions, CUjit_option *options, void **optionValues);
 #endif
 
 #ifdef __cplusplus

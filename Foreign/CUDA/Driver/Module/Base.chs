@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Module.Base
@@ -14,7 +15,8 @@ module Foreign.CUDA.Driver.Module.Base (
 
   -- * Module Management
   Module(..),
-  JITOption(..), JITTarget(..), JITResult(..), JITFallback(..),
+  JITOption(..), JITTarget(..), JITResult(..), JITFallback(..), JITInputType(..),
+  JITOptionInternal(..),
 
   -- ** Loading and unloading modules
   loadFile,
@@ -57,7 +59,7 @@ newtype Module = Module { useModule :: {# type CUmodule #}}
   deriving (Eq, Show)
 
 -- |
--- Just-in-time compilation options
+-- Just-in-time compilation and linking options
 --
 data JITOption
   = MaxRegisters       !Int             -- ^ maximum number of registers per thread
@@ -77,24 +79,37 @@ data JITResult = JITResult
   {
     jitTime     :: !Float,              -- ^ milliseconds spent compiling PTX
     jitInfoLog  :: !ByteString,         -- ^ information about PTX assembly
-    jitModule   :: !Module              -- ^ compilation error log or compiled module
+    jitModule   :: !Module              -- ^ the compiled module
   }
   deriving (Show)
 
 
-{# enum CUjit_option as JITOptionInternal
-    { }
-    with prefix="CU" deriving (Eq, Show) #}
-
+-- |
+-- Online compilation target architecture
+--
 {# enum CUjit_target as JITTarget
     { underscoreToCase }
     with prefix="CU_TARGET" deriving (Eq, Show) #}
 
+-- |
+-- Online compilation fallback strategy
+--
 {# enum CUjit_fallback as JITFallback
     { underscoreToCase
-    , CU_PREFER_PTX as PTX }
-    with prefix="CU_PREFER" deriving (Eq, Show) #}
+    , CU_PREFER_PTX as PreferPTX }
+    with prefix="CU" deriving (Eq, Show) #}
 
+-- |
+-- Device code formats that can be used for online linking
+--
+{# enum CUjitInputType as JITInputType
+    { underscoreToCase
+    , CU_JIT_INPUT_PTX as PTX }
+    with prefix="CU_JIT_INPUT" deriving (Eq, Show) #}
+
+{# enum CUjit_option as JITOptionInternal
+    { }
+    with prefix="CU" deriving (Eq, Show) #}
 
 
 --------------------------------------------------------------------------------
