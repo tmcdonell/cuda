@@ -15,6 +15,6 @@ module Foreign.CUDA.Driver.Module (
 
 ) where
 
-import Foreign.CUDA.Driver.Module.Base  hiding ( useModule, jitOptionUnpack, jitTargetOfCompute )
+import Foreign.CUDA.Driver.Module.Base  hiding ( JITOptionInternal(..), useModule, jitOptionUnpack, jitTargetOfCompute )
 import Foreign.CUDA.Driver.Module.Query
 

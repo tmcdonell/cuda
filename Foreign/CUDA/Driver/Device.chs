@@ -18,7 +18,7 @@
 module Foreign.CUDA.Driver.Device (
 
   -- * Device Management
-  Device(..), -- should be exported abstractly
+  Device(..),
   DeviceProperties(..), DeviceAttribute(..), Compute(..), ComputeMode(..), InitFlag,
   initialise, capability, device, attribute, count, name, props, totalMem
 

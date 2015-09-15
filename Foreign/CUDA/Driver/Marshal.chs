@@ -53,7 +53,7 @@ module Foreign.CUDA.Driver.Marshal (
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
-import Foreign.CUDA.Driver.Context                      ( Context(..) )
+import Foreign.CUDA.Driver.Context.Base                 ( Context(..) )
 import Foreign.CUDA.Internal.C2HS
 
 -- System

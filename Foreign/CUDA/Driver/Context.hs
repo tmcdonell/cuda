@@ -17,7 +17,7 @@ module Foreign.CUDA.Driver.Context (
 
 ) where
 
-import Foreign.CUDA.Driver.Context.Base
+import Foreign.CUDA.Driver.Context.Base   hiding ( useContext )
 import Foreign.CUDA.Driver.Context.Config
 import Foreign.CUDA.Driver.Context.Peer
 
