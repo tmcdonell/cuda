@@ -21,7 +21,7 @@ module Foreign.CUDA.Driver.IPC.Marshal (
 
   -- ** IPC memory management
   IPCDevicePtr, IPCFlag(..),
-  create, open, close,
+  export, open, close,
 
 ) where
 
@@ -76,12 +76,12 @@ newtype IPCDevicePtr a = IPCDevicePtr { useIPCDevicePtr :: IPCMemHandle }
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g6f1b5be767b275f016523b2ac49ebec1>
 --
-{-# INLINEABLE create #-}
-create :: DevicePtr a -> IO (IPCDevicePtr a)
+{-# INLINEABLE export #-}
+export :: DevicePtr a -> IO (IPCDevicePtr a)
 #if CUDA_VERSION < 4000
-create _     = requireSDK 'create 4.0
+export _     = requireSDK 'create 4.0
 #else
-create !dptr = do
+export !dptr = do
   h <- newIPCMemHandle
   r <- cuIpcGetMemHandle h dptr
   resultIfOk (r, IPCDevicePtr h)
