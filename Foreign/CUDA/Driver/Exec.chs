@@ -17,9 +17,14 @@
 module Foreign.CUDA.Driver.Exec (
 
   -- * Kernel Execution
-  Fun(Fun), FunParam(..), FunAttribute(..),
-  requires, setBlockShape, setSharedSize, setParams, setCacheConfigFun,
-  launch, launchKernel, launchKernel'
+  Fun(Fun), FunParam(..), FunAttribute(..), SharedMem(..),
+  requires,
+  setCacheConfigFun,
+  setSharedMemConfigFun,
+  launchKernel, launchKernel',
+
+  -- Deprecated since CUDA-4.0
+  setBlockShape, setSharedSize, setParams, launch,
 
 ) where
 
@@ -29,7 +34,7 @@ module Foreign.CUDA.Driver.Exec (
 -- Friends
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Context                      ( Cache(..) )
+import Foreign.CUDA.Driver.Context                      ( Cache(..), SharedMem(..) )
 import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
 
 -- System
@@ -93,7 +98,9 @@ instance Storable FunParam where
 --------------------------------------------------------------------------------
 
 -- |
--- Returns the value of the selected attribute requirement for the given kernel
+-- Returns the value of the selected attribute requirement for the given kernel.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html#group__CUDA__EXEC_1g5e92a1b0d8d1b82cb00dcfb2de15961b>
 --
 {-# INLINEABLE requires #-}
 requires :: Fun -> FunAttribute -> IO Int
@@ -107,36 +114,6 @@ requires !fn !att = resultIfOk =<< cuFuncGetAttribute att fn
 
 
 -- |
--- Specify the @(x,y,z)@ dimensions of the thread blocks that are created when
--- the given kernel function is launched.
---
-{-# INLINEABLE setBlockShape #-}
-setBlockShape :: Fun -> (Int,Int,Int) -> IO ()
-setBlockShape !fn (!x,!y,!z) = nothingIfOk =<< cuFuncSetBlockShape fn x y z
-
-{-# INLINE cuFuncSetBlockShape #-}
-{# fun unsafe cuFuncSetBlockShape
-  { useFun `Fun'
-  ,        `Int'
-  ,        `Int'
-  ,        `Int' } -> `Status' cToEnum #}
-
-
--- |
--- Set the number of bytes of dynamic shared memory to be available to each
--- thread block when the function is launched
---
-{-# INLINEABLE setSharedSize #-}
-setSharedSize :: Fun -> Integer -> IO ()
-setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
-
-{-# INLINE cuFuncSetSharedSize #-}
-{# fun unsafe cuFuncSetSharedSize
-  { useFun   `Fun'
-  , cIntConv `Integer' } -> `Status' cToEnum #}
-
-
--- |
 -- On devices where the L1 cache and shared memory use the same hardware
 -- resources, this sets the preferred cache configuration for the given device
 -- function. This is only a preference; the driver is free to choose a different
@@ -144,6 +121,10 @@ setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 --
 -- Switching between configuration modes may insert a device-side
 -- synchronisation point for streamed kernel launches.
+--
+-- Requires CUDA-3.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html#group__CUDA__EXEC_1g40f8c11e81def95dc0072a375f965681>
 --
 {-# INLINEABLE setCacheConfigFun #-}
 setCacheConfigFun :: Fun -> Cache -> IO ()
@@ -158,22 +139,49 @@ setCacheConfigFun !fn !pref = nothingIfOk =<< cuFuncSetCacheConfig fn pref
   , cFromEnum `Cache' } -> `Status' cToEnum #}
 #endif
 
--- |
--- Invoke the kernel on a size @(w,h)@ grid of blocks. Each block contains the
--- number of threads specified by a previous call to 'setBlockShape'. The launch
--- may also be associated with a specific 'Stream'.
---
-{-# INLINEABLE launch #-}
-launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
-launch !fn (!w,!h) mst =
-  nothingIfOk =<< cuLaunchGridAsync fn w h (fromMaybe defaultStream mst)
 
-{-# INLINE cuLaunchGridAsync #-}
-{# fun unsafe cuLaunchGridAsync
+-- |
+-- Set the shared memory configuration of a device function.
+--
+-- On devices with configurable shared memory banks, this will force all
+-- subsequent launches of the given device function to use the specified
+-- shared memory bank size configuration. On launch of the function, the
+-- shared memory configuration of the device will be temporarily changed if
+-- needed to suit the function configuration. Changes in shared memory
+-- configuration may introduction a device side synchronisation between
+-- kernel launches.
+--
+-- Any per-function configuration specified by 'setSharedMemConfig' will
+-- override the context-wide configuration set with
+-- 'Foreign.CUDA.Driver.Context.Config.setSharedMem'.
+--
+-- Changing the shared memory bank size will not increase shared memory
+-- usage or affect occupancy of kernels, but may have major effects on
+-- performance. Larger bank sizes will allow for greater potential
+-- bandwidth to shared memory, but will change what kinds of accesses to
+-- shared memory will result in bank conflicts.
+--
+-- This function will do nothing on devices with fixed shared memory bank
+-- size.
+--
+-- Requires CUDA-5.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html#group__CUDA__EXEC_1g430b913f24970e63869635395df6d9f5>
+--
+{-# INLINEABLE setSharedMemConfigFun #-}
+setSharedMemConfigFun :: Fun -> SharedMem -> IO ()
+#if CUDA_VERSION < 5000
+setSharedMemConfigFun _    _     = requireSDK 'setSharedMemConfigFun 5.0
+#else
+setSharedMemConfigFun !fun !pref = nothingIfOk =<< cuFuncSetSharedMemConfig fun pref
+
+{-# INLINE cuFuncSetSharedMemConfig #-}
+{# fun unsafe cuFuncSetSharedMemConfig
   { useFun    `Fun'
-  ,           `Int'
-  ,           `Int'
-  , useStream `Stream' } -> `Status' cToEnum #}
+  , cFromEnum `SharedMem'
+  }
+  -> `Status' cToEnum #}
+#endif
 
 
 -- |
@@ -189,6 +197,8 @@ launch !fn (!w,!h) mst =
 -- The alternative 'launchKernel'' will pass the arguments in directly,
 -- requiring the application to know the size and alignment/padding of each
 -- kernel parameter.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html#group__CUDA__EXEC_1gb8f3dc3031b40da29d5f9a7139e52e15>
 --
 {-# INLINEABLE launchKernel  #-}
 {-# INLINEABLE launchKernel' #-}
@@ -271,8 +281,56 @@ launchKernel' = launchKernel
 
 
 --------------------------------------------------------------------------------
--- Kernel function parameters
+-- Deprecated
 --------------------------------------------------------------------------------
+
+-- |
+-- Invoke the kernel on a size @(w,h)@ grid of blocks. Each block contains the
+-- number of threads specified by a previous call to 'setBlockShape'. The launch
+-- may also be associated with a specific 'Stream'.
+--
+{-# INLINEABLE launch #-}
+launch :: Fun -> (Int,Int) -> Maybe Stream -> IO ()
+launch !fn (!w,!h) mst =
+  nothingIfOk =<< cuLaunchGridAsync fn w h (fromMaybe defaultStream mst)
+
+{-# INLINE cuLaunchGridAsync #-}
+{# fun unsafe cuLaunchGridAsync
+  { useFun    `Fun'
+  ,           `Int'
+  ,           `Int'
+  , useStream `Stream' } -> `Status' cToEnum #}
+
+
+-- |
+-- Specify the @(x,y,z)@ dimensions of the thread blocks that are created when
+-- the given kernel function is launched.
+--
+{-# INLINEABLE setBlockShape #-}
+setBlockShape :: Fun -> (Int,Int,Int) -> IO ()
+setBlockShape !fn (!x,!y,!z) = nothingIfOk =<< cuFuncSetBlockShape fn x y z
+
+{-# INLINE cuFuncSetBlockShape #-}
+{# fun unsafe cuFuncSetBlockShape
+  { useFun `Fun'
+  ,        `Int'
+  ,        `Int'
+  ,        `Int' } -> `Status' cToEnum #}
+
+
+-- |
+-- Set the number of bytes of dynamic shared memory to be available to each
+-- thread block when the function is launched
+--
+{-# INLINEABLE setSharedSize #-}
+setSharedSize :: Fun -> Integer -> IO ()
+setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
+
+{-# INLINE cuFuncSetSharedSize #-}
+{# fun unsafe cuFuncSetSharedSize
+  { useFun   `Fun'
+  , cIntConv `Integer' } -> `Status' cToEnum #}
+
 
 -- |
 -- Set the parameters that will specified next time the kernel is invoked
@@ -318,4 +376,5 @@ setParams !fn !prs = do
   ,         `Int'
   , castPtr `Ptr a'
   ,         `Int'   } -> `Status' cToEnum #}
+
 
