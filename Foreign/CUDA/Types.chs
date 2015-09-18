@@ -24,7 +24,7 @@ module Foreign.CUDA.Types (
   Event(..), EventFlag(..), WaitFlag,
 
   -- * Streams
-  Stream(..), StreamFlag,
+  Stream(..), StreamPriority, StreamFlag,
   defaultStream,
 
 ) where
@@ -125,6 +125,14 @@ instance Enum WaitFlag where
 --
 newtype Stream = Stream { useStream :: {# type CUstream #}}
   deriving (Eq, Show)
+
+
+-- |
+-- Priority of an execution stream. Work submitted to a higher priority
+-- stream may preempt execution of work already executing in a lower
+-- priority stream. Lower numbers represent higher priorities.
+--
+type StreamPriority = Int
 
 -- |
 -- Possible option flags for stream initialisation. Dummy instance until the API

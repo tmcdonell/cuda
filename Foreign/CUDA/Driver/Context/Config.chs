@@ -33,6 +33,10 @@ module Foreign.CUDA.Driver.Context.Config (
   SharedMem(..),
   getSharedMem, setSharedMem,
 
+  -- ** Streams
+  StreamPriority,
+  getStreamPriorityRange,
+
 ) where
 
 #include "cbits/stubs.h"
@@ -42,6 +46,7 @@ module Foreign.CUDA.Driver.Context.Config (
 import Foreign.CUDA.Driver.Context.Base
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Types
 
 -- System
 import Control.Monad
@@ -258,5 +263,35 @@ setSharedMem !c = nothingIfOk =<< cuCtxSetSharedMemConfig c
 {-# INLINE cuCtxSetSharedMemConfig #-}
 {# fun unsafe cuCtxSetSharedMemConfig
   { cFromEnum `SharedMem' } -> `Status' cToEnum #}
+#endif
+
+
+
+-- |
+-- Returns the numerical values that correspond to the greatest and least
+-- priority execution streams in the current context respectively. Stream
+-- priorities follow the convention that lower numerical numbers correspond
+-- to higher priorities. The range of meaningful stream priorities is given
+-- by the inclusive range [greatestPriority,leastPriority].
+--
+-- Requires CUDA-5.5.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g137920ab61a71be6ce67605b9f294091>
+--
+{-# INLINEABLE getStreamPriorityRange #-}
+getStreamPriorityRange :: IO (StreamPriority, StreamPriority)
+#if CUDA_VERSION < 5050
+getStreamPriorityRange = requireSDK 'getStreamPriorityRange 5.5
+#else
+getStreamPriorityRange = do
+  (r,l,h) <- cuCtxGetStreamPriorityRange
+  resultIfOk (r, (h,l))
+
+{-# INLINE cuCtxGetStreamPriorityRange #-}
+{# fun unsafe cuCtxGetStreamPriorityRange
+  { alloca- `Int' peekIntConv*
+  , alloca- `Int' peekIntConv*
+  }
+  -> `Status' cToEnum #}
 #endif
 
