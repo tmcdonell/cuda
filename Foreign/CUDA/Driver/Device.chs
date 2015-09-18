@@ -56,10 +56,10 @@ newtype Device = Device { useDevice :: {# type CUdevice #}}
     , MAX as CU_DEVICE_ATTRIBUTE_MAX }          -- ignore
     with prefix="CU_DEVICE_ATTRIBUTE" deriving (Eq, Show) #}
 
-{# pointer *CUdevprop as ^ foreign -> CUDevProp nocode #}
-
 
 #if CUDA_VERSION < 5000
+{# pointer *CUdevprop as ^ foreign -> CUDevProp nocode #}
+
 --
 -- Properties of the compute device (internal helper).
 -- Replaced by cuDeviceGetAttribute in CUDA-5.0 and later.
