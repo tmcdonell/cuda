@@ -44,6 +44,8 @@ import Control.Exception                                ( throwIO )
 -- |
 -- Create a new event
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g450687e75f3ff992fe01662a43d9d3db>
+--
 {-# INLINEABLE create #-}
 create :: [EventFlag] -> IO Event
 create !flags = resultIfOk =<< cuEventCreate flags
@@ -58,6 +60,8 @@ create !flags = resultIfOk =<< cuEventCreate flags
 -- |
 -- Destroy an event
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g593ec73a8ec5a5fc031311d3e4dca1ef>
+--
 {-# INLINEABLE destroy #-}
 destroy :: Event -> IO ()
 destroy !ev = nothingIfOk =<< cuEventDestroy ev
@@ -69,6 +73,8 @@ destroy !ev = nothingIfOk =<< cuEventDestroy ev
 
 -- |
 -- Determine the elapsed time (in milliseconds) between two events
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1gdfb1178807353bbcaa9e245da497cf97>
 --
 {-# INLINEABLE elapsedTime #-}
 elapsedTime :: Event -> Event -> IO Float
@@ -83,6 +89,8 @@ elapsedTime !ev1 !ev2 = resultIfOk =<< cuEventElapsedTime ev1 ev2
 
 -- |
 -- Determines if a event has actually been recorded
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g6f0704d755066b0ee705749ae911deef>
 --
 {-# INLINEABLE query #-}
 query :: Event -> IO Bool
@@ -102,6 +110,8 @@ query !ev =
 -- Record an event once all operations in the current context (or optionally
 -- specified stream) have completed. This operation is asynchronous.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g95424d3be52c4eb95d83861b70fb89d1>
+--
 {-# INLINEABLE record #-}
 record :: Event -> Maybe Stream -> IO ()
 record !ev !mst =
@@ -117,7 +127,11 @@ record !ev !mst =
 -- Makes all future work submitted to the (optional) stream wait until the given
 -- event reports completion before beginning execution. Synchronisation is
 -- performed on the device, including when the event and stream are from
--- different device contexts. Requires cuda-3.2.
+-- different device contexts.
+--
+-- Requires CUDA-3.2.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g6a898b652dfc6aa1d5c8d97062618b2f>
 --
 {-# INLINEABLE wait #-}
 wait :: Event -> Maybe Stream -> [WaitFlag] -> IO ()
@@ -136,6 +150,8 @@ wait !ev !mst !flags =
 
 -- |
 -- Wait until the event has been recorded
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g9e520d34e51af7f5375610bca4add99c>
 --
 {-# INLINEABLE block #-}
 block :: Event -> IO ()

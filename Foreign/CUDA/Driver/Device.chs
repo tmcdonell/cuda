@@ -44,6 +44,9 @@ import Prelude
 -- Data Types
 --------------------------------------------------------------------------------
 
+-- |
+-- A CUDA device
+--
 newtype Device = Device { useDevice :: {# type CUdevice #}}
   deriving (Eq, Show)
 
