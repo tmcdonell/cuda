@@ -15,10 +15,12 @@ module Foreign.CUDA.Driver.Texture (
 
   -- * Texture Reference Management
   Texture(..), Format(..), AddressMode(..), FilterMode(..), ReadMode(..),
-  create, destroy,
   bind, bind2D,
   getAddressMode, getFilterMode, getFormat,
   setAddressMode, setFilterMode, setFormat, setReadMode,
+
+  -- Deprecated
+  create, destroy,
 
   -- Internal
   peekTex
@@ -114,6 +116,8 @@ typedef enum CUtexture_flag_enum {
 -- reference functions are used to specify the format and interpretation to be
 -- used when the memory is read through this reference.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF__DEPRECATED.html#group__CUDA__TEXREF__DEPRECATED_1g0084fabe2c6d28ffcf9d9f5c7164f16c>
+--
 {-# INLINEABLE create #-}
 create :: IO Texture
 create = resultIfOk =<< cuTexRefCreate
@@ -124,7 +128,9 @@ create = resultIfOk =<< cuTexRefCreate
 
 
 -- |
--- Destroy a texture reference
+-- Destroy a texture reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF__DEPRECATED.html#group__CUDA__TEXREF__DEPRECATED_1gea8edbd6cf9f97e6ab2b41fc6785519d>
 --
 {-# INLINEABLE destroy #-}
 destroy :: Texture -> IO ()
@@ -138,6 +144,8 @@ destroy !tex = nothingIfOk =<< cuTexRefDestroy tex
 -- |
 -- Bind a linear array address of the given size (bytes) as a texture
 -- reference. Any previously bound references are unbound.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g44ef7e5055192d52b3d43456602b50a8>
 --
 {-# INLINEABLE bind #-}
 bind :: Texture -> DevicePtr a -> Int64 -> IO ()
@@ -156,6 +164,8 @@ bind !tex !dptr !bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 -- two-dimensional arena. Any previously bound reference is unbound. Note that
 -- calls to 'setFormat' can not follow a call to 'bind2D' for the same texture
 -- reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g26f709bbe10516681913d1ffe8756ee2>
 --
 {-# INLINEABLE bind2D #-}
 bind2D :: Texture -> Format -> Int -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
@@ -177,6 +187,8 @@ bind2D !tex !fmt !chn !dptr (!width,!height) !pitch =
 -- Get the addressing mode used by a texture reference, corresponding to the
 -- given dimension (currently the only supported dimension values are 0 or 1).
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1gfb367d93dc1d20aab0cf8ce70d543b33>
+--
 {-# INLINEABLE getAddressMode #-}
 getAddressMode :: Texture -> Int -> IO AddressMode
 getAddressMode !tex !dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
@@ -189,7 +201,9 @@ getAddressMode !tex !dim = resultIfOk =<< cuTexRefGetAddressMode tex dim
 
 
 -- |
--- Get the filtering mode used by a texture reference
+-- Get the filtering mode used by a texture reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g2439e069746f69b940f2f4dbc78cdf87>
 --
 {-# INLINEABLE getFilterMode #-}
 getFilterMode :: Texture -> IO FilterMode
@@ -202,7 +216,9 @@ getFilterMode !tex = resultIfOk =<< cuTexRefGetFilterMode tex
 
 
 -- |
--- Get the data format and number of channel components of the bound texture
+-- Get the data format and number of channel components of the bound texture.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g90936eb6c7c4434a609e1160c278ae53>
 --
 {-# INLINEABLE getFormat #-}
 getFormat :: Texture -> IO (Format, Int)
@@ -218,7 +234,9 @@ getFormat !tex = do
 
 
 -- |
--- Specify the addressing mode for the given dimension of a texture reference
+-- Specify the addressing mode for the given dimension of a texture reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g85f4a13eeb94c8072f61091489349bcb>
 --
 {-# INLINEABLE setAddressMode #-}
 setAddressMode :: Texture -> Int -> AddressMode -> IO ()
@@ -233,7 +251,9 @@ setAddressMode !tex !dim !mode = nothingIfOk =<< cuTexRefSetAddressMode tex dim 
 
 -- |
 -- Specify the filtering mode to be used when reading memory through a texture
--- reference
+-- reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g595d0af02c55576f8c835e4efd1f39c0>
 --
 {-# INLINEABLE setFilterMode #-}
 setFilterMode :: Texture -> FilterMode -> IO ()
@@ -247,7 +267,9 @@ setFilterMode !tex !mode = nothingIfOk =<< cuTexRefSetFilterMode tex mode
 
 -- |
 -- Specify additional characteristics for reading and indexing the texture
--- reference
+-- reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g554ffd896487533c36810f2e45bb7a28>
 --
 {-# INLINEABLE setReadMode #-}
 setReadMode :: Texture -> ReadMode -> IO ()
@@ -261,7 +283,9 @@ setReadMode !tex !mode = nothingIfOk =<< cuTexRefSetFlags tex mode
 
 -- |
 -- Specify the format of the data and number of packed components per element to
--- be read by the texture reference
+-- be read by the texture reference.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TEXREF.html#group__CUDA__TEXREF_1g05585ef8ea2fec728a03c6c8f87cf07a>
 --
 {-# INLINEABLE setFormat #-}
 setFormat :: Texture -> Format -> Int -> IO ()
