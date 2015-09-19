@@ -55,7 +55,7 @@ import Control.Monad                                    ( zipWithM_ )
 --------------------------------------------------------------------------------
 
 -- |
--- A @__global__@ device function
+-- A @\_\_global\_\_@ device function
 --
 newtype Fun = Fun { useFun :: {# type CUfunction #}}
 
