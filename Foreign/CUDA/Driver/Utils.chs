@@ -25,7 +25,7 @@ import Foreign.C
 
 
 -- |
--- Return the version number of the installed CUDA driver
+-- Return the version number of the installed CUDA driver.
 --
 {-# INLINEABLE driverVersion #-}
 driverVersion :: IO Int
