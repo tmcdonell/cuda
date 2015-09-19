@@ -98,6 +98,12 @@ typedef enum CUmemhostalloc_option_enum {
 -- system performance may suffer. This is best used sparingly to allocate
 -- staging areas for data exchange.
 --
+-- Host memory allocated in this way is automatically and immediately
+-- accessible to all contexts on all devices which support unified
+-- addressing.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gdd8311286d2c2691605362c689bc64e0>
+--
 {-# INLINEABLE mallocHostArray #-}
 mallocHostArray :: Storable a => [AllocFlag] -> Int -> IO (HostPtr a)
 mallocHostArray !flags = doMalloc undefined
@@ -116,7 +122,9 @@ mallocHostArray !flags = doMalloc undefined
 
 
 -- |
--- Free a section of page-locked host memory
+-- Free a section of page-locked host memory.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g62e0fdbe181dab6b1c90fa1a51c7b92c>
 --
 {-# INLINEABLE freeHost #-}
 freeHost :: HostPtr a -> IO ()
@@ -141,7 +149,12 @@ freeHost !p = nothingIfOk =<< cuMemFreeHost p
 -- performance, since it reduces the amount of pageable memory available. This
 -- is best used sparingly to allocate staging areas for data exchange.
 --
--- This function is not yet implemented on Mac OS X. Requires cuda-4.0.
+-- This function has limited support on Mac OS X. OS 10.7 or later is
+-- required.
+--
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gf0a9fe11544326dabd743b7aa6b54223>
 --
 {-# INLINEABLE registerArray #-}
 registerArray :: Storable a => [AllocFlag] -> Int -> Ptr a -> IO (HostPtr a)
@@ -166,7 +179,9 @@ registerArray !flags !n = go undefined
 -- |
 -- Unmaps the memory from the given pointer, and makes it pageable again.
 --
--- This function is not yet implemented on Mac OS X. Requires cuda-4.0.
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g63f450c8125359be87b7623b1c0b2a14>
 --
 {-# INLINEABLE unregisterArray #-}
 unregisterArray :: HostPtr a -> IO (Ptr a)
@@ -192,6 +207,8 @@ unregisterArray (HostPtr !p) = do
 -- it. The memory is sufficient to hold the given number of elements of storable
 -- type. It is suitably aligned for any type, and is not cleared.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gb82d2a09844a58dd9e744dc31e8aa467>
+--
 {-# INLINEABLE mallocArray #-}
 mallocArray :: Storable a => Int -> IO (DevicePtr a)
 mallocArray = doMalloc undefined
@@ -214,7 +231,8 @@ mallocArray = doMalloc undefined
 -- or via an exception), so the pointer must not be used after this.
 --
 -- Note that kernel launches can be asynchronous, so you may want to add a
--- synchronisation point using 'sync' as part of the computation.
+-- synchronisation point using 'Foreign.CUDA.Driver.Context.sync' as part
+-- of the continuation.
 --
 {-# INLINEABLE allocaArray #-}
 allocaArray :: Storable a => Int -> (DevicePtr a -> IO b) -> IO b
@@ -222,7 +240,9 @@ allocaArray !n = bracket (mallocArray n) free
 
 
 -- |
--- Release a section of device memory
+-- Release a section of device memory.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g89b3f154e17cc89b6eea277dbdf5c93a>
 --
 {-# INLINEABLE free #-}
 free :: DevicePtr a -> IO ()
@@ -250,7 +270,25 @@ data AttachFlag
 
 -- |
 -- Allocates memory that will be automatically managed by the Unified Memory
--- system
+-- system. The returned pointer is valid on the CPU and on all GPUs which
+-- supported managed memory. All accesses to this pointer must obey the
+-- Unified Memory programming model.
+--
+-- On a multi-GPU system with peer-to-peer support, where multiple GPUs
+-- support managed memory, the physical storage is created on the GPU which
+-- is active at the time 'mallocManagedArray' is called. All other GPUs
+-- will access the array at reduced bandwidth via peer mapping over the
+-- PCIe bus. The Unified Memory system does not migrate memory between
+-- GPUs.
+--
+-- On a multi-GPU system where multiple GPUs support managed memory, but
+-- not all pairs of such GPUs have peer-to-peer support between them, the
+-- physical storage is allocated in system memory (zero-copy memory) and
+-- all GPUs will access the data at reduced bandwidth over the PCIe bus.
+--
+-- Requires CUDA-6.0
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gb347ded34dc326af404aa02af5388a32>
 --
 {-# INLINEABLE mallocManagedArray #-}
 mallocManagedArray :: Storable a => [AttachFlag] -> Int -> IO (DevicePtr a)
@@ -281,7 +319,9 @@ mallocManagedArray !flags = doMalloc undefined
 
 -- |
 -- Copy a number of elements from the device to host memory. This is a
--- synchronous operation
+-- synchronous operation.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g3480368ee0208a98f75019c9a8450893>
 --
 {-# INLINEABLE peekArray #-}
 peekArray :: Storable a => Int -> DevicePtr a -> Ptr a -> IO ()
@@ -300,6 +340,8 @@ peekArray !n !dptr !hptr = doPeek undefined dptr
 -- |
 -- Copy memory from the device asynchronously, possibly associated with a
 -- particular stream. The destination host memory must be page-locked.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g56f30236c7c5247f8e061b59d3268362>
 --
 {-# INLINEABLE peekArrayAsync #-}
 peekArrayAsync :: Storable a => Int -> DevicePtr a -> HostPtr a -> Maybe Stream -> IO ()
@@ -320,6 +362,8 @@ peekArrayAsync !n !dptr !hptr !mst = doPeek undefined dptr
 
 -- |
 -- Copy a 2D array from the device to the host.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g27f885b30c34cc20a663a671dbf6fc27>
 --
 {-# INLINEABLE peekArray2D #-}
 peekArray2D
@@ -368,6 +412,8 @@ peekArray2D !w !h !dptr !dw !dx !dy !hptr !hw !hx !hy = doPeek undefined dptr
 -- Copy a 2D array from the device to the host asynchronously, possibly
 -- associated with a particular execution stream. The destination host memory
 -- must be page-locked.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g4acf155faeb969d9d21f5433d3d0f274>
 --
 {-# INLINEABLE peekArray2DAsync #-}
 peekArray2DAsync
@@ -434,7 +480,9 @@ peekListArray !n !dptr =
 -- --------------
 
 -- |
--- Copy a number of elements onto the device. This is a synchronous operation
+-- Copy a number of elements onto the device. This is a synchronous operation.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g4d32266788c440b0220b1a9ba5795169>
 --
 {-# INLINEABLE pokeArray #-}
 pokeArray :: Storable a => Int -> Ptr a -> DevicePtr a -> IO ()
@@ -453,6 +501,8 @@ pokeArray !n !hptr !dptr = doPoke undefined dptr
 -- |
 -- Copy memory onto the device asynchronously, possibly associated with a
 -- particular stream. The source host memory must be page-locked.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g1572263fe2597d7ba4f6964597a354a3>
 --
 {-# INLINEABLE pokeArrayAsync #-}
 pokeArrayAsync :: Storable a => Int -> HostPtr a -> DevicePtr a -> Maybe Stream -> IO ()
@@ -473,6 +523,8 @@ pokeArrayAsync !n !hptr !dptr !mst = dopoke undefined dptr
 
 -- |
 -- Copy a 2D array from the host to the device.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g27f885b30c34cc20a663a671dbf6fc27>
 --
 {-# INLINEABLE pokeArray2D #-}
 pokeArray2D
@@ -521,6 +573,8 @@ pokeArray2D !w !h !hptr !hw !hx !hy !dptr !dw !dx !dy = doPoke undefined dptr
 -- Copy a 2D array from the host to the device asynchronously, possibly
 -- associated with a particular execution stream. The source host memory must be
 -- page-locked.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g4acf155faeb969d9d21f5433d3d0f274>
 --
 {-# INLINEABLE pokeArray2DAsync #-}
 pokeArray2DAsync
@@ -589,6 +643,8 @@ pokeListArray !xs !dptr = F.withArrayLen xs $ \ !len !p -> pokeArray len p dptr
 -- is asynchronous with respect to the host, but will never overlap with kernel
 -- execution.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g1725774abf8b51b91945f3336b778c8b>
+--
 {-# INLINEABLE copyArray #-}
 copyArray :: Storable a => Int -> DevicePtr a -> DevicePtr a -> IO ()
 copyArray !n = docopy undefined
@@ -608,6 +664,8 @@ copyArray !n = docopy undefined
 -- second device array (destination). The copied areas may not overlap. The
 -- operation is asynchronous with respect to the host, and can be asynchronous
 -- to other device operations by associating it with a particular stream.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g39ea09ba682b8eccc9c3e0c04319b5c8>
 --
 {-# INLINEABLE copyArrayAsync #-}
 copyArrayAsync :: Storable a => Int -> DevicePtr a -> DevicePtr a -> Maybe Stream -> IO ()
@@ -629,6 +687,8 @@ copyArrayAsync !n !src !dst !mst = docopy undefined src
 -- array (destination). The copied areas must not overlap. This operation is
 -- asynchronous with respect to the host, but will never overlap with kernel
 -- execution.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g27f885b30c34cc20a663a671dbf6fc27>
 --
 {-# INLINEABLE copyArray2D #-}
 copyArray2D
@@ -678,6 +738,8 @@ copyArray2D !w !h !src !hw !hx !hy !dst !dw !dx !dy = doCopy undefined dst
 -- array (destination). The copied areas may not overlap. The operation is
 -- asynchronous with respect to the host, and can be asynchronous to other
 -- device operations by associating it with a particular execution stream.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g4acf155faeb969d9d21f5433d3d0f274>
 --
 {-# INLINEABLE copyArray2DAsync #-}
 copyArray2DAsync
@@ -736,6 +798,10 @@ copyArray2DAsync !w !h !src !hw !hx !hy !dst !dw !dx !dy !mst = doCopy undefined
 -- the source and destination contexts. To avoid this synchronisation, use
 -- 'copyArrayPeerAsync' instead.
 --
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1ge1f5c7771544fee150ada8853c7cbf4a>
+--
 {-# INLINEABLE copyArrayPeer #-}
 copyArrayPeer :: Storable a
               => Int                            -- ^ number of array elements
@@ -764,6 +830,10 @@ copyArrayPeer !n !src !srcCtx !dst !dstCtx = go undefined src dst
 -- Copies from device memory in one context to device memory in another context.
 -- Note that this function is asynchronous with respect to the host and all work
 -- in other streams and devices.
+--
+-- Requires CUDA-4.0.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g82fcecb38018e64b98616a8ac30112f2>
 --
 {-# INLINEABLE copyArrayPeerAsync #-}
 copyArrayPeerAsync :: Storable a
@@ -857,6 +927,12 @@ withListArrayLen xs f =
 -- Set a number of data elements to the specified value, which may be either 8-,
 -- 16-, or 32-bits wide.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g6e582bf866e9e2fb014297bfaf354d7b>
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g7d805e610054392a4d11e8a8bf5eb35c>
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g983e8d8759acd1b64326317481fbf132>
+--
 {-# INLINEABLE memset #-}
 memset :: Storable a => DevicePtr a -> Int -> a -> IO ()
 memset !dptr !n !val = case sizeOf val of
@@ -891,7 +967,15 @@ memset !dptr !n !val = case sizeOf val of
 -- |
 -- Set the number of data elements to the specified value, which may be either
 -- 8-, 16-, or 32-bits wide. The operation is asynchronous and may optionally be
--- associated with a stream. Requires cuda-3.2.
+-- associated with a stream.
+--
+-- Requires CUDA-3.2.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gaef08a7ccd61112f94e82f2b30d43627>
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gf731438877dd8ec875e4c43d848c878c>
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g58229da5d30f1c0cdf667b320ec2c0f5>
 --
 {-# INLINEABLE memsetAsync #-}
 memsetAsync :: Storable a => DevicePtr a -> Int -> a -> Maybe Stream -> IO ()
@@ -935,6 +1019,8 @@ memsetAsync !dptr !n !val !mst = case sizeOf val of
 --
 -- Currently, no options are supported and this must be empty.
 --
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g57a39e5cba26af4d06be67fc77cc62f0>
+--
 {-# INLINEABLE getDevicePtr #-}
 getDevicePtr :: [AllocFlag] -> HostPtr a -> IO (DevicePtr a)
 getDevicePtr !flags !hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
@@ -948,8 +1034,11 @@ getDevicePtr !flags !hp = resultIfOk =<< cuMemHostGetDevicePointer hp flags
     alloca'  = F.alloca
     useHP    = castPtr . useHostPtr
 
+
 -- |
--- Return the base address and allocation size of the given device pointer
+-- Return the base address and allocation size of the given device pointer.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g64fee5711274a2a0573a789c94d8299b>
 --
 {-# INLINEABLE getBasePtr #-}
 getBasePtr :: DevicePtr a -> IO (DevicePtr a, Int64)
@@ -968,7 +1057,9 @@ getBasePtr !dptr = do
 
 -- |
 -- Return the amount of free and total memory respectively available to the
--- current context (bytes)
+-- current context (bytes).
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g808f555540d0143a331cc42aa98835c0>
 --
 {-# INLINEABLE getMemInfo #-}
 getMemInfo :: IO (Int64, Int64)
