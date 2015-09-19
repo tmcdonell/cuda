@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.6.7.0
+Version:                0.7.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -13,12 +13,7 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
-    This release is for version 6.5 of the CUDA toolkit.
-    .
-    [/NOTE:/]
-    .
-    Due to a bug in nvcc, this package is not compatible with c2hs-0.18.* or
-    c2hs-0.19.*. See tmcdonell/cuda#18.
+    This release tested with versions 6.0, 6.5, and 7.0 of the CUDA toolkit.
     .
 
 License:                BSD3

@@ -1,3 +1,13 @@
+0.7.0.0
+
+  * Add support for operations from CUDA-7.0
+
+  * Add support for online linking
+
+  * Add support for inter-process communication
+
+  * Bug fixes, extra documentation, improve library coverage.
+
 0.6.7.0
 
   * Add support for building on Windows (thanks to mwu-tow)
