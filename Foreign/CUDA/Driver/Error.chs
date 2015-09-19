@@ -11,8 +11,15 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Driver.Error
-  where
+module Foreign.CUDA.Driver.Error (
+
+  -- * CUDA Errors
+  Status(..), CUDAException(..),
+  describe,
+  cudaError, requireSDK,
+  resultIfOk, nothingIfOk,
+
+) where
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
