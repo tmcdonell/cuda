@@ -347,7 +347,7 @@ getHookedBuildInfo verbosity = do
       notice verbosity $ printf "Using build information from '%s'.\n" generatedBuldinfoFilepath
       notice verbosity $ printf "Provide a '%s' file to override this behaviour.\n" customBuildinfoFilepath
       readHookedBuildInfo verbosity generatedBuldinfoFilepath
-    else die $ "Unexpected failure. Neither the default " ++ generatedBuldinfoFilepath ++ " nor custom " ++ customBuildinfoFilepath ++ " do exist."
+    else die $ "Unexpected failure. Neither the default " ++ generatedBuldinfoFilepath ++ " nor custom " ++ customBuildinfoFilepath ++ " exist."
 
 
 -- Replicate the default C2HS preprocessor hook here, and inject a value for
