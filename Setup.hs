@@ -73,7 +73,7 @@ additionalGhciLibraries libdir importLibs = do
   let dllNames = map (\(Just dllname) -> dropExtension dllname) (filter isJust candidateNames)
   return dllNames
 
--- OSX compatibility function
+-- Mac OS X compatibility function
 --
 -- Returns [] or ["U__BLOCKS__"]
 --
@@ -150,7 +150,7 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
         return buildInfo { extraGHCiLibs = extraGHCiLibs  buildInfo ++ extraGHCiLibs_ }
       addSystemSpecificOptions (Platform _ OSX) = return buildInfo
           { customFieldsBI = customFieldsBI buildInfo ++ [("frameworks", "CUDA")]
-          , ldOptions      = ldOptions      buildInfo ++ ["-F/Library/Frameworks"]
+          , ldOptions      = ldOptions      buildInfo ++ [ "-F/Library/Frameworks", "-Wl,-rpath," ++ cudaLibraryPath ]
           }
       addSystemSpecificOptions _ = return buildInfo
 
