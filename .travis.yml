@@ -45,6 +45,11 @@ before_install:
         fi
     - cabal install c2hs
 
+    # Need to install a newer version of the Cabal library in order to run the
+    # Setup.hs script
+    - cabal install Cabal --constraint="Cabal >= 1.22"
+
+    # Install the CUDA toolkit
     - echo "Installing CUDA library"
     - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
     - travis_retry sudo dpkg -i cuda-repo-ubuntu1204_${CUDA}_amd64.deb
@@ -70,7 +75,7 @@ script:
     - cabal configure -v2 -flib-Werror
     - cabal build
     - cabal haddock
-#    - cabal test --show-details=always
+    # - cabal test --show-details=always
 
     # Check the source distribution can be generated, built, and installed
     - cabal sdist
