@@ -1,51 +1,57 @@
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parse
-import Distribution.Verbosity
-import Distribution.System
 import Distribution.Simple
-import Distribution.Simple.Utils
-import Distribution.Simple.Setup
+import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
-import Distribution.Simple.Program
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess           hiding (ppC2hs)
+import Distribution.Simple.Program
+import Distribution.Simple.Setup
+import Distribution.Simple.Utils
+import Distribution.System
+import Distribution.Verbosity
 
-import Distribution.Simple.BuildPaths
-
-import Data.List hiding (isInfixOf)
-import Data.Maybe
-
-import Text.Printf
 import Control.Exception
 import Control.Monad
-import System.Exit                              hiding (die)
-import System.FilePath
+import Data.List                                hiding (isInfixOf)
+import Data.Maybe
 import System.Directory
 import System.Environment
+import System.Exit                              hiding (die)
+import System.FilePath
 import System.IO.Error                          hiding (catch)
+import Text.Printf
 import Prelude                                  hiding (catch)
 
-newtype CudaPath = CudaPath {
-  cudaPath :: String
-} deriving (Eq, Ord, Show, Read)
+
+newtype CudaPath = CudaPath { cudaPath :: String }
+  deriving (Eq, Ord, Show, Read)
 
 
 -- Windows compatibility function.
 --
--- CUDA toolkit uses different names for import libraries and their respective DLLs.
--- Eg. `cudart.lib` imports functions from `cudart32_70` (on 32-bit architecture and 7.0 version of toolkit).
--- The ghci linker fails to resolve this. Therefore, it needs to be given the DLL filenames
--- as `extra-ghci-libraries` option.
+-- CUDA toolkit uses different names for import libraries and their
+-- respective DLLs. For example, on 32-bit architecture and version 7.0 of
+-- toolkit, `cudart.lib` imports functions from `cudart32_70`.
 --
--- This function takes *a path to* import library and returns name of corresponding DLL.
+-- The ghci linker fails to resolve this. Therefore, it needs to be given
+-- the DLL filenames as `extra-ghci-libraries` option.
+--
+-- This function takes *a path to* import library and returns name of
+-- corresponding DLL.
+--
 -- Eg: "C:/CUDA/Toolkit/Win32/cudart.lib" -> "cudart32_70.dll"
--- Internally it assumes that nm tool is present in PATH. This should be always true, as nm is distributed along with GHC.
 --
--- The function is meant to be used on Windows. Other platforms may or may not work.
+-- Internally it assumes that 'nm' tool is present in PATH. This should be
+-- always true, as 'nm' is distributed along with GHC.
+--
+-- The function is meant to be used on Windows. Other platforms may or may
+-- not work.
 --
 importLibraryToDllFileName :: FilePath -> IO (Maybe FilePath)
 importLibraryToDllFileName importLibPath = do
   -- Sample output nm generates on cudart.lib
+  --
   -- nvcuda.dll:
   -- 00000000 i .idata$2
   -- 00000000 i .idata$4
@@ -55,14 +61,16 @@ importLibraryToDllFileName importLibPath = do
   -- 00000000 I __IMPORT_DESCRIPTOR_nvcuda
   --          U __NULL_IMPORT_DESCRIPTOR
   --          U nvcuda_NULL_THUNK_DATA
+  --
   nmOutput <- getProgramInvocationOutput normal (simpleProgramInvocation "nm" [importLibPath])
   return $ find (isInfixOf ("" <.> dllExtension)) (lines nmOutput)
 
 -- Windows compatibility function.
 --
--- The function is used to populate the extraGHCiLibs list on Windows platform.
--- It takes libraries directory and .lib filenames and returns their corresponding dll filename.
--- (Both filenames are stripped from extensions)
+-- The function is used to populate the extraGHCiLibs list on Windows
+-- platform. It takes libraries directory and .lib filenames and returns
+-- their corresponding dll filename. (Both filenames are stripped from
+-- extensions)
 --
 -- Eg: "C:\cuda\toolkit\lib\x64" -> ["cudart", "cuda"] -> ["cudart64_65", "ncuda"]
 --
@@ -79,8 +87,10 @@ additionalGhciLibraries libdir importLibs = do
 --
 getAppleBlocksOption :: IO [String]
 getAppleBlocksOption = do
-  let handler = (\_ -> return "") :: IOError -> IO String
-  fileContents <- catch (readFile "/usr/include/stdlib.h") handler -- If file does not exist, we'll end up wth an empty string.
+  let handler :: IOError -> IO String
+      handler = (\_ -> return "")
+  -- If file does not exist, we'll end up wth an empty string.
+  fileContents <- catch (readFile "/usr/include/stdlib.h") handler
   return ["-U__BLOCKS__"  |  "__BLOCKS__" `isInfixOf` fileContents]
 
 getCudaIncludePath :: CudaPath -> FilePath
@@ -91,17 +101,17 @@ getCudaLibraryPath (CudaPath path) (Platform arch os) = path </> libSubpath
   where
     libSubpath = case os of
       Windows -> "lib" </> case arch of
-         I386    -> "Win32"
-         X86_64  -> "x64"
-         _       -> error $ "Unexpected Windows architecture " ++ show arch ++ ". Please report this issue to https://github.com/tmcdonell/cuda/issues"
+         I386   -> "Win32"
+         X86_64 -> "x64"
+         _      -> error $ printf "Unexpected Windows architecture %s.\nPlease report this issue to https://github.com/tmcdonell/cuda/issues\n" (show arch)
 
-      OSX -> "lib"
+      OSX       -> "lib"
 
-      -- For now just treat all non-Windows systems similarly
+      -- For now just treat all other systems similarly
       _ -> case arch of
-         I386    -> "lib"
-         X86_64  -> "lib64"
-         _       -> "lib"  -- TODO how should this be handled?
+         X86_64 -> "lib64"
+         I386   -> "lib"
+         _      -> "lib"  -- TODO: how should this be handled?
 
 getCudaLibraries :: [String]
 getCudaLibraries = ["cudart", "cuda"]
@@ -161,8 +171,9 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
 --
 validateLocation :: Verbosity -> FilePath -> IO Bool
 validateLocation verbosity path = do
-  -- TODO: Ideally this should check also for cudart.lib and whether cudart exports relevant symbols.
-  -- This should be achievable with some `nm` trickery
+  -- TODO: Ideally this should check also for cudart.lib and whether cudart
+  -- exports relevant symbols. This should be achievable with some `nm`
+  -- trickery
   let testedPath = path </> "include" </> "cuda.h"
   exists <- doesFileExist testedPath
   info verbosity $
@@ -199,14 +210,14 @@ nvccProgramName :: String
 nvccProgramName = "nvcc"
 
 -- NOTE: this function throws an exception when there is no `nvcc` in PATH.
--- The exception contains meaningful message.
+-- The exception contains a meaningful message.
 --
 findProgramLocationThrowing :: String -> IO FilePath
 findProgramLocationThrowing execName = do
   location <- findProgramLocation normal execName
   case location of
     Just validLocation -> return validLocation
-    Nothing -> ioError $ mkIOError doesNotExistErrorType ("not found: " ++ execName) Nothing Nothing
+    Nothing            -> ioError $ mkIOError doesNotExistErrorType ("not found: " ++ execName) Nothing Nothing
 
 -- Returns pairs (action yielding candidate path, String description of that location)
 --
@@ -266,7 +277,7 @@ longError = unlines
 generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
 generateAndStoreBuildInfo verbosity platform (CompilerId ghcFlavor ghcVersion) path = do
   cudalocation <- findCudaLocation verbosity
-  pbi <- cudaLibraryBuildInfo cudalocation platform ghcVersion
+  pbi          <- cudaLibraryBuildInfo cudalocation platform ghcVersion
   storeHookedBuildInfo verbosity path pbi
 
 customBuildinfoFilepath :: FilePath
@@ -327,8 +338,8 @@ main = defaultMainWithHooks customHooks
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
 storeHookedBuildInfo verbosity path hbi = do
-    notice verbosity $ "Storing parameters to " ++ path
-    writeHookedBuildInfo path hbi
+  notice verbosity $ "Storing parameters to " ++ path
+  writeHookedBuildInfo path hbi
 
 -- Reads user-provided `cuda.buildinfo` if present, otherwise loads `cuda.buildinfo.generated`
 -- Outputs message informing about the other possibility.
@@ -338,16 +349,19 @@ storeHookedBuildInfo verbosity path hbi = do
 getHookedBuildInfo :: Verbosity -> IO HookedBuildInfo
 getHookedBuildInfo verbosity = do
   doesCustomBuildInfoExists <- doesFileExist customBuildinfoFilepath
-  if doesCustomBuildInfoExists then do
-    notice verbosity $ "The user-provided buildinfo from file " ++ customBuildinfoFilepath ++ " will be used. To use default settings, delete this file."
-    readHookedBuildInfo verbosity customBuildinfoFilepath
-  else do
-    doesGeneratedBuildInfoExists <- doesFileExist generatedBuldinfoFilepath
-    if doesGeneratedBuildInfoExists then do
-      notice verbosity $ printf "Using build information from '%s'.\n" generatedBuldinfoFilepath
-      notice verbosity $ printf "Provide a '%s' file to override this behaviour.\n" customBuildinfoFilepath
-      readHookedBuildInfo verbosity generatedBuldinfoFilepath
-    else die $ "Unexpected failure. Neither the default " ++ generatedBuldinfoFilepath ++ " nor custom " ++ customBuildinfoFilepath ++ " exist."
+  if doesCustomBuildInfoExists
+    then do
+      notice verbosity $ printf "The user-provided buildinfo from file %s will be used. To use default settings, delete this file.\n" customBuildinfoFilepath
+      readHookedBuildInfo verbosity customBuildinfoFilepath
+    else do
+      doesGeneratedBuildInfoExists <- doesFileExist generatedBuldinfoFilepath
+      if doesGeneratedBuildInfoExists
+        then do
+          notice verbosity $ printf "Using build information from '%s'.\n" generatedBuldinfoFilepath
+          notice verbosity $ printf "Provide a '%s' file to override this behaviour.\n" customBuildinfoFilepath
+          readHookedBuildInfo verbosity generatedBuldinfoFilepath
+        else
+          die $ printf "Unexpected failure. Neither the default %s nor custom %s exist.\n" generatedBuldinfoFilepath customBuildinfoFilepath
 
 
 -- Replicate the default C2HS preprocessor hook here, and inject a value for
