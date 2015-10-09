@@ -290,8 +290,8 @@ jitTargetOfCompute (Compute 5 2) = Compute52
 jitTargetOfCompute compute       = error ("Unknown JIT Target for Compute " ++ show compute)
 
 
-{-# INLINE c_strnlen' #-}
 #if defined(WIN32)
+{-# INLINE c_strnlen' #-}
 c_strnlen' :: CString -> CSize -> IO CSize
 c_strnlen' str size = do
   str' <- peekCStringLen (str, fromIntegral size)
