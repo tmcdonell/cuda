@@ -13,6 +13,7 @@ import Distribution.Verbosity
 
 import Control.Exception
 import Control.Monad
+import Data.Function
 import Data.List                                hiding (isInfixOf)
 import Data.Maybe
 import System.Directory
@@ -113,8 +114,17 @@ getCudaLibraryPath (CudaPath path) (Platform arch os) = path </> libSubpath
          I386   -> "lib"
          _      -> "lib"  -- TODO: how should this be handled?
 
-getCudaLibraries :: [String]
-getCudaLibraries = ["cudart", "cuda"]
+
+-- On OS X we don't link against the CUDA and CUDART libraries directly.
+-- Instead, we only link against CUDA.framework. Thismeans that we will not
+-- need to set the DYLD_LIBRARY_PATH environment variable in order to
+-- compile or execute programs.
+--
+getCudaLibraries :: Platform -> [String]
+getCudaLibraries (Platform _ os) =
+  case os of
+    OSX -> []
+    _   -> ["cudart", "cuda"]
 
 
 -- Generates build info with flags needed for CUDA Toolkit to be properly
@@ -122,29 +132,32 @@ getCudaLibraries = ["cudart", "cuda"]
 --
 cudaLibraryBuildInfo :: CudaPath -> Platform -> Version -> IO HookedBuildInfo
 cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
-  let cudaLibraryPath = getCudaLibraryPath cudaPath platform
-  -- Extra lib dirs are not needed on Windows somehow. On Linux their lack would cause an error: /usr/bin/ld: cannot find -lcudart
-  -- Still, they do not cause harm so let's have them regardless of OS.
-  let extraLibDirs_ = [cudaLibraryPath]
-  let includeDirs = [getCudaIncludePath cudaPath]
-  let ccOptions_ = map ("-I" ++) includeDirs
-  let ldOptions_ = map ("-L" ++) extraLibDirs_
-  let ghcOptions = map ("-optc" ++) ccOptions_  ++  map ("-optl" ++ ) ldOptions_
-  let extraLibs_ = getCudaLibraries
+  let cudaLibraryPath   = getCudaLibraryPath cudaPath platform
+
+  -- Extra lib dirs are not needed on Windows or Mac OS. On Linux their
+  -- lack would cause an error: /usr/bin/ld: cannot find -lcudart
+  let extraLibDirs_     = case os of
+                            OSX     -> []
+                            Windows -> []
+                            _       -> [cudaLibraryPath]
+
+  let includeDirs       = [getCudaIncludePath cudaPath]
+  let ccOptions_        = map ("-I" ++) includeDirs
+  let ldOptions_        = map ("-L" ++) extraLibDirs_
+  let ghcOptions        = map ("-optc" ++) ccOptions_  ++  map ("-optl" ++ ) ldOptions_
+  let extraLibs_        = getCudaLibraries platform
 
   -- Options for C2HS
-  let c2hsArchitectureFlag = case arch of I386   -> ["-m32"]
-                                          X86_64 -> ["-m64"]
-                                          _      -> []
+  let c2hsArchitectureFlag = case arch of
+                               I386   -> ["-m32"]
+                               X86_64 -> ["-m64"]
+                               _      -> []
   let c2hsEmptyCaseFlag = ["-DUSE_EMPTY_CASE" | versionBranch ghcVersion >= [7,8]]
-  let c2hsCppOptions = c2hsArchitectureFlag ++ c2hsEmptyCaseFlag ++ ["-E"]
+  let c2hsCppOptions    = c2hsArchitectureFlag ++ c2hsEmptyCaseFlag ++ ["-E"]
 
-  -- On OSX we might add one more options to c2hs cpp.
-  appleBlocksOption <- case os of OSX -> getAppleBlocksOption; _   -> return []
-
-  let c2hsOptions = unwords $ map ("--cppopts=" ++) (c2hsCppOptions ++ appleBlocksOption)
-  let extraOptionsC2Hs = ("x-extra-c2hs-options", c2hsOptions)
-  let buildInfo = emptyBuildInfo
+  let c2hsOptions       = unwords . map ("--cppopts=" ++)
+  let extraOptionsC2Hs  = ("x-extra-c2hs-options", c2hsOptions c2hsCppOptions)
+  let buildInfo         = emptyBuildInfo
           { ccOptions      = ccOptions_
           , ldOptions      = ldOptions_
           , extraLibs      = extraLibs_
@@ -155,17 +168,42 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
 
   let addSystemSpecificOptions :: Platform -> IO BuildInfo
       addSystemSpecificOptions (Platform _ Windows) = do
-        -- Workaround issue with ghci linker not being able to find DLLs with names different from their import LIBs.
+        -- Workaround issue with ghci linker not being able to find DLLs
+        -- with names different from their import LIBs.
         extraGHCiLibs_ <- additionalGhciLibraries cudaLibraryPath extraLibs_
         return buildInfo { extraGHCiLibs = extraGHCiLibs  buildInfo ++ extraGHCiLibs_ }
-      addSystemSpecificOptions (Platform _ OSX) = return buildInfo
-          { customFieldsBI = customFieldsBI buildInfo ++ [("frameworks", "CUDA")]
-          , ldOptions      = ldOptions      buildInfo ++ [ "-F/Library/Frameworks", "-Wl,-rpath," ++ cudaLibraryPath ]
+
+      addSystemSpecificOptions (Platform _ OSX) = do
+        -- On OS X tell the linker about the CUDA framework. It seems like
+        -- this shouldn't be necessary, since we also specify this in the
+        -- frameworks field...
+        --
+        -- We also might need to add one or more options to c2hs cpp.
+        appleBlocksOption <- getAppleBlocksOption
+        return buildInfo
+          { ldOptions      = ldOptions      buildInfo ++ ["-framework", "CUDA"]
+          , customFieldsBI = unionWith (+++) []
+                           $ customFieldsBI buildInfo ++ [("frameworks", "CUDA")
+                                                         ,("x-extra-c2hs-options", c2hsOptions appleBlocksOption)]
           }
+
       addSystemSpecificOptions _ = return buildInfo
 
   adjustedBuildInfo <-addSystemSpecificOptions platform
   return (Just adjustedBuildInfo, [])
+
+
+unionWith :: Ord k => (a -> a -> a) -> a -> [(k,a)] -> [(k,a)]
+unionWith f z
+  = map (\kv -> let (k,v) = unzip kv in (head k, foldr f z v))
+  . groupBy ((==) `on` fst)
+  . sortBy (compare `on` fst)
+
+(+++) :: String -> String -> String
+[] +++ ys = ys
+xs +++ [] = xs
+xs +++ ys = xs ++ ' ':ys
+
 
 -- Checks whether given location looks like a valid CUDA toolkit directory
 --
@@ -323,17 +361,18 @@ main = defaultMainWithHooks customHooks
     -- found, an error is raised. Otherwise the toolkit location is used to
     -- create a `cuda.buildinfo.generated` file with all the resulting flags.
     postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-    postConfHook args flags pkg_descr lbi
-      = let verbosity = fromFlag (configVerbosity flags)
-            currentPlatform = hostPlatform lbi
-            compilerId_ = (compilerId $ compiler lbi)
-        in do
-          noExtraFlags args
-          generateAndStoreBuildInfo verbosity currentPlatform compilerId_ generatedBuldinfoFilepath
-
-          actualBuildInfoToUse <- getHookedBuildInfo verbosity
-          let pkg_descr' = updatePackageDescription actualBuildInfoToUse pkg_descr
-          postConf simpleUserHooks args flags pkg_descr' lbi
+    postConfHook args flags pkg_descr lbi = do
+      let
+          verbosity = fromFlag (configVerbosity flags)
+          currentPlatform = hostPlatform lbi
+          compilerId_ = (compilerId $ compiler lbi)
+      --
+      noExtraFlags args
+      generateAndStoreBuildInfo verbosity currentPlatform compilerId_ generatedBuldinfoFilepath
+      --
+      actualBuildInfoToUse <- getHookedBuildInfo verbosity
+      let pkg_descr' = updatePackageDescription actualBuildInfoToUse pkg_descr
+      postConf simpleUserHooks args flags pkg_descr' lbi
 
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
