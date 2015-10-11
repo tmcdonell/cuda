@@ -22,7 +22,7 @@ module Foreign.CUDA.Driver (
 ) where
 
 import Foreign.CUDA.Ptr
-import Foreign.CUDA.Driver.Context      hiding ( device )
+import Foreign.CUDA.Driver.Context      hiding ( useContext, device )
 import Foreign.CUDA.Driver.Device       hiding ( useDevice )
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
