@@ -12,6 +12,13 @@
 -- API provides more control over how CUDA is used. Furthermore, since it
 -- does not require compiling and linking the program with 'nvcc', the
 -- Driver API provides better inter-language compatibility.
+  --
+-- The following is a short tutorial on using the Driver API. The steps can
+-- be copied into a file, or run directly in `ghci`, in which case `ghci`
+-- should be launched with the option `-fno-ghci-sandbox`. This is because
+-- CUDA maintains CPU-local state, so operations should always be run from
+-- a bound thread.
+--
 --
 -- [/Using the Driver API/]
 --
