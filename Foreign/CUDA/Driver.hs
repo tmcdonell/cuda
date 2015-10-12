@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2015] Trevor L. McDonell
 -- License   : BSD
 --
 -- This module defines an interface to the CUDA driver API. The Driver API
@@ -65,7 +65,8 @@
 -- context can be created per device, but resources, such as memory
 -- allocated in the GPU, are unique to each context. The module
 -- "Foreign.CUDA.Driver.Context" contains operations for managing multiple
--- contexts.
+-- contexts. Some devices allow data to be shared between contexts without
+-- copying, see "Foreign.CUDA.Driver.Context.Peer" for more information.
 --
 -- Once the context is no longer needed, it should be 'destroy'ed in order
 -- to free up any resources that were allocated to it.
