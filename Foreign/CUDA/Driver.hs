@@ -178,7 +178,7 @@
 --
 -- To execute our function, we will use a grid of 4 blocks, each containing
 -- 256 threads. Thus, a total of 1024 threads will be launched, which will
--- each compute a single element of the output array (recall on our input
+-- each compute a single element of the output array (recall that our input
 -- arrays each have 1024 elements). The module
 -- "Foreign.CUDA.Analysis.Occupancy" contains functions to help determine
 -- the ideal thread block size for a given kernel and GPU combination.
@@ -208,6 +208,9 @@
 -- 'Foreign.CUDA.Driver.Event.Event's, operations will be scheduled
 -- efficiently only once all dependencies (in the form of
 -- 'Foreign.CUDA.Driver.Event.Event's) have been cleared.
+--
+-- See "Foreign.CUDA.Driver.Event" and "Foreign.CUDA.Driver.Stream" for
+-- more information on this topic.
 --
 --------------------------------------------------------------------------------
 
