@@ -8,6 +8,9 @@
 
   * Bug fixes, extra documentation, improve library coverage.
 
+  * Mac OS X no longer requires the DYLD_LIBRARY_PATH environment variable in
+    order to compile or run programs that use this package.
+
 0.6.7.0
 
   * Add support for building on Windows (thanks to mwu-tow)

@@ -13,6 +13,13 @@ Description:
     The configure script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
+    This library provides bindings to both the CUDA Driver and Runtime APIs. To
+    get started, see one of:
+    .
+    * "Foreign.CUDA.Driver"
+    .
+    * "Foreign.CUDA.Runtime"
+    .
     This release tested with versions 6.0, 6.5, and 7.0 of the CUDA toolkit.
     .
 
