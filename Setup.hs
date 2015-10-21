@@ -116,8 +116,8 @@ getCudaLibraryPath (CudaPath path) (Platform arch os) = path </> libSubpath
 
 
 -- On OS X we don't link against the CUDA and CUDART libraries directly.
--- Instead, we only link against CUDA.framework. Thismeans that we will not
--- need to set the DYLD_LIBRARY_PATH environment variable in order to
+-- Instead, we only link against CUDA.framework. This means that we will
+-- not need to set the DYLD_LIBRARY_PATH environment variable in order to
 -- compile or execute programs.
 --
 getCudaLibraries :: Platform -> [String]
@@ -176,7 +176,7 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
       addSystemSpecificOptions (Platform _ OSX) = do
         -- On OS X tell the linker about the CUDA framework. It seems like
         -- this shouldn't be necessary, since we also specify this in the
-        -- frameworks field...
+        -- frameworks field. Possibly haskell/cabal#2724?
         --
         -- We also might need to add one or more options to c2hs cpp.
         appleBlocksOption <- getAppleBlocksOption
