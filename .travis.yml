@@ -7,10 +7,10 @@ env:
   matrix:
     - CUDA=6.5-14 GHC=7.6.3
     - CUDA=6.5-14 GHC=7.8.4
-    - CUDA=6.5-14 GHC=7.10.1
+    - CUDA=6.5-14 GHC=7.10.2
     - CUDA=7.0-28 GHC=7.6.3
     - CUDA=7.0-28 GHC=7.8.4
-    - CUDA=7.0-28 GHC=7.10.1
+    - CUDA=7.0-28 GHC=7.10.2
     - CUDA=7.0-28 GHC=head
 #    - CUDA=6.0-37
 
