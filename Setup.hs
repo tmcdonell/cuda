@@ -162,7 +162,11 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
           , ldOptions      = ldOptions_
           , extraLibs      = extraLibs_
           , extraLibDirs   = extraLibDirs_
-          , options        = [(GHC, ghcOptions)]  -- Is this needed for anything?
+          -- Are ghc-options below  needed for anything?
+          -- On Windows they need to be disabled because Cabal does not escape
+          -- them (quotes and backslashes) causing build fails on machines
+          -- with CUDA_PATH containing spaces.
+          , options        = [(GHC, ghcOptions) | os /= Windows]
           , customFieldsBI = [extraOptionsC2Hs]
           }
 
