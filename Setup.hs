@@ -134,11 +134,10 @@ cudaLibraryBuildInfo :: CudaPath -> Platform -> Version -> IO HookedBuildInfo
 cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
   let cudaLibraryPath   = getCudaLibraryPath cudaPath platform
 
-  -- Extra lib dirs are not needed on Windows or Mac OS. On Linux their
+  -- Extra lib dirs are not needed on Mac OS. On Windows or Linux their
   -- lack would cause an error: /usr/bin/ld: cannot find -lcudart
   let extraLibDirs_     = case os of
                             OSX     -> []
-                            Windows -> []
                             _       -> [cudaLibraryPath]
 
   let includeDirs       = [getCudaIncludePath cudaPath]
