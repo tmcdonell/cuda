@@ -22,6 +22,10 @@ Description:
     .
     This release tested with versions 6.0, 6.5, and 7.0 of the CUDA toolkit.
     .
+    For additional notes on installing on Windows, see:
+    .
+    <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
+    .
 
 License:                BSD3
 License-file:           LICENSE
