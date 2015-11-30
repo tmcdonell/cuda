@@ -229,11 +229,10 @@ cudaLibraryBuildInfo :: CudaPath -> Platform -> Version -> IO HookedBuildInfo
 cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
   let cudaLibraryPath   = getCudaLibraryPath cudaPath platform
 
-  -- Extra lib dirs are not needed on Windows or Mac OS. On Linux their
+  -- Extra lib dirs are not needed on Mac OS. On Windows or Linux their
   -- lack would cause an error: /usr/bin/ld: cannot find -lcudart
   let extraLibDirs_     = case os of
                             OSX     -> []
-                            Windows -> []
                             _       -> [cudaLibraryPath]
 
   let includeDirs       = [getCudaIncludePath cudaPath]
@@ -257,7 +256,11 @@ cudaLibraryBuildInfo cudaPath platform@(Platform arch os) ghcVersion = do
           , ldOptions      = ldOptions_
           , extraLibs      = extraLibs_
           , extraLibDirs   = extraLibDirs_
-          , options        = [(GHC, ghcOptions)]  -- Is this needed for anything?
+          -- Are ghc-options below  needed for anything?
+          -- On Windows they need to be disabled because Cabal does not escape
+          -- them (quotes and backslashes) causing build fails on machines
+          -- with CUDA_PATH containing spaces.
+          , options        = [(GHC, ghcOptions) | os /= Windows]
           , customFieldsBI = [extraOptionsC2Hs]
           }
 
