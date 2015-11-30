@@ -43,6 +43,7 @@ Extra-tmp-files:        cuda.buildinfo.generated
 Extra-source-files:     cbits/stubs.h
                         CHANGELOG.markdown
                         README.markdown
+                        WINDOWS.markdown
 
 Library
   Exposed-Modules:      Foreign.CUDA

@@ -202,23 +202,29 @@ validateLinker verbosity (Platform X86_64 Windows) db = do
           when (ldVersion < [2,25,1]) $ die $ linkerBugOnWindowsMsg ldPath
 validateLinker _ _ _ = return () -- The linker bug is present only on Win64 platform
 
-helpfulPageLinkForWindows = "https://github.com/mwu-tow/cuda/wiki/Using-cuda-package-on-Windows"
+helpfulPageLinkForWindows :: String
+helpfulPageLinkForWindows = "https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown"
 
+linkerBugOnWindowsMsg :: FilePath -> String
 linkerBugOnWindowsMsg ldPath = printf (unlines msg) ldPath
   where
     msg =
       [ "********************************************************************************"
-      , "Detected ld.exe in version < 2.25.1. This version has known bug on Windows x64 architecture, making it unable to correctly link programs using CUDA. The fix is available and MSys2 released fixed version of `ld` as part of their binutils package (version 2.25.1)."
       , ""
-      , "To fix this issue, replace the `ld.exe` in your GHC installation with the correct binary. Please visit the folowing webpage for details:"
-      , helpfulPageLinkForWindows
+      , "The installed version of `ld.exe` has version < 2.25.1. This version has known bug on Windows x64 architecture, making it unable to correctly link programs using CUDA. The fix is available and MSys2 released fixed version of `ld.exe` as part of their binutils package (version 2.25.1)."
+      , ""
+      , "To fix this issue, replace the `ld.exe` in your GHC installation with the correct binary. See the following page for details:"
+      , ""
+      , "  " ++ helpfulPageLinkForWindows
       , ""
       , "The full path to the outdated `ld.exe` detected in your installation:"
       , ""
       , "> %s"
       , ""
-      , "The corrected binary is avaible e. g. here: "
-      , "https://github.com/mwu-tow/cuda/raw/fixed-ld/ld.exe"
+      , "Please download a recent version of binutils `ld.exe`, from, e.g.:"
+      , ""
+      , "  http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-binutils-2.25.1-1-any.pkg.tar.xz"
+      , ""
       , "********************************************************************************"
       ]
 
@@ -411,7 +417,7 @@ longError = unlines
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
 generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity platform (CompilerId ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo verbosity platform (CompilerId _ghcFlavor ghcVersion) path = do
   cudalocation <- findCudaLocation verbosity
   pbi          <- cudaLibraryBuildInfo cudalocation platform ghcVersion
   storeHookedBuildInfo verbosity path pbi
