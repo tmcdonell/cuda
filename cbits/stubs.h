@@ -27,9 +27,6 @@ cudaConfigureCallSimple
     cudaStream_t stream
 );
 
-const char*
-cudaGetErrorStringWrapper(cudaError_t error);
-
 CUresult
 cuTexRefSetAddress2DSimple
 (

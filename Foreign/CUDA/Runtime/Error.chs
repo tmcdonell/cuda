@@ -83,7 +83,7 @@ requireSDK n v = cudaError $ printf "'%s' requires at least cuda-%3.1f\n" (show 
 -- |
 -- Return the descriptive string associated with a particular error code
 --
-{# fun pure unsafe cudaGetErrorStringWrapper as describe
+{# fun pure unsafe cudaGetErrorString as describe
     { cFromEnum `Status' } -> `String' #}
 --
 -- Logically, this must be a pure function, returning a pointer to a statically

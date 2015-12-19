@@ -20,12 +20,6 @@ cudaConfigureCallSimple
     return cudaConfigureCall(gridDim, blockDim, sharedMem, stream);
 }
 
-const char*
-cudaGetErrorStringWrapper(cudaError_t error)
-{
-    return cudaGetErrorString(error);
-}
-
 CUresult
 cuTexRefSetAddress2DSimple
 (
