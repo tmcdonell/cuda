@@ -1,95 +1,99 @@
-language: haskell
-env:
-  global:
-    - HAPPY=1.19.5
-    - ALEX=3.1.4
-
-  matrix:
-    - CUDA=6.5-14 GHC=7.6.3
-    - CUDA=6.5-14 GHC=7.8.4
-    - CUDA=6.5-14 GHC=7.10.2
-    - CUDA=7.0-28 GHC=7.6.3
-    - CUDA=7.0-28 GHC=7.8.4
-    - CUDA=7.0-28 GHC=7.10.2
-    - CUDA=7.0-28 GHC=head
-#    - CUDA=6.0-37
+# vim: nospell
+language: c
+dist: trusty
+sudo: true
 
 matrix:
+  include:
+    - env: CUDA=6.5-14 GHC=7.6.3 CABAL=1.18
+      compiler: "#GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.0-28 GHC=7.6.3 CABAL=1.18
+      compiler: "#GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=7.6.3 CABAL=1.18
+      compiler: "#GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=6.5-14 GHC=7.8.4 CABAL=1.18
+      compiler: "#GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.0-28 GHC=7.8.4 CABAL=1.18
+      compiler: "#GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=7.8.4 CABAL=1.18
+      compiler: "#GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=6.5-14 GHC=7.10.3 CABAL=1.22
+      compiler: "#GHC 7.10"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.0-28 GHC=7.10.3 CABAL=1.22
+      compiler: "#GHC 7.10"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=7.10.3 CABAL=1.22
+      compiler: "#GHC 7.10"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
+
   allow_failures:
-    - env: CUDA=7.0-28 GHC=head
+    - env: CUDA=7.5.18 GHC=head CABAL=head
+
 
 before_install:
-    # If travis doesn't have the version of GHC that we want, get it from hvr's PPA
-    - echo "Setting up GHC"
-    - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
-    - travis_retry sudo apt-get update -qq
-      # - travis_retry sudo apt-get install -y c2hs
-    - export PATH=/usr/local/ghc/${GHC}/bin:${PATH}
-    - |
-        if [ $(ghc --numeric-version) != ${GHC} ]; then
-            travis_retry sudo apt-get install -y ghc-${GHC}
-            export PATH=/opt/ghc/${GHC}/bin:${PATH}
-        fi
-    - |
-        if [ ${CABAL} ]; then
-            travis_retry sudo apt-get install -y cabal-install-${CABAL}
-            export PATH=/opt/cabal/${CABAL}/bin:${PATH}
-        fi
+  - unset CC
+  - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$PATH
 
-    # If we want to build c2hs from source, ghc-7.8 and later will require newer
-    # versions of happy and alex
-    - |
-        if [ ${GHC%.*} != 7.6 ]; then
-            travis_retry sudo apt-get install -y alex-${ALEX} happy-${HAPPY}
-            export PATH=/opt/alex/${ALEX}/bin:/opt/happy/${HAPPY}/bin:${PATH}
-        fi
-    - cabal install c2hs
+  # Need to install a newer version of the Cabal library in order to run the Setup.hs script
+  - cabal install Cabal --constraint="Cabal >= 1.22"
+  - cabal install c2hs
 
-    # Need to install a newer version of the Cabal library in order to run the
-    # Setup.hs script
-    - cabal install Cabal --constraint="Cabal >= 1.22"
-
-    # Install the CUDA toolkit
-    - echo "Installing CUDA library"
-    - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_${CUDA}_amd64.deb
-    - travis_retry sudo dpkg -i cuda-repo-ubuntu1204_${CUDA}_amd64.deb
-    - travis_retry sudo apt-get update -qq
-    - export CUDA_APT=${CUDA%-*}
-    - export CUDA_APT=${CUDA_APT/./-}
-#    - travis_retry sudo apt-get install -y cuda-${CUDA_APT}
-    - travis_retry sudo apt-get install -y cuda-drivers cuda-core-${CUDA_APT} cuda-cudart-dev-${CUDA_APT}
-    - travis_retry sudo apt-get clean
-    - export CUDA_HOME=/usr/local/cuda-${CUDA%%-*}
-    - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
-    - export PATH=${CUDA_HOME}/bin:${PATH}
+  # Install the CUDA toolkit
+  - echo "Installing CUDA library"
+  - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_${CUDA}_amd64.deb
+  - travis_retry sudo dpkg -i cuda-repo-ubuntu1404_${CUDA}_amd64.deb
+  - travis_retry sudo apt-get update -qq
+  - export CUDA_APT=${CUDA%-*}
+  - export CUDA_APT=${CUDA_APT/./-}
+#  - travis_retry sudo apt-get install -y cuda-${CUDA_APT}
+  - travis_retry sudo apt-get install -y cuda-drivers cuda-core-${CUDA_APT} cuda-cudart-dev-${CUDA_APT}
+  - travis_retry sudo apt-get clean
+  - export CUDA_HOME=/usr/local/cuda-${CUDA%%-*}
+  - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
+  - export PATH=${CUDA_HOME}/bin:${PATH}
 
 install:
-    - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
-    - cabal --version
-    - c2hs --version
-    - nvcc --version
-    - cabal install --only-dependencies --enable-tests
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - cabal --version
+  - c2hs --version
+  - nvcc --version
+  - cabal install --only-dependencies --enable-tests
 
 script:
-    # Check the build
-    - cabal configure -v2 -flib-Werror
-    - cabal build
-    - cabal haddock
-    # - cabal test --show-details=always
+  # Check the build
+  - cabal configure -v2 -flib-Werror
+  - cabal build
+  - cabal haddock
+  # - cabal test --show-details=always
 
-    # Check the source distribution can be generated, built, and installed
-    - cabal sdist
-    - |
-        export SRC_TGZ=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
-        cd dist
-        if [ -f "$SRC_TGZ" ]; then
-            cabal install --force-reinstalls ${SRC_TGZ} || exit 1
-        else
-            echo "'$SRC_TGZ': not found"
-            exit 1
-        fi
+  # Check the source distribution can be generated, built, and installed
+  - cabal sdist
+  - |
+      export SRC_TGZ=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
+      cd dist
+      if [ -f "$SRC_TGZ" ]; then
+          cabal install --force-reinstalls ${SRC_TGZ} || exit 1
+      else
+          echo "'$SRC_TGZ': not found"
+          exit 1
+      fi
 
 after_failure:
-    - dmesg
-    - ls -R /usr/local/cuda*
+  - dmesg
+  - ls -R /usr/local/cuda*
 
