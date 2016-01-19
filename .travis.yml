@@ -1,5 +1,5 @@
 # vim: nospell
-language: c
+language: generic
 dist: trusty
 sudo: true
 
