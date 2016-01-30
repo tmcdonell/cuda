@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.0.0
+Version:                0.7.1.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -20,7 +20,7 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    This release tested with versions 6.0, 6.5, and 7.0 of the CUDA toolkit.
+    This release tested with versions 6.0, 6.5, 7.0, and 7.5 of the CUDA toolkit.
     .
     For additional notes on installing on Windows, see:
     .
