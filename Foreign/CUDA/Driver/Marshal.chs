@@ -18,7 +18,8 @@ module Foreign.CUDA.Driver.Marshal (
 
   -- * Host Allocation
   AllocFlag(..),
-  mallocHostArray, freeHost, registerArray, unregisterArray,
+  mallocHostArray, mallocHostForeignPtr, freeHost,
+  registerArray, unregisterArray,
 
   -- * Device Allocation
   mallocArray, allocaArray, free,
@@ -66,6 +67,7 @@ import Prelude
 
 import Foreign.C
 import Foreign.Ptr
+import Foreign.ForeignPtr
 import Foreign.Storable
 import qualified Foreign.Marshal                        as F
 
@@ -111,6 +113,17 @@ mallocHostArray !flags = doMalloc undefined
     doMalloc :: Storable a' => a' -> Int -> IO (HostPtr a')
     doMalloc x !n = resultIfOk =<< cuMemHostAlloc (n * sizeOf x) flags
 
+-- |
+-- As 'mallocHostArray', but return a 'ForeignPtr' instead. The array will be
+-- deallocated automatically once the last reference to the 'ForeignPtr' is
+-- dropped.
+--
+{-# INLINEABLE mallocHostForeignPtr #-}
+mallocHostForeignPtr :: Storable a => [AllocFlag] -> Int -> IO (ForeignPtr a)
+mallocHostForeignPtr !flags !size = do
+  HostPtr ptr <- mallocHostArray flags size
+  newForeignPtr finalizerMemFreeHost ptr
+
 {-# INLINE cuMemHostAlloc #-}
 {# fun unsafe cuMemHostAlloc
   { alloca'-        `HostPtr a'   peekHP*
@@ -120,6 +133,11 @@ mallocHostArray !flags = doMalloc undefined
     alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
     peekHP !p  = HostPtr . castPtr <$> peek p
 
+-- Pointer to the foreign function to release host arrays, which may be used as
+-- a finalizer. Technically this function has a non-void return type, but I am
+-- hoping that that doesn't matter...
+--
+foreign import ccall "&cuMemFreeHost" finalizerMemFreeHost :: FinalizerPtr a
 
 -- |
 -- Free a section of page-locked host memory.
