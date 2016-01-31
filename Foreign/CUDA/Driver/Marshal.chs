@@ -60,6 +60,7 @@ import Foreign.CUDA.Internal.C2HS
 -- System
 import Data.Int
 import Data.Maybe
+import Data.Word
 import Unsafe.Coerce
 import Control.Applicative
 import Control.Exception
