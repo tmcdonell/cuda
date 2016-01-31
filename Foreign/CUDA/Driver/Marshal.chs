@@ -119,6 +119,7 @@ mallocHostArray !flags = doMalloc undefined
 -- dropped.
 --
 {-# INLINEABLE mallocHostForeignPtr #-}
+{-# SPECIALISE mallocHostForeignPtr :: [AllocFlag] -> Int -> IO (ForeignPtr Word8) #-}
 mallocHostForeignPtr :: Storable a => [AllocFlag] -> Int -> IO (ForeignPtr a)
 mallocHostForeignPtr !flags !size = do
   HostPtr ptr <- mallocHostArray flags size
