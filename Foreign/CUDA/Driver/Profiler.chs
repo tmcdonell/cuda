@@ -11,6 +11,7 @@
 
 module Foreign.CUDA.Driver.Profiler (
 
+  OutputMode(..),
   initialise,
   start, stop,
 
@@ -31,7 +32,8 @@ import Foreign.C
 -- | Profiler output mode
 --
 {# enum CUoutput_mode as OutputMode
-    { underscoreToCase }
+    { underscoreToCase
+    , CU_OUT_CSV as CSV }
     with prefix="CU_OUT" deriving (Eq, Show) #}
 
 
@@ -48,7 +50,7 @@ import Foreign.C
 --
 {-# INLINEABLE initialise #-}
 initialise
-    :: FilePath     -- ^ configuration file which lists counters/options to profile
+    :: FilePath     -- ^ configuration file that itemises which counters and/or options to profile
     -> FilePath     -- ^ output file where profiling results will be stored
     -> OutputMode
     -> IO ()
