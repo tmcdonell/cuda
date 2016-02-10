@@ -1,3 +1,9 @@
+0.7.1.0
+
+  * mallocHostForeignPtr
+
+  * Add profiler control functions
+
 0.7.0.0
 
   * Add support for operations from CUDA-7.0

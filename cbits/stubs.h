@@ -12,6 +12,7 @@
 #endif
 
 #include <cuda.h>
+#include <cudaProfiler.h>
 #include <cuda_runtime_api.h>
 
 #ifdef __cplusplus
