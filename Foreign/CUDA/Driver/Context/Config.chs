@@ -85,7 +85,7 @@ data Cache
 -- |
 -- Device shared memory configuration preference
 --
-#if CUDA_VERSION < 3020
+#if CUDA_VERSION < 4020
 data SharedMem
 #else
 {# enum CUsharedconfig as SharedMem
@@ -218,14 +218,14 @@ setCache !c = nothingIfOk =<< cuCtxSetCacheConfig c
 -- devices without configurable shared memory, this function returns the
 -- fixed bank size of the hardware.
 --
--- Requires CUDA-3.2
+-- Requires CUDA-4.2
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g17153a1b8b8c756f7ab8505686a4ad74>
 --
 {-# INLINEABLE getSharedMem #-}
 getSharedMem :: IO SharedMem
-#if CUDA_VERSION < 3020
-getSharedMem = requireSDK 'getSharedMem 3.2
+#if CUDA_VERSION < 4020
+getSharedMem = requireSDK 'getSharedMem 4.2
 #else
 getSharedMem = resultIfOk =<< cuCtxGetSharedMemConfig
 
@@ -249,14 +249,14 @@ getSharedMem = resultIfOk =<< cuCtxGetSharedMemConfig
 -- allow for greater potential bandwidth to shared memory, but change the
 -- kinds of accesses which result in bank conflicts.
 --
--- Requires CUDA-3.2
+-- Requires CUDA-4.2
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__CTX.html#group__CUDA__CTX_1g2574235fa643f8f251bf7bc28fac3692>
 --
 {-# INLINEABLE setSharedMem #-}
 setSharedMem :: SharedMem -> IO ()
-#if CUDA_VERSION < 3020
-setSharedMem _  = requireSDK 'setSharedMem 3.2
+#if CUDA_VERSION < 4020
+setSharedMem _  = requireSDK 'setSharedMem 4.2
 #else
 setSharedMem !c = nothingIfOk =<< cuCtxSetSharedMemConfig c
 
