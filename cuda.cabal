@@ -41,8 +41,6 @@ Tested-with:            GHC >= 7.6
 Build-type:             Custom
 
 Extra-tmp-files:        cuda.buildinfo.generated
-                        config.status
-                        config.log
 
 Extra-source-files:     cbits/stubs.h
                         CHANGELOG.markdown
