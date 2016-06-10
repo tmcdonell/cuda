@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
@@ -281,8 +282,10 @@ jitTargetOfCompute (Compute 1 2) = Compute12
 jitTargetOfCompute (Compute 1 3) = Compute13
 jitTargetOfCompute (Compute 2 0) = Compute20
 jitTargetOfCompute (Compute 2 1) = Compute21
+#if CUDA_VERSION >= 5000
 jitTargetOfCompute (Compute 3 0) = Compute30
 jitTargetOfCompute (Compute 3 5) = Compute35
+#endif
 #if CUDA_VERSION >= 6000
 jitTargetOfCompute (Compute 3 2) = Compute32
 jitTargetOfCompute (Compute 5 0) = Compute50
