@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
@@ -102,10 +104,14 @@ data JITResult = JITResult
 -- |
 -- Device code formats that can be used for online linking
 --
+#if CUDA_VERSION < 5050
+data JITInputType
+#else
 {# enum CUjitInputType as JITInputType
     { underscoreToCase
     , CU_JIT_INPUT_PTX as PTX }
     with prefix="CU_JIT_INPUT" deriving (Eq, Show) #}
+#endif
 
 {# enum CUjit_option as JITOptionInternal
     { }
