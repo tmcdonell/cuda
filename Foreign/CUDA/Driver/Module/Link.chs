@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
@@ -50,8 +51,12 @@ import qualified Data.ByteString.Char8                  as B
 -- |
 -- A pending JIT linker state
 --
+#if CUDA_VERSION < 5050
+data LinkState
+#else
 newtype LinkState = LinkState { useLinkState :: {# type CUlinkState #} }
   deriving (Show)
+#endif
 
 
 --------------------------------------------------------------------------------
