@@ -149,7 +149,7 @@ complete !ls = do
 {-# INLINEABLE addFile #-}
 addFile :: LinkState -> FilePath -> JITInputType -> [JITOption] -> IO ()
 #if CUDA_VERSION < 5050
-addFile _ _ _ _ = requireSDK 'addile 5.5
+addFile _ _ _ _ = requireSDK 'addFile 5.5
 #else
 addFile !ls !fp !t !options =
   let (opt,val) = unzip $ map jitOptionUnpack options
