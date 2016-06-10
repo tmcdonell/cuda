@@ -16,7 +16,7 @@ module Foreign.CUDA.Driver.Error (
   -- * CUDA Errors
   Status(..), CUDAException(..),
   describe,
-  cudaError, requireSDK,
+  cudaError, cudaErrorIO, requireSDK,
   resultIfOk, nothingIfOk,
 
 ) where
@@ -159,15 +159,24 @@ instance Show CUDAException where
 
 
 -- |
+-- Raise a CUDAException. Exceptions can be thrown from pure code, but can only
+-- be caught in the 'IO' monad.
+--
+{-# RULES "cudaError/IO" cudaError = cudaErrorIO #-}
+{-# NOINLINE [1] cudaError #-}
+cudaError :: String -> a
+cudaError s = throw (UserError s)
+
+-- |
 -- Raise a CUDAException in the IO Monad
 --
-cudaError :: String -> IO a
-cudaError s = throwIO (UserError s)
+cudaErrorIO :: String -> IO a
+cudaErrorIO s = throwIO (UserError s)
 
 -- |
 -- A specially formatted error message
 --
-requireSDK :: Name -> Double -> IO a
+requireSDK :: Name -> Double -> a
 requireSDK n v = cudaError $ printf "'%s' requires at least cuda-%3.1f\n" (show n) v
 
 
