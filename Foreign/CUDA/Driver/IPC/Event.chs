@@ -13,7 +13,7 @@
 -- Restricted to devices which support unified addressing on Linux
 -- operating systems.
 --
--- Since CUDA-4.0.
+-- Since CUDA-4.1.
 --
 --------------------------------------------------------------------------------
 
@@ -77,8 +77,8 @@ newtype IPCEvent = IPCEvent { useIPCEvent :: IPCEventHandle }
 --
 {-# INLINEABLE export #-}
 export :: Event -> IO IPCEvent
-#if CUDA_VERSION < 4000
-export _   = requireSDK 'create 4.0
+#if CUDA_VERSION < 4010
+export _   = requireSDK 'create 4.1
 #else
 export !ev = do
   h <- newIPCEventHandle
@@ -109,8 +109,8 @@ export !ev = do
 --
 {-# INLINEABLE open #-}
 open :: IPCEvent -> IO Event
-#if CUDA_VERSION < 4000
-open _    = requireSDK 'open 4.0
+#if CUDA_VERSION < 4010
+open _    = requireSDK 'open 4.1
 #else
 open !ev = resultIfOk =<< cuIpcOpenEventHandle (useIPCEvent ev)
 
@@ -132,5 +132,9 @@ open !ev = resultIfOk =<< cuIpcOpenEventHandle (useIPCEvent ev)
 type IPCEventHandle = ForeignPtr ()
 
 newIPCEventHandle :: IO IPCEventHandle
+#if CUDA_VERSION < 4010
+newIPCEventHandle = requireSDK 'newIPCEventHandle 4.1
+#else
 newIPCEventHandle = mallocForeignPtrBytes {#sizeof CUipcEventHandle#}
+#endif
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
@@ -58,9 +59,13 @@ newtype IPCDevicePtr a = IPCDevicePtr { useIPCDevicePtr :: IPCMemHandle }
 -- |
 -- Flags for controlling IPC memory access
 --
+#if CUDA_VERSION < 4010
+data IPCFlag
+#else
 {# enum CUipcMem_flags as IPCFlag
   { underscoreToCase }
   with prefix="CU_IPC_MEM" deriving (Eq, Show, Bounded) #}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -72,14 +77,14 @@ newtype IPCDevicePtr a = IPCDevicePtr { useIPCDevicePtr :: IPCMemHandle }
 -- allocation. The handle can then be sent to another process and made
 -- available to that process via 'open'.
 --
--- Requires CUDA-4.0.
+-- Requires CUDA-4.1.
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1g6f1b5be767b275f016523b2ac49ebec1>
 --
 {-# INLINEABLE export #-}
 export :: DevicePtr a -> IO (IPCDevicePtr a)
-#if CUDA_VERSION < 4000
-export _     = requireSDK 'create 4.0
+#if CUDA_VERSION < 4010
+export _     = requireSDK 'export 4.1
 #else
 export !dptr = do
   h <- newIPCMemHandle
@@ -109,14 +114,14 @@ export !dptr = do
 -- context per device per other process. Memory returned by 'open' must be
 -- freed via 'close'.
 --
--- Requires CUDA-4.0.
+-- Requires CUDA-4.1.
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1ga8bd126fcff919a0c996b7640f197b79>
 --
 {-# INLINEABLE open #-}
 open :: IPCDevicePtr a -> [IPCFlag]-> IO (DevicePtr a)
-#if CUDA_VERSION < 4000
-open _    _      = requireSDK 'open 4.0
+#if CUDA_VERSION < 4010
+open _    _      = requireSDK 'open 4.1
 #else
 open !hdl !flags = resultIfOk =<< cuIpcOpenMemHandle (useIPCDevicePtr hdl) flags
 
@@ -138,14 +143,14 @@ open !hdl !flags = resultIfOk =<< cuIpcOpenMemHandle (useIPCDevicePtr hdl) flags
 -- Any resources used to enable peer access will be freed if this is the
 -- last mapping using them.
 --
--- Requires CUDA-4.0.
+-- Requires CUDA-4.1.
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gd6f5d5bcf6376c6853b64635b0157b9e>
 --
 {-# INLINEABLE close #-}
 close :: DevicePtr a -> IO ()
-#if CUDA_VERSION < 4000
-close _     = requireSDK 'close 4.0
+#if CUDA_VERSION < 4010
+close _     = requireSDK 'close 4.1
 #else
 close !dptr = nothingIfOk =<< cuIpcCloseMemHandle dptr
 
@@ -164,5 +169,9 @@ close !dptr = nothingIfOk =<< cuIpcCloseMemHandle dptr
 type IPCMemHandle = ForeignPtr ()
 
 newIPCMemHandle :: IO IPCMemHandle
+#if CUDA_VERSION < 4010
+newIPCMemHandle = requireSDK 'newIPCMemHandle 4.1
+#else
 newIPCMemHandle = mallocForeignPtrBytes {#sizeof CUipcMemHandle#}
+#endif
 
