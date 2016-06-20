@@ -91,13 +91,14 @@ script:
   - cabal sdist
   - |
       export SRC_TGZ=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
-      cd dist
+      pushd dist
       if [ -f "$SRC_TGZ" ]; then
           cabal install --force-reinstalls ${SRC_TGZ} || exit 1
       else
           echo "'$SRC_TGZ': not found"
           exit 1
       fi
+      popd
 
 after_failure:
   - dmesg
