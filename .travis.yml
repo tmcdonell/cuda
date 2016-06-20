@@ -1,7 +1,7 @@
 # vim: nospell
 language: generic
 dist: trusty
-sudo: true
+sudo: required
 
 matrix:
   include:
@@ -41,6 +41,22 @@ matrix:
       compiler: "GHC 7.10"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
 
+    - env: CUDA=6.5-14 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.0-28 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=head CABAL=head
+      compiler: "GHC HEAD"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-head, cabal-install-head, happy-1.19.5, alex-3.1.7 ] }}
+
   allow_failures:
     - env: CUDA=7.5.18 GHC=head CABAL=head
 
@@ -50,22 +66,12 @@ before_install:
 
   # Need to install a newer version of the Cabal library in order to run the Setup.hs script
   - cabal update
-  - cabal install Cabal --constraint="Cabal >= 1.22"
+  - cabal install Cabal --constraint="Cabal >= 1.24"
   - cabal install c2hs
 
   # Install the CUDA toolkit
   - echo "Installing CUDA library"
-  - travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_${CUDA}_amd64.deb
-  - travis_retry sudo dpkg -i cuda-repo-ubuntu1404_${CUDA}_amd64.deb
-  - travis_retry sudo apt-get update -qq
-  - export CUDA_APT=${CUDA%-*}
-  - export CUDA_APT=${CUDA_APT/./-}
-#  - travis_retry sudo apt-get install -y cuda-${CUDA_APT}
-  - travis_retry sudo apt-get install -y cuda-drivers cuda-core-${CUDA_APT} cuda-cudart-dev-${CUDA_APT}
-  - travis_retry sudo apt-get clean
-  - export CUDA_HOME=/usr/local/cuda-${CUDA%%-*}
-  - export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
-  - export PATH=${CUDA_HOME}/bin:${PATH}
+  - source .travis/install-cuda-trusty.sh
 
 install:
   - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
@@ -96,4 +102,7 @@ script:
 after_failure:
   - dmesg
   - ls -R /usr/local/cuda*
+
+after_success:
+  - source .travis/update-accelerate-buildbot.sh
 
