@@ -49,7 +49,7 @@
 module Foreign.CUDA.Analysis.Occupancy (
 
     Occupancy(..),
-    occupancy, optimalBlockSize, optimalBlockSizeBy, maxResidentBlocks,
+    occupancy, optimalBlockSize, optimalBlockSizeOf, maxResidentBlocks,
     incPow2, incWarp, decPow2, decWarp
 
 ) where
@@ -93,7 +93,6 @@ occupancy !dev !thds !regs !smem
     regs' = 1 `max` regs
     smem' = 1 `max` smem
 
-    floor'        = floor   :: Double -> Int
     ceiling'      = ceiling :: Double -> Int
     ceilingBy x s = s * ceiling' (fromIntegral x / fromIntegral s)
 
@@ -111,9 +110,9 @@ occupancy !dev !thds !regs !smem
 
     -- Maximum thread blocks per multiprocessor
     --
-    limitWarpBlock = threadBlocksPerMP gpu `min` floor' (fromIntegral (warpsPerMP gpu)     / fromIntegral warps)
-    limitRegMP     = threadBlocksPerMP gpu `min` floor' (fromIntegral (regFileSize gpu)    / fromIntegral registers)
-    limitSMemMP    = threadBlocksPerMP gpu `min` floor' (fromIntegral (sharedMemPerMP gpu) / fromIntegral sharedMem)
+    limitWarpBlock = threadBlocksPerMP gpu `min` (warpsPerMP gpu     `div` warps)
+    limitRegMP     = threadBlocksPerMP gpu `min` (regFileSize gpu    `div` registers)
+    limitSMemMP    = threadBlocksPerMP gpu `min` (sharedMemPerMP gpu `div` sharedMem)
 
 
 -- |
@@ -127,7 +126,7 @@ optimalBlockSize
     -> (Int -> Int)             -- ^ Register count as a function of thread block size
     -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-optimalBlockSize = flip optimalBlockSizeBy decWarp
+optimalBlockSize dev = optimalBlockSizeOf dev (decWarp dev)
 
 
 -- |
@@ -137,18 +136,16 @@ optimalBlockSize = flip optimalBlockSizeBy decWarp
 -- should be monotonically decreasing to return the smallest block size yielding
 -- maximum occupancy, and vice-versa.
 --
-{-# INLINEABLE optimalBlockSizeBy #-}
-optimalBlockSizeBy
-    :: DeviceProperties
-    -> (DeviceProperties -> [Int])
-    -> (Int -> Int)
-    -> (Int -> Int)
+{-# INLINEABLE optimalBlockSizeOf #-}
+optimalBlockSizeOf
+    :: DeviceProperties         -- ^ Architecture to optimise for
+    -> [Int]                    -- ^ Thread block sizes to consider
+    -> (Int -> Int)             -- ^ Register count as a function of thread block size
+    -> (Int -> Int)             -- ^ Shared memory usage (bytes) as a function of thread block size
     -> (Int, Occupancy)
-optimalBlockSizeBy !dev !fblk !freg !fsmem
-  = maximumBy (comparing (occupancy100 . snd)) $ zip threads residency
-  where
-    residency = map (\t -> occupancy dev t (freg t) (fsmem t)) threads
-    threads   = fblk dev
+optimalBlockSizeOf !dev !threads !freg !fsmem
+  = maximumBy (comparing (occupancy100 . snd))
+  $ [ (t, occupancy dev t (freg t) (fsmem t)) | t <- threads ]
 
 
 -- | Increments in powers-of-two, over the range of supported thread block sizes
