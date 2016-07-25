@@ -131,12 +131,12 @@ libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
         case os of
           _ -> return bi
 
-  extraGhciLibs' <- cudaGhciLibraries platform installPath extraLibs'
+  extraGHCiLibs' <- cudaGHCiLibraries platform installPath extraLibs'
   buildInfo'     <- addSystemSpecificOptions $ emptyBuildInfo
     { ccOptions      = ccOptions'
     , ldOptions      = ldOptions'
     , extraLibs      = extraLibs'
-    , extraGHCiLibs  = extraGhciLibs'
+    , extraGHCiLibs  = extraGHCiLibs'
     , extraLibDirs   = extraLibDirs'
     , frameworks     = frameworks'
     , options        = [(GHC, ghcOptions) | os /= Windows]
@@ -176,8 +176,8 @@ cudaLibraries (Platform _ os) =
     OSX -> ["cudadevrt", "cudart_static"]
     _   -> ["cudart", "cuda"]
 
-cudaGhciLibraries :: Platform -> FilePath -> [String] -> IO [String]
-cudaGhciLibraries platform@(Platform _ os) installPath libraries =
+cudaGHCiLibraries :: Platform -> FilePath -> [String] -> IO [String]
+cudaGHCiLibraries platform@(Platform _ os) installPath libraries =
   case os of
     Windows -> cudaGhciLibrariesWindows platform installPath libraries
     OSX     -> return ["cudart"]
