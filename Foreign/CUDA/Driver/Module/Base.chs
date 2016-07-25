@@ -214,12 +214,14 @@ loadDataFromPtrEx !img !options = do
   (s,mdl) <- cuModuleLoadDataEx img i p_opts p_vals
 
   case s of
-    Success     -> do
+    Success -> do
       time    <- peek (castPtr p_vals)
-      infoLog <- B.fromForeignPtr (castForeignPtr fp_ilog) 0 `fmap` c_strnlen p_ilog logSize
+      bytes   <- c_strnlen p_ilog logSize
+      let infoLog | bytes == 0 = B.empty
+                  | otherwise  = B.fromForeignPtr (castForeignPtr fp_ilog) 0 bytes
       return  $! JITResult time infoLog mdl
 
-    _           -> do
+    _       -> do
       errLog  <- peekCString p_elog
       cudaError (unlines [describe s, errLog])
 
