@@ -141,7 +141,10 @@ instance Enum InitFlag where
 --
 {-# INLINEABLE initialise #-}
 initialise :: [InitFlag] -> IO ()
-initialise !flags = nothingIfOk =<< cuInit flags
+initialise !flags = nothingIfOk =<< cuInit flags <* enable_constructors
+
+{-# INLINE enable_constructors #-}
+{# fun unsafe enable_constructors { } -> `()' #}
 
 {-# INLINE cuInit #-}
 {# fun unsafe cuInit

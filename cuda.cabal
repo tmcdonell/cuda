@@ -89,6 +89,7 @@ Library
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
+                        cbits/init.c
 
   Build-tools:          c2hs >= 0.21
   Build-depends:
@@ -117,4 +118,6 @@ Executable nvidia-device-query
 source-repository head
     type:               git
     location:           https://github.com/tmcdonell/cuda
+
+-- vim: nospell
 

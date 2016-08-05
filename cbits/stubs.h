@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+void enable_constructors();
+
 cudaError_t
 cudaConfigureCallSimple
 (
