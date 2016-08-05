@@ -39,10 +39,14 @@ __attribute__((constructor)) void preinitialise_cuda()
     CUresult status = cuInit (0);
 
     if ( status != CUDA_SUCCESS ) {
+#if CUDA_VERSION >= 6000
         const char* str = NULL;
 
         cuGetErrorString(status, &str);
         fprintf(stderr, "Failed to pre-initialise CUDA: %s\n", str);
+#else
+        fprintf(stderr, "Failed to pre-initialise CUDA (%d)\n", status);
+#endif
     }
 }
 
