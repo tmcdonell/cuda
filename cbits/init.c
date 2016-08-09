@@ -60,7 +60,7 @@ static uintptr_t __reserved_regions[1][2] = {{0x200000000, 0x1000000000}};
  */
 void reserve_cuda_memory_region()
 {
-    msync(__reserved, sizeof(int), MS_SYNC);
+    msync(__reserved, getpagesize(), MS_SYNC);
 
     if ( !(*__reserved) ) {
         int i;
@@ -87,7 +87,7 @@ void reserve_cuda_memory_region()
  */
 void release_cuda_memory_region()
 {
-    msync(__reserved, sizeof(int), MS_SYNC);
+    msync(__reserved, getpagesize(), MS_SYNC);
 
     if ( *__reserved ) {
         int i;
@@ -137,19 +137,18 @@ CUresult CUDAAPI cuInit(unsigned int Flags)
 __attribute__((constructor)) void __hscuda_setup()
 {
     int fd = shm_open(SHM_FILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-
     if ( fd < 0 ) {
         perror("Failed to create shared memory object");
         exit(EXIT_FAILURE);
     }
 
-    int err = ftruncate(fd, sizeof(int));
+    int err = ftruncate(fd, getpagesize());
     if ( err < 0 ) {
         perror("Failed to create shared memory object");
         exit(EXIT_FAILURE);
     }
 
-    __reserved = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    __reserved = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( MAP_FAILED == __reserved ) {
         perror("Failed to reserve shared memory");
         exit(EXIT_FAILURE);
@@ -162,7 +161,7 @@ __attribute__((destructor)) void __hscuda_teardown()
 {
     release_cuda_memory_region();
 
-    munmap(__reserved, sizeof(int));
+    munmap(__reserved, getpagesize());
     shm_unlink(SHM_FILE);
 }
 
