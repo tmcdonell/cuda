@@ -136,18 +136,36 @@ CUresult CUDAAPI cuInit(unsigned int Flags)
 */
 __attribute__((constructor)) void __hscuda_setup()
 {
-    int fd = shm_open(SHM_FILE, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-    if ( fd < 0 ) {
-        perror("Failed to create shared memory object");
-        exit(EXIT_FAILURE);
+    /*
+     * Create or open the shared memory region. If it does not exist we create
+     * it and set the size of the newly allocated object, which also initialises
+     * it to zero. If it does exist, open the existing region.
+     */
+    int fd = shm_open(SHM_FILE, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+    if ( fd > 0 ) {
+        /*
+         * Set the size of the newly created object. Must be a multiple of the
+         * page size.
+         */
+        int err = ftruncate(fd, getpagesize());
+        if ( err < 0 ) {
+            perror("Failed to allocate shared memory object");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        /*
+         * Attempt to open to the existing shared-memory region
+         */
+        fd = shm_open(SHM_FILE, O_RDWR, S_IRUSR | S_IWUSR);
+        if ( fd < 0 ) {
+            perror("Failed to open existing shared memory object");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    int err = ftruncate(fd, getpagesize());
-    if ( err < 0 ) {
-        perror("Failed to create shared memory object");
-        exit(EXIT_FAILURE);
-    }
-
+    /*
+     * Map the shared memory segment into the address space of the process
+     */
     __reserved = mmap(NULL, getpagesize(), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( MAP_FAILED == __reserved ) {
         perror("Failed to reserve shared memory");
