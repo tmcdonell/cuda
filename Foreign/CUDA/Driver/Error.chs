@@ -30,6 +30,7 @@ import Control.Monad
 import Data.Typeable
 import Foreign.C
 import Foreign.Marshal
+import Foreign.Ptr
 import Foreign.Storable
 import Language.Haskell.TH
 import System.IO.Unsafe

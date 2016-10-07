@@ -40,6 +40,7 @@ import Control.Monad
 import Prelude
 
 import Foreign.C
+import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal
 
