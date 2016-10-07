@@ -123,7 +123,12 @@ Library
 
   default-language:     Haskell98
   Extensions:
-  ghc-options:          -Wall -O2 -funbox-strict-fields -fwarn-tabs
+  ghc-options:          -Wall
+                        -O2
+                        -funbox-strict-fields
+                        -fwarn-tabs
+                        -fno-warn-unused-imports
+
   ghc-prof-options:     -fprof-auto -fprof-cafs
 
 
