@@ -64,6 +64,13 @@ Extra-source-files:     cbits/stubs.h
                         README.markdown
                         WINDOWS.markdown
 
+custom-setup
+  setup-depends:
+      base              >= 4.6
+    , Cabal             >= 1.24
+    , directory         >= 1.0
+    , filepath          >= 1.0
+
 Library
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
