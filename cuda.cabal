@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.1.0
+Version:                0.7.5.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -10,26 +10,43 @@ Description:
     .
     <http://developer.nvidia.com/cuda-downloads>
     .
-    The configure script will look for your CUDA installation in the standard
+    The setup script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
     This library provides bindings to both the CUDA Driver and Runtime APIs. To
     get started, see one of:
     .
-    * "Foreign.CUDA.Driver"
+    * "Foreign.CUDA.Driver" (a short tutorial is available here)
     .
     * "Foreign.CUDA.Runtime"
     .
     This release tested with versions 6.0, 6.5, 7.0, and 7.5 of the CUDA toolkit.
     .
+    [/NOTES:/]
+    .
+    The setup script for this package requires at least Cabal-1.24. To upgrade,
+    execute one of:
+    .
+    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.24"@
+    .
+    * stack users: @stack setup --upgrade-cabal@
+    .
+    Due to an interaction between GHC-8 and unified virtual address spaces in
+    CUDA, this package does not currently work with GHCi on ghc-8.0.1 (compiled
+    programs should work). See the following for more details:
+    .
+    * <https://github.com/tmcdonell/cuda/issues/39>
+    .
+    * <https://ghc.haskell.org/trac/ghc/ticket/12573>
+    .
     For additional notes on installing on Windows, see:
     .
-    <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
+    * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
     .
 
 License:                BSD3
 License-file:           LICENSE
-Copyright:              Copyright (c) [2009..2015]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
+Copyright:              Copyright (c) [2009..2016]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
@@ -46,6 +63,13 @@ Extra-source-files:     cbits/stubs.h
                         CHANGELOG.markdown
                         README.markdown
                         WINDOWS.markdown
+
+custom-setup
+  setup-depends:
+      base              >= 4.6
+    , Cabal             >= 1.24
+    , directory         >= 1.0
+    , filepath          >= 1.0
 
 Library
   Exposed-Modules:      Foreign.CUDA
@@ -99,7 +123,12 @@ Library
 
   default-language:     Haskell98
   Extensions:
-  ghc-options:          -Wall -O2 -funbox-strict-fields -fwarn-tabs
+  ghc-options:          -Wall
+                        -O2
+                        -funbox-strict-fields
+                        -fwarn-tabs
+                        -fno-warn-unused-imports
+
   ghc-prof-options:     -fprof-auto -fprof-cafs
 
 
@@ -115,9 +144,10 @@ Executable nvidia-device-query
   default-language:     Haskell98
 
 
-source-repository head
+source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
+    tag:                0.7.5.0
 
 -- vim: nospell
 
