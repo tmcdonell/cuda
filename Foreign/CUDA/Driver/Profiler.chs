@@ -25,7 +25,6 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- system
-import Foreign
 import Foreign.C
 
 

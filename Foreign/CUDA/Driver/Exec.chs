@@ -371,7 +371,6 @@ setParams !fn !prs = do
 
 {-# INLINE cuParamSetv #-}
 {# fun unsafe cuParamSetv
-  `Storable a' =>
   { useFun  `Fun'
   ,         `Int'
   , castPtr `Ptr a'

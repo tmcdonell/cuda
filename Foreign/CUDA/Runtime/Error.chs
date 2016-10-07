@@ -27,9 +27,7 @@ import Foreign.CUDA.Internal.C2HS
 import Control.Exception
 import Data.Typeable
 import Foreign.C
-import Foreign.Ptr
 import Language.Haskell.TH
-import System.IO.Unsafe
 import Text.Printf
 
 #include "cbits/stubs.h"
