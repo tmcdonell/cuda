@@ -10,21 +10,38 @@ Description:
     .
     <http://developer.nvidia.com/cuda-downloads>
     .
-    The configure script will look for your CUDA installation in the standard
+    The setup script will look for your CUDA installation in the standard
     places, and if the nvcc compiler is found in your PATH, relative to that.
     .
     This library provides bindings to both the CUDA Driver and Runtime APIs. To
     get started, see one of:
     .
-    * "Foreign.CUDA.Driver"
+    * "Foreign.CUDA.Driver" (a short tutorial is available here)
     .
     * "Foreign.CUDA.Runtime"
     .
     This release tested with versions 6.0, 6.5, 7.0, and 7.5 of the CUDA toolkit.
     .
+    [/NOTES:/]
+    .
+    The setup script for this package requires at least Cabal-1.24. To upgrade,
+    execute one of:
+    .
+    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.24"@
+    .
+    * stack users: @stack setup --upgrade-cabal@
+    .
+    Due to an interaction between GHC-8 and unified virtual address spaces in
+    CUDA, this package does not currently work with GHCi on ghc-8.0.1 (compiled
+    programs should work). See the following for more details:
+    .
+    * <https://github.com/tmcdonell/cuda/issues/39>
+    .
+    * <https://ghc.haskell.org/trac/ghc/ticket/12573>
+    .
     For additional notes on installing on Windows, see:
     .
-    <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
+    * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
     .
 
 License:                BSD3
