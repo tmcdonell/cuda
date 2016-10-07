@@ -1,15 +1,14 @@
-#define _GNU_SOURCE
 
 #include <cuda.h>
 
-#include <stdint.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 
 /*
@@ -117,6 +116,11 @@ CUresult CUDAAPI cuInit(unsigned int Flags)
     release_cuda_memory_region();
 
     CUresult CUDAAPI (*original_cuInit)(unsigned int) = dlsym(RTLD_NEXT, "cuInit");
+    if ( !original_cuInit ) {
+        perror("dlsym failed to locate 'cuInit'");
+        exit(EXIT_FAILURE);
+    }
+
     return original_cuInit(Flags);
 }
 
