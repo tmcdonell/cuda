@@ -111,6 +111,7 @@ Library
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
+                        Text.Show.Describe
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
