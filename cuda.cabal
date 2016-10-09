@@ -72,6 +72,7 @@ custom-setup
     , filepath          >= 1.0
 
 Library
+  hs-source-dirs:       src
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
                         Foreign.CUDA.Types
