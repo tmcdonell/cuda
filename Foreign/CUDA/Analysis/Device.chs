@@ -166,6 +166,9 @@ deviceResources = resources . computeCapability
       Compute 5 0 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM10x
       Compute 5 2 -> DeviceResources 32 2048 32 64 128  98304 256  65536 256 4 255 Warp   -- Maxwell GM20x
       Compute 5 3 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM20B
+      Compute 6 0 -> DeviceResources 32 2048 32 64  64  65536 256  65536 256 4 255 Warp   -- Pascal GP100 (?)
+      Compute 6 1 -> DeviceResources 32 2048 32 64 128  98304 256  65536 256 4 255 Warp   -- Pascal GP10x (?)
+      Compute 6 2 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Pascal (?)
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
