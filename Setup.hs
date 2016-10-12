@@ -1,17 +1,23 @@
+{-# LANGUAGE CPP #-}
 
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parse
 import Distribution.Simple
 import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
-import Distribution.Simple.Program.Db
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess                               hiding ( ppC2hs )
 import Distribution.Simple.Program
+import Distribution.Simple.Program.Db
 import Distribution.Simple.Setup
 import Distribution.Simple.Utils
 import Distribution.System
 import Distribution.Verbosity
+
+#if MIN_VERSION_Cabal(1,25,0)
+import Distribution.PackageDescription.PrettyPrint
+import Distribution.Version
+#endif
 
 import Control.Exception
 import Control.Monad
@@ -506,8 +512,13 @@ getHookedBuildInfo verbosity = do
 --
 -- Everything below copied from Distribution.Simple.PreProcess
 --
+#if MIN_VERSION_Cabal(1,25,0)
+ppC2hs :: BuildInfo -> LocalBuildInfo -> ComponentLocalBuildInfo -> PreProcessor
+ppC2hs bi lbi _clbi
+#else
 ppC2hs :: BuildInfo -> LocalBuildInfo -> PreProcessor
 ppC2hs bi lbi
+#endif
     = PreProcessor {
         platformIndependent = False,
         runPreProcessor     = \(inBaseDir, inRelativeFile)
@@ -541,7 +552,15 @@ hcDefines comp =
 -- FIXME: this forces GHC's crazy 4.8.2 -> 408 convention on all the other
 -- compilers. Check if that's really what they want.
 versionInt :: Version -> String
-versionInt (Version { versionBranch = [] })      = "1"
-versionInt (Version { versionBranch = [n] })     = show n
-versionInt (Version { versionBranch = n1:n2:_ }) = printf "%d%02d" n1 n2
+versionInt v =
+  case versionBranch v of
+    []      -> "1"
+    [n]     -> show n
+    n1:n2:_ -> printf "%d%02d" n1 n2
+
+
+#if MIN_VERSION_Cabal(1,25,0)
+versionBranch :: Version -> [Int]
+versionBranch = versionNumbers
+#endif
 
