@@ -1,5 +1,10 @@
 {-# LANGUAGE CPP #-}
 
+-- The MIN_VERSION_Cabal macro was introduced with Cabal-1.24.
+#ifndef MIN_VERSION_Cabal
+#define MIN_VERSION_Cabal(major1,major2,minor) 0
+#endif
+
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parse
 import Distribution.Simple
@@ -14,7 +19,7 @@ import Distribution.Simple.Utils
 import Distribution.System
 import Distribution.Verbosity
 
-#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
+#if MIN_VERSION_Cabal(1,25,0)
 import Distribution.PackageDescription.PrettyPrint
 import Distribution.Version
 #endif
@@ -512,7 +517,7 @@ getHookedBuildInfo verbosity = do
 --
 -- Everything below copied from Distribution.Simple.PreProcess
 --
-#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
+#if MIN_VERSION_Cabal(1,25,0)
 ppC2hs :: BuildInfo -> LocalBuildInfo -> ComponentLocalBuildInfo -> PreProcessor
 ppC2hs bi lbi _clbi
 #else
@@ -559,7 +564,7 @@ versionInt v =
     n1:n2:_ -> printf "%d%02d" n1 n2
 
 
-#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
+#if MIN_VERSION_Cabal(1,25,0)
 versionBranch :: Version -> [Int]
 versionBranch = versionNumbers
 #endif
