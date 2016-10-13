@@ -14,7 +14,7 @@ import Distribution.Simple.Utils
 import Distribution.System
 import Distribution.Verbosity
 
-#if MIN_VERSION_Cabal(1,25,0)
+#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
 import Distribution.PackageDescription.PrettyPrint
 import Distribution.Version
 #endif
@@ -512,7 +512,7 @@ getHookedBuildInfo verbosity = do
 --
 -- Everything below copied from Distribution.Simple.PreProcess
 --
-#if MIN_VERSION_Cabal(1,25,0)
+#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
 ppC2hs :: BuildInfo -> LocalBuildInfo -> ComponentLocalBuildInfo -> PreProcessor
 ppC2hs bi lbi _clbi
 #else
@@ -559,7 +559,7 @@ versionInt v =
     n1:n2:_ -> printf "%d%02d" n1 n2
 
 
-#if MIN_VERSION_Cabal(1,25,0)
+#if defined(MIN_VERSION_Cabal) && MIN_VERSION_Cabal(1,25,0)
 versionBranch :: Version -> [Int]
 versionBranch = versionNumbers
 #endif
