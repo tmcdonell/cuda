@@ -1,6 +1,8 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP             #-}
+{-# LANGUAGE QuasiQuotes     #-}
+{-# LANGUAGE TemplateHaskell #-}
 
--- The MIN_VERSION_Cabal macro was introduced with Cabal-1.24.
+-- The MIN_VERSION_Cabal macro was introduced with Cabal-1.24 (??)
 #ifndef MIN_VERSION_Cabal
 #define MIN_VERSION_Cabal(major1,major2,minor) 0
 #endif
@@ -14,8 +16,9 @@ import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess                               hiding ( ppC2hs )
 import Distribution.Simple.Program
 import Distribution.Simple.Program.Db
+import Distribution.Simple.Program.Find
 import Distribution.Simple.Setup
-import Distribution.Simple.Utils
+import Distribution.Simple.Utils                                    hiding ( isInfixOf )
 import Distribution.System
 import Distribution.Verbosity
 
@@ -484,9 +487,14 @@ findProgramLocationOrError verbosity execName = do
 findProgram :: Verbosity -> FilePath -> IO (Maybe FilePath)
 findProgram verbosity prog = do
   result <- findProgramOnSearchPath verbosity defaultProgramSearchPath prog
-  case result of
-    Nothing       -> return Nothing
-    Just (path,_) -> return (Just path)
+#if MIN_VERSION_Cabal(1,25,0)
+  return (fmap fst result)
+#else
+  $( case withinRange cabalVersion (orLaterVersion (Version [1,24] [])) of
+       True  -> [| return (fmap fst result) |]
+       False -> [| return result |]
+    )
+#endif
 
 
 -- Reads user-provided `cuda.buildinfo` if present, otherwise loads `cuda.buildinfo.generated`
