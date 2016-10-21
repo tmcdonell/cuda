@@ -72,6 +72,7 @@ custom-setup
     , filepath          >= 1.0
 
 Library
+  hs-source-dirs:       src
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
                         Foreign.CUDA.Types
@@ -110,6 +111,7 @@ Library
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
+                        Text.Show.Describe
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
