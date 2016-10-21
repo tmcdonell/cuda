@@ -66,7 +66,7 @@ before_install:
 
   # Need to install a newer version of the Cabal library in order to run the Setup.hs script
   - cabal update
-  - cabal install Cabal --constraint="Cabal >= 1.24"
+  - cabal install Cabal --constraint="Cabal >= 1.22"
   - cabal install c2hs
 
   # Install the CUDA toolkit

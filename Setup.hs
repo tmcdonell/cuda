@@ -14,8 +14,9 @@ import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess                               hiding ( ppC2hs )
 import Distribution.Simple.Program
 import Distribution.Simple.Program.Db
+import Distribution.Simple.Program.Find
 import Distribution.Simple.Setup
-import Distribution.Simple.Utils
+import Distribution.Simple.Utils                                    hiding ( isInfixOf )
 import Distribution.System
 import Distribution.Verbosity
 
@@ -484,10 +485,13 @@ findProgramLocationOrError verbosity execName = do
 findProgram :: Verbosity -> FilePath -> IO (Maybe FilePath)
 findProgram verbosity prog = do
   result <- findProgramOnSearchPath verbosity defaultProgramSearchPath prog
+#if MIN_VERSION_Cabal(1,24,0)
   case result of
     Nothing       -> return Nothing
     Just (path,_) -> return (Just path)
-
+#else
+  return result
+#endif
 
 -- Reads user-provided `cuda.buildinfo` if present, otherwise loads `cuda.buildinfo.generated`
 -- Outputs message informing about the other possibility.
