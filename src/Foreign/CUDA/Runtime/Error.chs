@@ -22,6 +22,7 @@ module Foreign.CUDA.Runtime.Error (
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
+import Text.Show.Describe
 
 -- System
 import Control.Exception
@@ -83,12 +84,14 @@ requireSDK n v = cudaError $ printf "'%s' requires at least cuda-%3.1f\n" (show 
 -- |
 -- Return the descriptive string associated with a particular error code
 --
-{# fun pure unsafe cudaGetErrorString as describe
-    { cFromEnum `Status' } -> `String' #}
---
+instance Describe Status where
+    describe = cudaGetErrorString
+
 -- Logically, this must be a pure function, returning a pointer to a statically
 -- defined string constant.
 --
+{# fun pure unsafe cudaGetErrorString
+    { cFromEnum `Status' } -> `String' #}
 
 
 -- |

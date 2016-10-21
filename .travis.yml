@@ -5,29 +5,21 @@ sudo: required
 
 matrix:
   include:
-    - env: CUDA=6.5-14 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=6.5-14 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=7.0-28 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=7.0-28 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=7.5-18 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=7.5-18 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=6.5-14 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=8.0.44-1 GHC=8.0.1 CABAL=1.24
+      compiler: "GHC 8.0"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
     - env: CUDA=6.5-14 GHC=7.10.3 CABAL=1.22
       compiler: "GHC 7.10"
@@ -41,32 +33,61 @@ matrix:
       compiler: "GHC 7.10"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=6.5-14 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=8.0.44-1 GHC=7.10.3 CABAL=1.22
+      compiler: "GHC 7.10"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=7.0-28 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=6.5-14 GHC=7.8.4 CABAL=1.18
+      compiler: "GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=7.5-18 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
+    - env: CUDA=7.0-28 GHC=7.8.4 CABAL=1.18
+      compiler: "GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=7.5-18 GHC=head CABAL=head
+    - env: CUDA=7.5-18 GHC=7.8.4 CABAL=1.18
+      compiler: "GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=8.0.44-1 GHC=7.8.4 CABAL=1.18
+      compiler: "GHC 7.8"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=6.5-14 GHC=7.6.3 CABAL=1.18
+      compiler: "GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.0-28 GHC=7.6.3 CABAL=1.18
+      compiler: "GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=7.5-18 GHC=7.6.3 CABAL=1.18
+      compiler: "GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=8.0.44-1 GHC=7.6.3 CABAL=1.18
+      compiler: "GHC 7.6"
+      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
+
+    - env: CUDA=8.0.44-1 GHC=head CABAL=head
       compiler: "GHC HEAD"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-head, cabal-install-head, happy-1.19.5, alex-3.1.7 ] }}
 
   allow_failures:
-    - env: CUDA=7.5-18 GHC=head CABAL=head
+    - env: CUDA=8.0.44-1 GHC=head CABAL=head
 
 
 before_install:
   - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$HOME/.cabal/bin:$PATH
 
-  # Need to install a newer version of the Cabal library in order to run the Setup.hs script
+  # Need at least Cabal-1.22 to run the Setup.hs script. This is the default
+  # version of GHC-7.10 and later.
   - cabal update
-  - cabal install Cabal --constraint="Cabal >= 1.24"
+  - |
+      case ${GHC} in
+        7.6.*) cabal install Cabal --constraint="Cabal >= 1.22" ;;
+        7.8.*) cabal install Cabal --constraint="Cabal >= 1.22" ;;
+      esac
   - cabal install c2hs
 
   # Install the CUDA toolkit

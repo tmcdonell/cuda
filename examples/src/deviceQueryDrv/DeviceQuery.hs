@@ -80,11 +80,7 @@ statDevice dev@DeviceProperties{..} =
   in
   putStrLn . render
     $ hang table 4
-    $ case computeMode of
-        Default          -> text "Multiple host threads can use the device simultaneously"
-        Exclusive        -> text "Only one host thread in a process is able to use this device"
-        Prohibited       -> text "No host thread can use this device"
-        ExclusiveProcess -> text "Multiple threads in one process can use the device simultaneously"
+    $ text (describe computeMode)
 
 
 showFreq :: Integral i => i -> String

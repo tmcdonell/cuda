@@ -8,17 +8,20 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Analysis.Device
-  (
+module Foreign.CUDA.Analysis.Device (
+
     Compute(..), ComputeMode(..),
     DeviceProperties(..), DeviceResources(..), Allocation(..), PCI(..),
-    deviceResources
-  )
-  where
+    deviceResources,
+    describe
+
+) where
 
 #include "cbits/stubs.h"
 
 import Data.Int
+import Text.Show.Describe
+
 import Debug.Trace
 
 
@@ -28,6 +31,15 @@ import Debug.Trace
 {# enum CUcomputemode as ComputeMode
     { underscoreToCase }
     with prefix="CU_COMPUTEMODE" deriving (Eq, Show) #}
+
+instance Describe ComputeMode where
+  describe Default          = "Multiple contexts are allowed on the device simultaneously"
+#if CUDA_VERSION < 8000
+  describe Exclusive        = "Only one context used by a single thread can be present on this device at a time"
+#endif
+  describe Prohibited       = "No contexts can be created on this device at this time"
+  describe ExclusiveProcess = "Only one context used by a single process can be present on this device at a time"
+
 
 -- |
 -- GPU compute capability, major and minor revision number respectively.
@@ -166,6 +178,9 @@ deviceResources = resources . computeCapability
       Compute 5 0 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM10x
       Compute 5 2 -> DeviceResources 32 2048 32 64 128  98304 256  65536 256 4 255 Warp   -- Maxwell GM20x
       Compute 5 3 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM20B
+      Compute 6 0 -> DeviceResources 32 2048 32 64  64  65536 256  65536 256 4 255 Warp   -- Pascal GP100 (?)
+      Compute 6 1 -> DeviceResources 32 2048 32 64 128  98304 256  65536 256 4 255 Warp   -- Pascal GP10x (?)
+      Compute 6 2 -> DeviceResources 32 2048 32 64 128  65536 256  65536 256 4 255 Warp   -- Pascal (?)
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want

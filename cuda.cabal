@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.5.0
+Version:                0.7.5.1
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -24,10 +24,10 @@ Description:
     .
     [/NOTES:/]
     .
-    The setup script for this package requires at least Cabal-1.24. To upgrade,
+    The setup script for this package requires at least Cabal-1.22. To upgrade,
     execute one of:
     .
-    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.24"@
+    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.22"@
     .
     * stack users: @stack setup --upgrade-cabal@
     .
@@ -52,7 +52,7 @@ Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
-Cabal-version:          >= 1.24
+Cabal-version:          >= 1.22
 Tested-with:            GHC >= 7.6
 
 Build-type:             Custom
@@ -67,11 +67,12 @@ Extra-source-files:     cbits/stubs.h
 custom-setup
   setup-depends:
       base              >= 4.6
-    , Cabal             >= 1.24
+    , Cabal             >= 1.22
     , directory         >= 1.0
     , filepath          >= 1.0
 
 Library
+  hs-source-dirs:       src
   Exposed-Modules:      Foreign.CUDA
                         Foreign.CUDA.Ptr
                         Foreign.CUDA.Types
@@ -110,6 +111,7 @@ Library
                         Foreign.CUDA.Driver.Utils
 
   Other-modules:        Foreign.CUDA.Internal.C2HS
+                        Text.Show.Describe
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
@@ -147,7 +149,7 @@ Executable nvidia-device-query
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.7.5.0
+    tag:                0.7.5.1
 
 -- vim: nospell
 

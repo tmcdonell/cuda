@@ -9,8 +9,12 @@
 --
 --------------------------------------------------------------------------------
 
-module Foreign.CUDA.Runtime.Utils (runtimeVersion, driverVersion)
-  where
+module Foreign.CUDA.Runtime.Utils (
+
+  runtimeVersion,
+  driverVersion,
+
+) where
 
 #include "cbits/stubs.h"
 {# context lib="cudart" #}

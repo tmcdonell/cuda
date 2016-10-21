@@ -12,10 +12,10 @@
 -- API provides more control over how CUDA is used. Furthermore, since it
 -- does not require compiling and linking the program with 'nvcc', the
 -- Driver API provides better inter-language compatibility.
-  --
+--
 -- The following is a short tutorial on using the Driver API. The steps can
--- be copied into a file, or run directly in `ghci`, in which case `ghci`
--- should be launched with the option `-fno-ghci-sandbox`. This is because
+-- be copied into a file, or run directly in @ghci@, in which case @ghci@
+-- should be launched with the option @-fno-ghci-sandbox@. This is because
 -- CUDA maintains CPU-local state, so operations should always be run from
 -- a bound thread.
 --
@@ -100,14 +100,14 @@
 -- >     }
 -- > }
 --
--- Here, the `__global__` keyword marks the function as a kernel that
+-- Here, the @__global__@ keyword marks the function as a kernel that
 -- should be computed on the GPU in data parallel. When we execute this
 -- function on the GPU, (at least) /N/ threads will execute /N/ individual
--- instances of the kernel function `vecAdd`. Each thread will operate on
+-- instances of the kernel function @vecAdd@. Each thread will operate on
 -- a single element of each input array to create a single value in the
 -- result. See the CUDA programming guide for more details.
 --
--- We can save this to a file `vector_add.cu`, and compile it using `nvcc`
+-- We can save this to a file @vector_add.cu@, and compile it using @nvcc@
 -- into a form that we can then load onto the GPU and execute:
 --
 -- > $ nvcc --ptx vector_add.cu
@@ -173,7 +173,7 @@
 -- the GPU which all execute the same function, and each thread has
 -- a unique identifier in the grid/block hierarchy which can be used to
 -- identify exactly which element this thread should process (the
--- `blockIdx` and `threadIdx` parameters that we saw earlier,
+-- @blockIdx@ and @threadIdx@ parameters that we saw earlier,
 -- respectively).
 --
 -- To execute our function, we will use a grid of 4 blocks, each containing
