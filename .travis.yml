@@ -64,9 +64,15 @@ matrix:
 before_install:
   - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$HOME/.cabal/bin:$PATH
 
-  # Need to install a newer version of the Cabal library in order to run the Setup.hs script
+  # Need to install a newer version of the Cabal library in order to run the
+  # Setup.hs script. Only do this for very old versions of GHC; we want it to
+  # compile out-of-the-box for recent-ish versions.
   - cabal update
-  - cabal install Cabal --constraint="Cabal >= 1.22"
+  - |
+      case ${GHC} in
+        7.6.*) cabal install Cabal --constraint="Cabal >= 1.24" ;;
+        7.8.*) cabal install Cabal --constraint="Cabal >= 1.24" ;;
+      esac
   - cabal install c2hs
 
   # Install the CUDA toolkit
