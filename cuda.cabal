@@ -39,6 +39,8 @@ Description:
     .
     * <https://ghc.haskell.org/trac/ghc/ticket/12573>
     .
+    The bug should be fixed in ghc-8.0.2 and beyond.
+    .
     For additional notes on installing on Windows, see:
     .
     * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
@@ -132,6 +134,9 @@ Library
                         -fno-warn-unused-imports
 
   ghc-prof-options:     -fprof-auto -fprof-cafs
+
+  if impl(ghc == 8.0.1)
+    cpp-options:        -DCUDA_PRELOAD
 
 
 Executable nvidia-device-query
