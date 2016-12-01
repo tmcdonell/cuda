@@ -96,12 +96,13 @@ main = defaultMainWithHooks customHooks
     postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
     postConfHook args flags pkg_descr lbi = do
       let
-          verbosity       = fromFlag (configVerbosity flags)
+          verbosity       = fromFlagOrDefault normal (configVerbosity flags)
+          profile         = fromFlagOrDefault False  (configProfLib flags)
           currentPlatform = hostPlatform lbi
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      generateAndStoreBuildInfo verbosity currentPlatform compilerId_ generatedBuildInfoFilePath
+      generateAndStoreBuildInfo verbosity profile currentPlatform compilerId_ generatedBuildInfoFilePath
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
@@ -112,8 +113,8 @@ main = defaultMainWithHooks customHooks
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
 --
-libraryBuildInfo :: FilePath -> Platform -> Version -> IO HookedBuildInfo
-libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
+libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
+libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
   let
       libraryPaths      = [cudaLibraryPath platform installPath]
       includePaths      = [cudaIncludePath platform installPath]
@@ -124,7 +125,7 @@ libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
       ldOptions'        = map ("-L"++) libraryPaths
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
-                       ++ if os /= Windows
+                       ++ if os /= Windows && not profile
                             then map ("-optl-Wl,-rpath,"++) extraLibDirs'
                             else []
       extraLibs'        = cudaLibraries platform
@@ -362,10 +363,10 @@ windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
-generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity platform (CompilerId _ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo :: Verbosity -> Bool -> Platform -> CompilerId -> FilePath -> IO ()
+generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo installPath platform ghcVersion
+  hbi         <- libraryBuildInfo profile installPath platform ghcVersion
   storeHookedBuildInfo verbosity path hbi
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
