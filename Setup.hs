@@ -175,8 +175,8 @@ cudaLibraryPath (Platform arch os) installPath = installPath </> libpath
   where
     libpath =
       case (os, arch) of
-        (Windows, I386)   -> "Win32"
-        (Windows, X86_64) -> "x64"
+        (Windows, I386)   -> "lib/Win32"
+        (Windows, X86_64) -> "lib/x64"
         (OSX,     _)      -> "lib"    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64) -> "lib64"  -- treat all others similarly
         _                 -> "lib"
@@ -459,7 +459,7 @@ validateLocation verbosity platform path = do
 --
 candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH", "environment variable CUDA_PATH")
+  [ (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
   , (findInPath,         "nvcc compiler executable in PATH")
   , (return defaultPath, printf "default install location (%s)" defaultPath)
   ]
@@ -577,4 +577,3 @@ versionInt v =
 versionBranch :: Version -> [Int]
 versionBranch = versionNumbers
 #endif
-
