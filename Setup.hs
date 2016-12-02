@@ -1,31 +1,17 @@
-{-# LANGUAGE CPP             #-}
-{-# LANGUAGE QuasiQuotes     #-}
-{-# LANGUAGE TemplateHaskell #-}
-
--- The MIN_VERSION_Cabal macro was introduced with Cabal-1.24 (??)
-#ifndef MIN_VERSION_Cabal
-#define MIN_VERSION_Cabal(major1,major2,minor) 0
-#endif
 
 import Distribution.PackageDescription
 import Distribution.PackageDescription.Parse
 import Distribution.Simple
 import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
+import Distribution.Simple.Program.Db
 import Distribution.Simple.LocalBuildInfo
 import Distribution.Simple.PreProcess                               hiding ( ppC2hs )
 import Distribution.Simple.Program
-import Distribution.Simple.Program.Db
-import Distribution.Simple.Program.Find
 import Distribution.Simple.Setup
-import Distribution.Simple.Utils                                    hiding ( isInfixOf )
+import Distribution.Simple.Utils
 import Distribution.System
 import Distribution.Verbosity
-
-#if MIN_VERSION_Cabal(1,25,0)
-import Distribution.PackageDescription.PrettyPrint
-import Distribution.Version
-#endif
 
 import Control.Exception
 import Control.Monad
@@ -96,13 +82,12 @@ main = defaultMainWithHooks customHooks
     postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
     postConfHook args flags pkg_descr lbi = do
       let
-          verbosity       = fromFlagOrDefault normal (configVerbosity flags)
-          profile         = fromFlagOrDefault False  (configProfLib flags)
+          verbosity       = fromFlag (configVerbosity flags)
           currentPlatform = hostPlatform lbi
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      generateAndStoreBuildInfo verbosity profile currentPlatform compilerId_ generatedBuildInfoFilePath
+      generateAndStoreBuildInfo verbosity currentPlatform compilerId_ generatedBuildInfoFilePath
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
@@ -113,8 +98,8 @@ main = defaultMainWithHooks customHooks
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
 --
-libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
-libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
+libraryBuildInfo :: FilePath -> Platform -> Version -> IO HookedBuildInfo
+libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
   let
       libraryPaths      = [cudaLibraryPath platform installPath]
       includePaths      = [cudaIncludePath platform installPath]
@@ -125,7 +110,7 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
       ldOptions'        = map ("-L"++) libraryPaths
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
-                       ++ if os /= Windows && not profile
+                       ++ if os /= Windows
                             then map ("-optl-Wl,-rpath,"++) extraLibDirs'
                             else []
       extraLibs'        = cudaLibraries platform
@@ -175,8 +160,8 @@ cudaLibraryPath (Platform arch os) installPath = installPath </> libpath
   where
     libpath =
       case (os, arch) of
-        (Windows, I386)   -> "Win32"
-        (Windows, X86_64) -> "x64"
+        (Windows, I386)   -> "lib/Win32"
+        (Windows, X86_64) -> "lib/x64"
         (OSX,     _)      -> "lib"    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64) -> "lib64"  -- treat all others similarly
         _                 -> "lib"
@@ -363,10 +348,10 @@ windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
-generateAndStoreBuildInfo :: Verbosity -> Bool -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
+generateAndStoreBuildInfo verbosity platform (CompilerId _ghcFlavor ghcVersion) path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo profile installPath platform ghcVersion
+  hbi         <- libraryBuildInfo installPath platform ghcVersion
   storeHookedBuildInfo verbosity path hbi
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
@@ -459,7 +444,7 @@ validateLocation verbosity platform path = do
 --
 candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH", "environment variable CUDA_PATH")
+  [ (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH")
   , (findInPath,         "nvcc compiler executable in PATH")
   , (return defaultPath, printf "default install location (%s)" defaultPath)
   ]
@@ -488,14 +473,9 @@ findProgramLocationOrError verbosity execName = do
 findProgram :: Verbosity -> FilePath -> IO (Maybe FilePath)
 findProgram verbosity prog = do
   result <- findProgramOnSearchPath verbosity defaultProgramSearchPath prog
-#if MIN_VERSION_Cabal(1,25,0)
-  return (fmap fst result)
-#else
-  $( case withinRange cabalVersion (orLaterVersion (Version [1,24] [])) of
-       True  -> [| return (fmap fst result) |]
-       False -> [| return result |]
-    )
-#endif
+  case result of
+    Nothing       -> return Nothing
+    Just (path,_) -> return (Just path)
 
 
 -- Reads user-provided `cuda.buildinfo` if present, otherwise loads `cuda.buildinfo.generated`
@@ -526,13 +506,8 @@ getHookedBuildInfo verbosity = do
 --
 -- Everything below copied from Distribution.Simple.PreProcess
 --
-#if MIN_VERSION_Cabal(1,25,0)
-ppC2hs :: BuildInfo -> LocalBuildInfo -> ComponentLocalBuildInfo -> PreProcessor
-ppC2hs bi lbi _clbi
-#else
 ppC2hs :: BuildInfo -> LocalBuildInfo -> PreProcessor
 ppC2hs bi lbi
-#endif
     = PreProcessor {
         platformIndependent = False,
         runPreProcessor     = \(inBaseDir, inRelativeFile)
@@ -566,15 +541,6 @@ hcDefines comp =
 -- FIXME: this forces GHC's crazy 4.8.2 -> 408 convention on all the other
 -- compilers. Check if that's really what they want.
 versionInt :: Version -> String
-versionInt v =
-  case versionBranch v of
-    []      -> "1"
-    [n]     -> show n
-    n1:n2:_ -> printf "%d%02d" n1 n2
-
-
-#if MIN_VERSION_Cabal(1,25,0)
-versionBranch :: Version -> [Int]
-versionBranch = versionNumbers
-#endif
-
+versionInt (Version { versionBranch = [] })      = "1"
+versionInt (Version { versionBranch = [n] })     = show n
+versionInt (Version { versionBranch = n1:n2:_ }) = printf "%d%02d" n1 n2
