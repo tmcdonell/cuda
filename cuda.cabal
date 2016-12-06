@@ -10,8 +10,12 @@ Description:
     .
     <http://developer.nvidia.com/cuda-downloads>
     .
-    The setup script will look for your CUDA installation in the standard
-    places, and if the nvcc compiler is found in your PATH, relative to that.
+    The setup script will look for your CUDA installation by checking, in the
+    following order:
+    .
+      1. The @CUDA_PATH@ environment variable
+      2. Searching for @nvcc@ on the @PATH@
+      3. Checking at @\/usr\/local\/cuda@
     .
     This library provides bindings to both the CUDA Driver and Runtime APIs. To
     get started, see one of:
