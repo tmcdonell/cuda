@@ -380,6 +380,7 @@ storeHookedBuildInfo verbosity path hbi = do
 --  1. CUDA_PATH environment variable
 --  2. Looking for `nvcc` in `PATH`
 --  3. Checking /usr/local/cuda
+--  4. CUDA_PATH_Vx_y environment variable, for recent CUDA toolkit versions x.y
 --
 -- In case of failure, calls die with the pretty long message from below.
 --
@@ -459,9 +460,14 @@ validateLocation verbosity platform path = do
 --
 candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
-  , (findInPath,         "nvcc compiler executable in PATH")
-  , (return defaultPath, printf "default install location (%s)" defaultPath)
+  [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
+  , (findInPath,              "nvcc compiler executable in PATH")
+  , (return defaultPath,      printf "default install location (%s)" defaultPath)
+  , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
+  , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
+  , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
+  , (getEnv "CUDA_PATH_V6_5", "environment variable CUDA_PATH_V6_5")
+  , (getEnv "CUDA_PATH_V6_0", "environment variable CUDA_PATH_V6_0")
   ]
   where
     findInPath :: IO FilePath
@@ -577,3 +583,4 @@ versionInt v =
 versionBranch :: Version -> [Int]
 versionBranch = versionNumbers
 #endif
+
