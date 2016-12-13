@@ -1,6 +1,6 @@
 # vim: nospell
 #
-resolver: lts-6.19
+resolver: lts-6.26
 
 packages:
 - '.'
