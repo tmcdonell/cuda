@@ -175,8 +175,8 @@ cudaLibraryPath (Platform arch os) installPath = installPath </> libpath
   where
     libpath =
       case (os, arch) of
-        (Windows, I386)   -> "Win32"
-        (Windows, X86_64) -> "x64"
+        (Windows, I386)   -> "lib/Win32"
+        (Windows, X86_64) -> "lib/x64"
         (OSX,     _)      -> "lib"    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64) -> "lib64"  -- treat all others similarly
         _                 -> "lib"
@@ -380,6 +380,7 @@ storeHookedBuildInfo verbosity path hbi = do
 --  1. CUDA_PATH environment variable
 --  2. Looking for `nvcc` in `PATH`
 --  3. Checking /usr/local/cuda
+--  4. CUDA_PATH_Vx_y environment variable, for recent CUDA toolkit versions x.y
 --
 -- In case of failure, calls die with the pretty long message from below.
 --
@@ -459,9 +460,14 @@ validateLocation verbosity platform path = do
 --
 candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH", "environment variable CUDA_PATH")
-  , (findInPath,         "nvcc compiler executable in PATH")
-  , (return defaultPath, printf "default install location (%s)" defaultPath)
+  [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
+  , (findInPath,              "nvcc compiler executable in PATH")
+  , (return defaultPath,      printf "default install location (%s)" defaultPath)
+  , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
+  , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
+  , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
+  , (getEnv "CUDA_PATH_V6_5", "environment variable CUDA_PATH_V6_5")
+  , (getEnv "CUDA_PATH_V6_0", "environment variable CUDA_PATH_V6_0")
   ]
   where
     findInPath :: IO FilePath
