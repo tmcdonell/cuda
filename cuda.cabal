@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.5.1
+Version:                0.7.5.2
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -10,8 +10,13 @@ Description:
     .
     <http://developer.nvidia.com/cuda-downloads>
     .
-    The setup script will look for your CUDA installation in the standard
-    places, and if the nvcc compiler is found in your PATH, relative to that.
+    The setup script will look for your CUDA installation by checking, in the
+    following order:
+    .
+      1. The @CUDA_PATH@ environment variable
+      2. Searching for @nvcc@ on the @PATH@
+      3. Checking at @\/usr\/local\/cuda@
+      4. @CUDA_PATH_Vx_y@ environment variable, for recent CUDA toolkit versions x.y
     .
     This library provides bindings to both the CUDA Driver and Runtime APIs. To
     get started, see one of:
@@ -38,6 +43,8 @@ Description:
     * <https://github.com/tmcdonell/cuda/issues/39>
     .
     * <https://ghc.haskell.org/trac/ghc/ticket/12573>
+    .
+    The bug should be fixed in ghc-8.0.2 and beyond.
     .
     For additional notes on installing on Windows, see:
     .
@@ -133,6 +140,9 @@ Library
 
   ghc-prof-options:     -fprof-auto -fprof-cafs
 
+  if impl(ghc == 8.0.1)
+    cpp-options:        -DCUDA_PRELOAD
+
 
 Executable nvidia-device-query
   Main-is:              DeviceQuery.hs
@@ -149,7 +159,7 @@ Executable nvidia-device-query
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.7.5.1
+    tag:                0.7.5.2
 
 -- vim: nospell
 

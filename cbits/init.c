@@ -34,6 +34,7 @@ void enable_constructors() { }
  *
  * See: https://github.com/tmcdonell/cuda/issues/39
  */
+#ifdef CUDA_PRELOAD
 __attribute__((constructor)) void preinitialise_cuda()
 {
     CUresult status = cuInit (0);
@@ -49,4 +50,5 @@ __attribute__((constructor)) void preinitialise_cuda()
 #endif
     }
 }
+#endif
 

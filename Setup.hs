@@ -96,12 +96,13 @@ main = defaultMainWithHooks customHooks
     postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
     postConfHook args flags pkg_descr lbi = do
       let
-          verbosity       = fromFlag (configVerbosity flags)
+          verbosity       = fromFlagOrDefault normal (configVerbosity flags)
+          profile         = fromFlagOrDefault False  (configProfLib flags)
           currentPlatform = hostPlatform lbi
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      generateAndStoreBuildInfo verbosity currentPlatform compilerId_ generatedBuildInfoFilePath
+      generateAndStoreBuildInfo verbosity profile currentPlatform compilerId_ generatedBuildInfoFilePath
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
@@ -112,8 +113,8 @@ main = defaultMainWithHooks customHooks
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
 --
-libraryBuildInfo :: FilePath -> Platform -> Version -> IO HookedBuildInfo
-libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
+libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
+libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
   let
       libraryPaths      = [cudaLibraryPath platform installPath]
       includePaths      = [cudaIncludePath platform installPath]
@@ -124,7 +125,7 @@ libraryBuildInfo installPath platform@(Platform arch os) ghcVersion = do
       ldOptions'        = map ("-L"++) libraryPaths
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
-                       ++ if os /= Windows
+                       ++ if os /= Windows && not profile
                             then map ("-optl-Wl,-rpath,"++) extraLibDirs'
                             else []
       extraLibs'        = cudaLibraries platform
@@ -174,8 +175,8 @@ cudaLibraryPath (Platform arch os) installPath = installPath </> libpath
   where
     libpath =
       case (os, arch) of
-        (Windows, I386)   -> "Win32"
-        (Windows, X86_64) -> "x64"
+        (Windows, I386)   -> "lib/Win32"
+        (Windows, X86_64) -> "lib/x64"
         (OSX,     _)      -> "lib"    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64) -> "lib64"  -- treat all others similarly
         _                 -> "lib"
@@ -362,10 +363,10 @@ windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
-generateAndStoreBuildInfo :: Verbosity -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity platform (CompilerId _ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo :: Verbosity -> Bool -> Platform -> CompilerId -> FilePath -> IO ()
+generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo installPath platform ghcVersion
+  hbi         <- libraryBuildInfo profile installPath platform ghcVersion
   storeHookedBuildInfo verbosity path hbi
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
@@ -379,6 +380,7 @@ storeHookedBuildInfo verbosity path hbi = do
 --  1. CUDA_PATH environment variable
 --  2. Looking for `nvcc` in `PATH`
 --  3. Checking /usr/local/cuda
+--  4. CUDA_PATH_Vx_y environment variable, for recent CUDA toolkit versions x.y
 --
 -- In case of failure, calls die with the pretty long message from below.
 --
@@ -458,9 +460,14 @@ validateLocation verbosity platform path = do
 --
 candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH", "environment variable CUDA_PATH")
-  , (findInPath,         "nvcc compiler executable in PATH")
-  , (return defaultPath, printf "default install location (%s)" defaultPath)
+  [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
+  , (findInPath,              "nvcc compiler executable in PATH")
+  , (return defaultPath,      printf "default install location (%s)" defaultPath)
+  , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
+  , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
+  , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
+  , (getEnv "CUDA_PATH_V6_5", "environment variable CUDA_PATH_V6_5")
+  , (getEnv "CUDA_PATH_V6_0", "environment variable CUDA_PATH_V6_0")
   ]
   where
     findInPath :: IO FilePath
