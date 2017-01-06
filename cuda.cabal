@@ -14,8 +14,11 @@ Description:
     following order:
     .
       1. The @CUDA_PATH@ environment variable
+    .
       2. Searching for @nvcc@ on the @PATH@
+    .
       3. Checking at @\/usr\/local\/cuda@
+    .
       4. @CUDA_PATH_Vx_y@ environment variable, for recent CUDA toolkit versions x.y
     .
     This library provides bindings to both the CUDA Driver and Runtime APIs. To
