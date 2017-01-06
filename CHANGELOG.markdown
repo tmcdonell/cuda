@@ -1,3 +1,17 @@
+0.7.5.2
+
+  * Bug fixes: #43, #45, #47
+
+0.7.5.1
+
+  * Re-enable support for Cabal-1.22
+
+  * Bug fixes: #40, #44
+
+0.7.5.0
+
+  * Add support for CUDA-7.5
+
 0.7.1.0
 
   * mallocHostForeignPtr
