@@ -82,37 +82,50 @@ occupancy
     -> Int              -- ^ Registers per thread
     -> Int              -- ^ Shared memory per block (bytes)
     -> Occupancy
-occupancy !dev !thds !regs !smem
+occupancy !dev !threads !regs !smem
   = Occupancy at ab aw oc
   where
-    at = ab * thds
-    aw = ab * warps
-    ab = minimum [limitWarpBlock, limitRegMP, limitSMemMP]
+    at = ab * threads
+    aw = ab * limitWarpsPerBlock
+    ab = minimum [limitDueToWarps, limitDueToRegs, limitDueToSMem]
     oc = 100 * fromIntegral aw / fromIntegral (warpsPerMP gpu)
 
-    regs' = 1 `max` regs
-    smem' = 1 `max` smem
-
     ceiling'      = ceiling :: Double -> Int
+    floor'        = floor   :: Double -> Int
     ceilingBy x s = s * ceiling' (fromIntegral x / fromIntegral s)
+    floorBy x s   = s * floor' (fromIntegral x / fromIntegral s)
 
     -- Physical resources
     --
     gpu = deviceResources dev
 
-    -- Allocation per thread block
+    -- Allocated resource limits
     --
-    warps     = ceiling' (fromIntegral thds / fromIntegral (threadsPerWarp gpu))
-    sharedMem = ceilingBy smem' (sharedMemAllocUnit gpu)
-    registers = case allocation gpu of
-      Block -> (warps `ceilingBy` regAllocWarp gpu * regs' * threadsPerWarp gpu) `ceilingBy` regAllocUnit gpu
-      Warp  -> warps * ceilingBy (regs' * threadsPerWarp gpu) (regAllocUnit gpu)
+    limitWarpsPerBlock  = ceiling' (fromIntegral threads / fromIntegral (threadsPerWarp gpu))
+    -- limitWarpsPerSM     = warpsPerMP gpu
+
+    limitRegsPerBlock   = case regAllocationStyle gpu of
+                            Block -> ((limitWarpsPerBlock `ceilingBy` warpAllocUnit gpu) * regs * threadsPerWarp gpu) `ceilingBy` regAllocUnit gpu
+                            Warp  -> limitWarpsPerBlock
+    limitRegsPerSM      = case regAllocationStyle gpu of
+                            Block -> maxRegPerBlock gpu
+                            Warp  -> (maxRegPerBlock gpu `div` ((regs * threadsPerWarp gpu) `ceilingBy` warpRegAllocUnit gpu)) `floorBy` warpAllocUnit gpu
+
+    limitSMemPerBlock   = smem `ceilingBy` sharedMemAllocUnit gpu
+    -- limitSMemPerSM      = maxSharedMemPerBlock gpu
 
     -- Maximum thread blocks per multiprocessor
     --
-    limitWarpBlock = threadBlocksPerMP gpu `min` (warpsPerMP gpu     `div` warps)
-    limitRegMP     = threadBlocksPerMP gpu `min` (regFileSize gpu    `div` registers)
-    limitSMemMP    = threadBlocksPerMP gpu `min` (sharedMemPerMP gpu `div` sharedMem)
+    limitDueToWarps                     = threadBlocksPerMP gpu `min` (warpsPerMP gpu `div` limitWarpsPerBlock)
+    limitDueToRegs
+      | regs > maxRegPerThread gpu      = 0
+      | regs > 0                        = (limitRegsPerSM `div` limitRegsPerBlock) * (regFileSizePerMP gpu `div` maxRegPerBlock gpu)
+      | otherwise                       = threadBlocksPerMP gpu
+
+    limitDueToSMem
+      | smem > maxSharedMemPerBlock gpu = 0
+      | smem > 0                        = sharedMemPerMP gpu `div` limitSMemPerBlock
+      | otherwise                       = threadBlocksPerMP gpu
 
 
 -- |
