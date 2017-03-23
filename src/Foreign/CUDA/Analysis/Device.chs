@@ -138,21 +138,26 @@ data PCI = PCI
 
 -- GPU Hardware Resources
 --
+-- These are either taken from the CUDA occupancy calculator, or the CUDA
+-- wikipedia entry: <https://en.wikipedia.org/wiki/CUDA#Version_features_and_specifications>
+--
 data Allocation      = Warp | Block
 data DeviceResources = DeviceResources
-  {
-    threadsPerWarp      :: !Int,        -- ^ Warp size
-    threadsPerMP        :: !Int,        -- ^ Maximum number of in-flight threads on a multiprocessor
-    threadBlocksPerMP   :: !Int,        -- ^ Maximum number of thread blocks resident on a multiprocessor
-    warpsPerMP          :: !Int,        -- ^ Maximum number of in-flight warps per multiprocessor
-    coresPerMP          :: !Int,        -- ^ Number of SIMD arithmetic units per multiprocessor
-    sharedMemPerMP      :: !Int,        -- ^ Total amount of shared memory per multiprocessor (bytes)
-    sharedMemAllocUnit  :: !Int,        -- ^ Shared memory allocation unit size (bytes)
-    regFileSize         :: !Int,        -- ^ Total number of registers in a multiprocessor
-    regAllocUnit        :: !Int,        -- ^ Register allocation unit size
-    regAllocWarp        :: !Int,        -- ^ Register allocation granularity for warps
-    regPerThread        :: !Int,        -- ^ Maximum number of registers per thread
-    allocation          :: !Allocation  -- ^ How multiprocessor resources are divided
+  { threadsPerWarp          :: !Int         -- ^ Warp size
+  , coresPerMP              :: !Int         -- ^ Number of SIMD arithmetic units per multiprocessor
+  , warpsPerMP              :: !Int         -- ^ Maximum number of in-flight warps per multiprocessor
+  , threadsPerMP            :: !Int         -- ^ Maximum number of in-flight threads on a multiprocessor
+  , threadBlocksPerMP       :: !Int         -- ^ Maximum number of thread blocks resident on a multiprocessor
+  , sharedMemPerMP          :: !Int         -- ^ Total amount of shared memory per multiprocessor (bytes)
+  , maxSharedMemPerBlock    :: !Int         -- ^ Maximum amount of shared memory per thread block (bytes)
+  , regFileSizePerMP        :: !Int         -- ^ Total number of registers in a multiprocessor
+  , maxRegPerBlock          :: !Int         -- ^ Maximum number of registers per block
+  , regAllocUnit            :: !Int         -- ^ Register allocation unit size
+  , regAllocationStyle      :: !Allocation  -- ^ How multiprocessor resources are divided (register allocation granularity)
+  , maxRegPerThread         :: !Int         -- ^ Maximum number of registers per thread
+  , sharedMemAllocUnit      :: !Int         -- ^ Shared memory allocation unit size (bytes)
+  , warpAllocUnit           :: !Int         -- ^ Warp allocation granularity
+  , warpRegAllocUnit        :: !Int         -- ^ Warp register allocation granularity
   }
 
 
@@ -165,22 +170,135 @@ deviceResources = resources . computeCapability
     -- This is mostly extracted from tables in the CUDA occupancy calculator.
     --
     resources compute = case compute of
-      Compute 1 0 -> DeviceResources 32  768  8  24   8  16384 512   8192 256 2 124 Block  -- Tesla G80
-      Compute 1 1 -> DeviceResources 32  768  8  24   8  16384 512   8192 256 2 124 Block  -- Tesla G8x
-      Compute 1 2 -> DeviceResources 32 1024  8  32   8  16384 512  16384 512 2 124 Block  -- Tesla G9x
-      Compute 1 3 -> DeviceResources 32 1024  8  32   8  16384 512  16384 512 2 124 Block  -- Tesla GT200
-      Compute 2 0 -> DeviceResources 32 1536  8  48  32  49152 128  32768  64 2  63 Warp   -- Fermi GF100
-      Compute 2 1 -> DeviceResources 32 1536  8  48  48  49152 128  32768  64 2  63 Warp   -- Fermi GF10x
-      Compute 3 0 -> DeviceResources 32 2048 16  64 192  49152 256  65536 256 4  63 Warp   -- Kepler GK10x
-      Compute 3 2 -> DeviceResources 32 2048 16  64 192  49152 256  65536 256 4 255 Warp   -- Jetson TK1
-      Compute 3 5 -> DeviceResources 32 2048 16  64 192  49152 256  65536 256 4 255 Warp   -- Kepler GK11x
-      Compute 3 7 -> DeviceResources 32 2048 16  64 192 114688 256 131072 256 4 266 Warp   -- Kepler GK21x
-      Compute 5 0 -> DeviceResources 32 2048 32  64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM10x
-      Compute 5 2 -> DeviceResources 32 2048 32  64 128  98304 256  65536 256 4 255 Warp   -- Maxwell GM20x
-      Compute 5 3 -> DeviceResources 32 2048 32  64 128  65536 256  65536 256 4 255 Warp   -- Maxwell GM20B
-      Compute 6 0 -> DeviceResources 32 2048 32  64  64  65536 256  65536 256 4 255 Warp   -- Pascal GP100 (?)
-      Compute 6 1 -> DeviceResources 32 2048 32  64 128  98304 256  65536 256 4 255 Warp   -- Pascal GP10x (?)
-      Compute 6 2 -> DeviceResources 32 4096 32 128 128  65536 256  65536 256 4 255 Warp   -- Pascal (?)
+      Compute 1 0 -> resources (Compute 1 1)      -- Tesla G80
+      Compute 1 1 -> DeviceResources              -- Tesla G8x
+        { threadsPerWarp        = 32
+        , coresPerMP            = 8
+        , warpsPerMP            = 24
+        , threadsPerMP          = 768
+        , threadBlocksPerMP     = 8
+        , sharedMemPerMP        = 16384
+        , maxSharedMemPerBlock  = 16384
+        , regFileSizePerMP      = 8192
+        , maxRegPerBlock        = 8192
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Block
+        , maxRegPerThread       = 124
+        , sharedMemAllocUnit    = 512
+        , warpAllocUnit         = 2
+        , warpRegAllocUnit      = 256
+        }
+      Compute 1 2 ->  resources (Compute 1 3)     -- Tesla G9x
+      Compute 1 3 -> (resources (Compute 1 1))    -- Tesla GT200
+        { threadsPerMP          = 1024
+        , warpsPerMP            = 32
+        , regFileSizePerMP      = 16384
+        , maxRegPerBlock        = 16384
+        , regAllocUnit          = 512
+        }
+
+      Compute 2 0 -> DeviceResources              -- Fermi GF100
+        { threadsPerWarp        = 32
+        , coresPerMP            = 32
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 8
+        , sharedMemPerMP        = 49152
+        , maxSharedMemPerBlock  = 49152
+        , regFileSizePerMP      = 32768
+        , maxRegPerBlock        = 32768
+        , regAllocUnit          = 64
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 63
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 2
+        , warpRegAllocUnit      = 64
+        }
+      Compute 2 1 -> (resources (Compute 2 0))    -- Fermi GF10x
+        { coresPerMP            = 48
+        }
+
+      Compute 3 0 -> DeviceResources
+        { threadsPerWarp        = 32
+        , coresPerMP            = 192
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 16
+        , sharedMemPerMP        = 49152
+        , maxSharedMemPerBlock  = 49152
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 63
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        }
+      Compute 3 2 -> (resources (Compute 3 5))    -- Jetson TK1
+      Compute 3 5 -> (resources (Compute 3 0))    -- Kepler GK11x
+        { maxRegPerThread       = 255
+        }
+      Compute 3 7 -> (resources (Compute 3 5))    -- Kepler GK21x
+        { sharedMemPerMP        = 114688
+        , regFileSizePerMP      = 131072
+        }
+
+      Compute 5 0 -> DeviceResources              -- Maxwell GM10x
+        { threadsPerWarp        = 32
+        , coresPerMP            = 128
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 65536
+        , maxSharedMemPerBlock  = 49152
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        }
+      Compute 5 2 -> (resources (Compute 5 0))    -- Maxwell GM20x
+        { sharedMemPerMP        = 98304
+        , maxRegPerBlock        = 32768
+        , warpAllocUnit         = 2
+        }
+      Compute 5 3 -> (resources (Compute 5 0))    -- Maxwell GM20B
+        { maxRegPerBlock        = 32768
+        , warpAllocUnit         = 2
+        }
+
+      Compute 6 0 -> DeviceResources              -- Pascal GP100
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 65536
+        , maxSharedMemPerBlock  = 49152
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 2
+        , warpRegAllocUnit      = 256
+        }
+      Compute 6 1 -> (resources (Compute 6 0))    -- Pascal GP10x
+        { coresPerMP            = 128
+        , sharedMemPerMP        = 98304
+        , warpAllocUnit         = 4
+        }
+      Compute 6 2 -> (resources (Compute 6 0))    -- Pascal ??
+        { coresPerMP            = 128
+        , warpsPerMP            = 128
+        , threadBlocksPerMP     = 4096
+        , warpAllocUnit         = 4
+        }
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
