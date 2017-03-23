@@ -1,3 +1,7 @@
+0.7.5.3
+
+  * Bug fix in occupancy calculator
+
 0.7.5.2
 
   * Bug fixes: #43, #45, #47
