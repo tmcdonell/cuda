@@ -423,7 +423,7 @@ findFirstValidLocation verbosity platform = go
       info verbosity $ printf "checking for %s" desc
       found <- validateIOLocation verbosity platform path
       if found
-        then Just `fmap` path
+        then fmap Just $ canonicalizePath =<< path
         else go xs
 
 
