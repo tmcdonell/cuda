@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.IPC.Event
--- Copyright : [2009..2015] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- IPC event management for low-level driver interface.

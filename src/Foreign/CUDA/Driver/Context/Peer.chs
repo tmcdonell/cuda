@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context.Peer
--- Copyright : [2009..2015] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Direct peer context access functions for the low-level driver interface.
