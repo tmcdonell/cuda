@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.5.3
+Version:                0.8.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -28,7 +28,7 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    This release tested with versions 6.0, 6.5, 7.0, and 7.5 of the CUDA toolkit.
+    This release tested with versions 6.0, 6.5, 7.0, 7.5, and 8.0 of the CUDA toolkit.
     .
     [/NOTES:/]
     .
@@ -161,10 +161,14 @@ Executable nvidia-device-query
   default-language:     Haskell98
 
 
+source-repository head
+    type:               git
+    location:           https://github.com/tmcdonell/cuda
+
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.7.5.3
+    tag:                0.8.0.0
 
 -- vim: nospell
 
