@@ -82,7 +82,7 @@
 module Foreign.CUDA.Driver.Unified (
 
   -- ** Querying pointer attributes
-  PointerAttributes(..),
+  PointerAttributes(..), MemoryType(..),
   getAttributes,
 
   -- ** Setting pointer attributes
@@ -113,6 +113,11 @@ import Foreign.Storable
 import Prelude
 
 
+
+#if CUDA_VERSION < 7000
+data PointerAttributes
+data MemoryType
+#else
 -- | Information about a pointer
 --
 data PointerAttributes a = PointerAttributes
@@ -124,11 +129,8 @@ data PointerAttributes a = PointerAttributes
   , ptrSyncMemops :: !Bool
   , ptrIsManaged  :: !Bool
   }
-  deriving (Show)
+  deriving Show
 
-#if CUDA_VERSION < 7000
-data MemoryType
-#else
 {# enum CUmemorytype as MemoryType
   { underscoreToCase
   , DEVICE  as DeviceMemory
