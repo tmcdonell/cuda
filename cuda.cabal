@@ -83,46 +83,55 @@ custom-setup
 
 Library
   hs-source-dirs:       src
-  Exposed-Modules:      Foreign.CUDA
-                        Foreign.CUDA.Path
-                        Foreign.CUDA.Ptr
-                        Foreign.CUDA.Types
-                        Foreign.CUDA.Analysis
-                        Foreign.CUDA.Analysis.Device
-                        Foreign.CUDA.Analysis.Occupancy
-                        Foreign.CUDA.Runtime
-                        Foreign.CUDA.Runtime.Device
-                        Foreign.CUDA.Runtime.Error
-                        Foreign.CUDA.Runtime.Event
-                        Foreign.CUDA.Runtime.Exec
-                        Foreign.CUDA.Runtime.Marshal
-                        Foreign.CUDA.Runtime.Stream
-                        Foreign.CUDA.Runtime.Texture
-                        Foreign.CUDA.Runtime.Utils
-                        Foreign.CUDA.Driver
-                        Foreign.CUDA.Driver.Context
-                        Foreign.CUDA.Driver.Context.Base
-                        Foreign.CUDA.Driver.Context.Config
-                        Foreign.CUDA.Driver.Context.Peer
-                        Foreign.CUDA.Driver.Context.Primary
-                        Foreign.CUDA.Driver.Device
-                        Foreign.CUDA.Driver.Error
-                        Foreign.CUDA.Driver.Event
-                        Foreign.CUDA.Driver.Exec
-                        Foreign.CUDA.Driver.IPC.Event
-                        Foreign.CUDA.Driver.IPC.Marshal
-                        Foreign.CUDA.Driver.Marshal
-                        Foreign.CUDA.Driver.Module
-                        Foreign.CUDA.Driver.Module.Base
-                        Foreign.CUDA.Driver.Module.Link
-                        Foreign.CUDA.Driver.Module.Query
-                        Foreign.CUDA.Driver.Profiler
-                        Foreign.CUDA.Driver.Stream
-                        Foreign.CUDA.Driver.Texture
-                        Foreign.CUDA.Driver.Utils
+  Exposed-Modules:
+      Foreign.CUDA
+      Foreign.CUDA.Path
+      Foreign.CUDA.Ptr
+      Foreign.CUDA.Types
 
-  Other-modules:        Foreign.CUDA.Internal.C2HS
-                        Text.Show.Describe
+      -- Kernel and device analysis
+      Foreign.CUDA.Analysis
+      Foreign.CUDA.Analysis.Device
+      Foreign.CUDA.Analysis.Occupancy
+
+      -- Driver API
+      Foreign.CUDA.Driver
+      Foreign.CUDA.Driver.Context
+      Foreign.CUDA.Driver.Context.Base
+      Foreign.CUDA.Driver.Context.Config
+      Foreign.CUDA.Driver.Context.Peer
+      Foreign.CUDA.Driver.Context.Primary
+      Foreign.CUDA.Driver.Device
+      Foreign.CUDA.Driver.Error
+      Foreign.CUDA.Driver.Event
+      Foreign.CUDA.Driver.Exec
+      Foreign.CUDA.Driver.IPC.Event
+      Foreign.CUDA.Driver.IPC.Marshal
+      Foreign.CUDA.Driver.Marshal
+      Foreign.CUDA.Driver.Module
+      Foreign.CUDA.Driver.Module.Base
+      Foreign.CUDA.Driver.Module.Link
+      Foreign.CUDA.Driver.Module.Query
+      Foreign.CUDA.Driver.Profiler
+      Foreign.CUDA.Driver.Stream
+      Foreign.CUDA.Driver.Texture
+      Foreign.CUDA.Driver.Unified
+      Foreign.CUDA.Driver.Utils
+
+      -- Runtime API
+      Foreign.CUDA.Runtime
+      Foreign.CUDA.Runtime.Device
+      Foreign.CUDA.Runtime.Error
+      Foreign.CUDA.Runtime.Event
+      Foreign.CUDA.Runtime.Exec
+      Foreign.CUDA.Runtime.Marshal
+      Foreign.CUDA.Runtime.Stream
+      Foreign.CUDA.Runtime.Texture
+      Foreign.CUDA.Runtime.Utils
+
+  Other-modules:
+      Foreign.CUDA.Internal.C2HS
+      Text.Show.Describe
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
@@ -137,13 +146,16 @@ Library
 
   default-language:     Haskell98
   Extensions:
-  ghc-options:          -Wall
-                        -O2
-                        -funbox-strict-fields
-                        -fwarn-tabs
-                        -fno-warn-unused-imports
+  ghc-options:
+      -Wall
+      -O2
+      -funbox-strict-fields
+      -fwarn-tabs
+      -fno-warn-unused-imports
 
-  ghc-prof-options:     -fprof-auto -fprof-cafs
+  ghc-prof-options:
+      -fprof-auto
+      -fprof-cafs
 
   if impl(ghc == 8.0.1)
     cpp-options:        -DCUDA_PRELOAD

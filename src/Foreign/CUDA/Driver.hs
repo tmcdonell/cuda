@@ -223,6 +223,7 @@ module Foreign.CUDA.Driver (
   module Foreign.CUDA.Driver.Exec,
   module Foreign.CUDA.Driver.Marshal,
   module Foreign.CUDA.Driver.Module,
+  module Foreign.CUDA.Driver.Unified,
   module Foreign.CUDA.Driver.Utils
 
 ) where
@@ -234,5 +235,6 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
 import Foreign.CUDA.Driver.Marshal      hiding ( useDeviceHandle, peekDeviceHandle )
 import Foreign.CUDA.Driver.Module
+import Foreign.CUDA.Driver.Unified
 import Foreign.CUDA.Driver.Utils
 
