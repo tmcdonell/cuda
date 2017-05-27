@@ -180,6 +180,7 @@ data StreamWaitFlag
   with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
 #endif
 
+
 -- | Write a value to memory, (presumably) after all preceding work in the
 -- stream has completed. Unless the option 'WriteValueNoMemoryBarrier' is
 -- supplied, the write is preceded by a system-wide memory fence.
@@ -188,12 +189,14 @@ data StreamWaitFlag
 --
 -- Requires CUDA-8.0.
 --
+{-# INLINEABLE write #-}
 write :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWriteFlag] -> IO ()
 #if CUDA_VERSION < 8000
 write _   _   _      _     = requireSDK 'write 8.0
 #else
 write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
 
+{-# INLINE cuStreamWriteValue32 #-}
 {# fun unsafe cuStreamWriteValue32
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Int32'
@@ -213,12 +216,14 @@ write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val
 --
 -- Requires CUDA-8.0.
 --
+{-# INLINEABLE wait #-}
 wait :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWaitFlag] -> IO ()
 #if CUDA_VERSION < 8000
 wait _   _   _      _     = requireSDK 'writeValue 8.0
 #else
 wait ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
 
+{-# INLINE cuStreamWaitValue32 #-}
 {# fun unsafe cuStreamWaitValue32
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Int32'
