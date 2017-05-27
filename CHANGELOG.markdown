@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Tested with CUDA toolkit 8.0
 
 ### Added
-  * Add operations for unified addressing in the device API.
+  * Add operations for unified addressing in the device API
+  * Add `write` and `wait` operations for streams in the device API
   * (internals) The paths this module was configured against are exposed by the
     module `Foreign.CUDA.Paths`.
 
