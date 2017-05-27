@@ -126,9 +126,8 @@ data PointerAttributes a = PointerAttributes
   }
   deriving (Show)
 
-#if CUDA_VERSION < 8000
+#if CUDA_VERSION < 7000
 data MemoryType
-data Advice
 #else
 {# enum CUmemorytype as MemoryType
   { underscoreToCase
@@ -138,13 +137,17 @@ data Advice
   , UNIFIED as UnifiedMemory }
   with prefix="CU_MEMORYTYPE" deriving (Eq, Show, Bounded) #}
 
-{# enum CUmem_advise as Advice
-  { underscoreToCase }
-  with prefix="CU_MEM_ADVISE" deriving (Eq, Show, Bounded) #}
-
 {# enum CUpointer_attribute as PointerAttribute
   { underscoreToCase }
   with prefix="CU_POINTER" deriving (Eq, Show, Bounded) #}
+#endif
+
+#if CUDA_VERSION < 8000
+data Advice
+#else
+{# enum CUmem_advise as Advice
+  { underscoreToCase }
+  with prefix="CU_MEM_ADVISE" deriving (Eq, Show, Bounded) #}
 #endif
 
 
