@@ -219,7 +219,7 @@ write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val
 {-# INLINEABLE wait #-}
 wait :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWaitFlag] -> IO ()
 #if CUDA_VERSION < 8000
-wait _   _   _      _     = requireSDK 'writeValue 8.0
+wait _   _   _      _     = requireSDK 'wait 8.0
 #else
 wait ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
 
