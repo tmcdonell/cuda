@@ -68,7 +68,7 @@ create !flags = resultIfOk =<< cuStreamCreate flags
 -- be queried using 'Foreign.CUDA.Driver.Context.Config.getStreamPriorityRange'.
 -- If the specified priority is outside the supported numerical range, it
 -- will automatically be clamped to the highest or lowest number in the
--- range.
+-- range
 --
 -- Requires CUDA-5.5.
 --
