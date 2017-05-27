@@ -113,9 +113,8 @@ import Foreign.Storable
 import Prelude
 
 
-
 #if CUDA_VERSION < 7000
-data PointerAttributes
+data PointerAttributes a
 data MemoryType
 #else
 -- | Information about a pointer
