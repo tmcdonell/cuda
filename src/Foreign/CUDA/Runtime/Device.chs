@@ -10,7 +10,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Device
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Device management routines

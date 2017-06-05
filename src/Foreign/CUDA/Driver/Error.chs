@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Error
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Error handling

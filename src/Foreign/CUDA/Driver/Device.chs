@@ -8,7 +8,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Device
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Device management for low-level driver interface

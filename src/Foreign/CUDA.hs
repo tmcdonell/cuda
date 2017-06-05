@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Top level bindings. By default, expose the C-for-CUDA runtime API bindings,

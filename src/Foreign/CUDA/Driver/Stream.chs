@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Stream
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Stream management for low-level driver interface
@@ -15,8 +15,9 @@
 module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
-  Stream(..), StreamFlag,
+  Stream(..), StreamFlag, StreamWriteFlag(..), StreamWaitFlag(..),
   create, createWithPriority, destroy, finished, block, getPriority,
+  write, wait,
 
   defaultStream,
 
@@ -68,7 +69,7 @@ create !flags = resultIfOk =<< cuStreamCreate flags
 -- be queried using 'Foreign.CUDA.Driver.Context.Config.getStreamPriorityRange'.
 -- If the specified priority is outside the supported numerical range, it
 -- will automatically be clamped to the highest or lowest number in the
--- range.
+-- range
 --
 -- Requires CUDA-5.5.
 --
@@ -163,5 +164,73 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
   , alloca-   `StreamPriority' peekIntConv*
   }
   -> `Status' cToEnum #}
+#endif
+
+
+#if CUDA_VERSION < 8000
+data StreamWriteFlag
+data StreamWaitFlag
+#else
+{# enum CUstreamWriteValue_flags as StreamWriteFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+
+{# enum CUstreamWaitValue_flags as StreamWaitFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
+
+-- | Write a value to memory, (presumably) after all preceding work in the
+-- stream has completed. Unless the option 'WriteValueNoMemoryBarrier' is
+-- supplied, the write is preceded by a system-wide memory fence.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g091455366d56dc2f1f69726aafa369b0>
+--
+-- Requires CUDA-8.0.
+--
+{-# INLINEABLE write #-}
+write :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWriteFlag] -> IO ()
+#if CUDA_VERSION < 8000
+write _   _   _      _     = requireSDK 'write 8.0
+#else
+write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
+
+{-# INLINE cuStreamWriteValue32 #-}
+{# fun unsafe cuStreamWriteValue32
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Int32'
+  ,                 `Int32'
+  , combineBitMasks `[StreamWriteFlag]'
+  }
+  -> `Status' cToEnum #}
+  where
+    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
+#endif
+
+
+-- | Wait on a memory location. Work ordered after the operation will block
+-- until the given condition on the memory is satisfied.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g629856339de7bc6606047385addbb398>
+--
+-- Requires CUDA-8.0.
+--
+{-# INLINEABLE wait #-}
+wait :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWaitFlag] -> IO ()
+#if CUDA_VERSION < 8000
+wait _   _   _      _     = requireSDK 'wait 8.0
+#else
+wait ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
+
+{-# INLINE cuStreamWaitValue32 #-}
+{# fun unsafe cuStreamWaitValue32
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Int32'
+  ,                 `Int32'
+  , combineBitMasks `[StreamWaitFlag]'
+  } -> `Status' cToEnum #}
+  where
+    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 #endif
 
