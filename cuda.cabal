@@ -28,7 +28,8 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    This release tested with versions 6.0, 6.5, 7.0, 7.5, and 8.0 of the CUDA toolkit.
+    See the <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix
+    for tested CUDA library versions.
     .
     [/NOTES:/]
     .
