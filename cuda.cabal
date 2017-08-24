@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.7.5.3
+Version:                0.8.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -28,7 +28,8 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    This release tested with versions 6.0, 6.5, 7.0, and 7.5 of the CUDA toolkit.
+    See the <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix
+    for tested CUDA library versions.
     .
     [/NOTES:/]
     .
@@ -56,7 +57,7 @@ Description:
 
 License:                BSD3
 License-file:           LICENSE
-Copyright:              Copyright (c) [2009..2016]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
+Copyright:              Copyright (c) [2009..2017]. Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Author:                 Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
@@ -83,45 +84,55 @@ custom-setup
 
 Library
   hs-source-dirs:       src
-  Exposed-Modules:      Foreign.CUDA
-                        Foreign.CUDA.Ptr
-                        Foreign.CUDA.Types
-                        Foreign.CUDA.Analysis
-                        Foreign.CUDA.Analysis.Device
-                        Foreign.CUDA.Analysis.Occupancy
-                        Foreign.CUDA.Runtime
-                        Foreign.CUDA.Runtime.Device
-                        Foreign.CUDA.Runtime.Error
-                        Foreign.CUDA.Runtime.Event
-                        Foreign.CUDA.Runtime.Exec
-                        Foreign.CUDA.Runtime.Marshal
-                        Foreign.CUDA.Runtime.Stream
-                        Foreign.CUDA.Runtime.Texture
-                        Foreign.CUDA.Runtime.Utils
-                        Foreign.CUDA.Driver
-                        Foreign.CUDA.Driver.Context
-                        Foreign.CUDA.Driver.Context.Base
-                        Foreign.CUDA.Driver.Context.Config
-                        Foreign.CUDA.Driver.Context.Peer
-                        Foreign.CUDA.Driver.Context.Primary
-                        Foreign.CUDA.Driver.Device
-                        Foreign.CUDA.Driver.Error
-                        Foreign.CUDA.Driver.Event
-                        Foreign.CUDA.Driver.Exec
-                        Foreign.CUDA.Driver.IPC.Event
-                        Foreign.CUDA.Driver.IPC.Marshal
-                        Foreign.CUDA.Driver.Marshal
-                        Foreign.CUDA.Driver.Module
-                        Foreign.CUDA.Driver.Module.Base
-                        Foreign.CUDA.Driver.Module.Link
-                        Foreign.CUDA.Driver.Module.Query
-                        Foreign.CUDA.Driver.Profiler
-                        Foreign.CUDA.Driver.Stream
-                        Foreign.CUDA.Driver.Texture
-                        Foreign.CUDA.Driver.Utils
+  Exposed-Modules:
+      Foreign.CUDA
+      Foreign.CUDA.Path
+      Foreign.CUDA.Ptr
+      Foreign.CUDA.Types
 
-  Other-modules:        Foreign.CUDA.Internal.C2HS
-                        Text.Show.Describe
+      -- Kernel and device analysis
+      Foreign.CUDA.Analysis
+      Foreign.CUDA.Analysis.Device
+      Foreign.CUDA.Analysis.Occupancy
+
+      -- Driver API
+      Foreign.CUDA.Driver
+      Foreign.CUDA.Driver.Context
+      Foreign.CUDA.Driver.Context.Base
+      Foreign.CUDA.Driver.Context.Config
+      Foreign.CUDA.Driver.Context.Peer
+      Foreign.CUDA.Driver.Context.Primary
+      Foreign.CUDA.Driver.Device
+      Foreign.CUDA.Driver.Error
+      Foreign.CUDA.Driver.Event
+      Foreign.CUDA.Driver.Exec
+      Foreign.CUDA.Driver.IPC.Event
+      Foreign.CUDA.Driver.IPC.Marshal
+      Foreign.CUDA.Driver.Marshal
+      Foreign.CUDA.Driver.Module
+      Foreign.CUDA.Driver.Module.Base
+      Foreign.CUDA.Driver.Module.Link
+      Foreign.CUDA.Driver.Module.Query
+      Foreign.CUDA.Driver.Profiler
+      Foreign.CUDA.Driver.Stream
+      Foreign.CUDA.Driver.Texture
+      Foreign.CUDA.Driver.Unified
+      Foreign.CUDA.Driver.Utils
+
+      -- Runtime API
+      Foreign.CUDA.Runtime
+      Foreign.CUDA.Runtime.Device
+      Foreign.CUDA.Runtime.Error
+      Foreign.CUDA.Runtime.Event
+      Foreign.CUDA.Runtime.Exec
+      Foreign.CUDA.Runtime.Marshal
+      Foreign.CUDA.Runtime.Stream
+      Foreign.CUDA.Runtime.Texture
+      Foreign.CUDA.Runtime.Utils
+
+  Other-modules:
+      Foreign.CUDA.Internal.C2HS
+      Text.Show.Describe
 
   Include-dirs:         .
   C-sources:            cbits/stubs.c
@@ -131,17 +142,21 @@ Library
   Build-depends:
       base              >= 4 && < 5
     , bytestring
+    , filepath          >= 1.0
     , template-haskell
 
   default-language:     Haskell98
   Extensions:
-  ghc-options:          -Wall
-                        -O2
-                        -funbox-strict-fields
-                        -fwarn-tabs
-                        -fno-warn-unused-imports
+  ghc-options:
+      -Wall
+      -O2
+      -funbox-strict-fields
+      -fwarn-tabs
+      -fno-warn-unused-imports
 
-  ghc-prof-options:     -fprof-auto -fprof-cafs
+  ghc-prof-options:
+      -fprof-auto
+      -fprof-cafs
 
   if impl(ghc == 8.0.1)
     cpp-options:        -DCUDA_PRELOAD
@@ -159,10 +174,14 @@ Executable nvidia-device-query
   default-language:     Haskell98
 
 
+source-repository head
+    type:               git
+    location:           https://github.com/tmcdonell/cuda
+
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.7.5.3
+    tag:                0.8.0.0
 
 -- vim: nospell
 

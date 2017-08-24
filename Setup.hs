@@ -116,13 +116,15 @@ main = defaultMainWithHooks customHooks
 libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
 libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
   let
-      libraryPaths      = [cudaLibraryPath platform installPath]
-      includePaths      = [cudaIncludePath platform installPath]
+      libraryPath       = cudaLibraryPath platform installPath
+      includePath       = cudaIncludePath platform installPath
 
       -- options for GHC
-      extraLibDirs'     = libraryPaths
-      ccOptions'        = map ("-I"++) includePaths
-      ldOptions'        = map ("-L"++) libraryPaths
+      extraLibDirs'     = [ libraryPath ]
+      ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ installPath ++ "\""
+                          , "-DCUDA_LIBRARY_PATH=\"" ++ libraryPath ++ "\""
+                          , "-I" ++ includePath ]
+      ldOptions'        = [ "-L" ++ libraryPath ]
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
                        ++ if os /= Windows && not profile
@@ -423,7 +425,7 @@ findFirstValidLocation verbosity platform = go
       info verbosity $ printf "checking for %s" desc
       found <- validateIOLocation verbosity platform path
       if found
-        then Just `fmap` path
+        then fmap Just $ canonicalizePath =<< path
         else go xs
 
 

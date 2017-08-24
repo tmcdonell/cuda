@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Marshal
--- Copyright : [2009..2014] Trevor L. McDonell
+-- Copyright : [2009..2017] Trevor L. McDonell
 -- License   : BSD
 --
 -- Memory management for low-level driver interface
@@ -27,6 +27,7 @@ module Foreign.CUDA.Driver.Marshal (
   -- * Unified Memory Allocation
   AttachFlag(..),
   mallocManagedArray,
+  prefetchArrayAsync,
 
   -- * Marshalling
   peekArray, peekArrayAsync, peekArray2D, peekArray2DAsync, peekListArray,
@@ -52,6 +53,7 @@ module Foreign.CUDA.Driver.Marshal (
 
 -- Friends
 import Foreign.CUDA.Ptr
+import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Stream                       ( Stream(..), defaultStream )
 import Foreign.CUDA.Driver.Context.Base                 ( Context(..) )
@@ -327,6 +329,35 @@ mallocManagedArray !flags = doMalloc undefined
   , combineBitMasks `[AttachFlag]'                  } -> `Status' cToEnum #}
   where
     alloca' !f = F.alloca $ \ !p -> poke p nullPtr >> f (castPtr p)
+#endif
+
+
+-- | Pre-fetches the given number of elements to the specified destination
+-- device. If the specified device is Nothing, the data is pre-fetched to host
+-- memory. The pointer must refer to a memory range allocated with
+-- 'mallocManagedArray'.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__UNIFIED.html#group__CUDA__UNIFIED_1gfe94f8b7fb56291ebcea44261aa4cb84>
+--
+-- Requires CUDA-8.0.
+--
+prefetchArrayAsync :: Storable a => DevicePtr a -> Int -> Maybe Device -> Maybe Stream -> IO ()
+#if CUDA_VERSION < 8000
+prefetchArrayAsync _   _ _    _   = requireSDK 'prefetchArrayAsync 8.0
+#else
+prefetchArrayAsync ptr n mdev mst = go undefined ptr
+  where
+    go :: Storable a' => a' -> DevicePtr a' -> IO ()
+    go x _ = nothingIfOk =<< cuMemPrefetchAsync ptr (n * sizeOf x) (maybe (-1) useDevice mdev) (fromMaybe defaultStream mst)
+
+{-# INLINE cuMemPrefetchAsync #-}
+{# fun unsafe cuMemPrefetchAsync
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  ,                 `CInt'
+  , useStream       `Stream'
+  }
+  -> `Status' cToEnum #}
 #endif
 
 
