@@ -5,10 +5,6 @@ sudo: required
 
 matrix:
   include:
-    - env: CUDA=6.5-14 GHC=8.2.1 CABAL=2.0
-      compiler: "GHC 8.2"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
     - env: CUDA=7.0-28 GHC=8.2.1 CABAL=2.0
       compiler: "GHC 8.2"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
@@ -20,10 +16,6 @@ matrix:
     - env: CUDA=8.0.61-1 GHC=8.2.1 CABAL=2.0
       compiler: "GHC 8.2"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
     - env: CUDA=7.0-28 GHC=8.0.1 CABAL=1.24
       compiler: "GHC 8.0"
@@ -37,10 +29,6 @@ matrix:
       compiler: "GHC 8.0"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=6.5-14 GHC=7.10.3 CABAL=1.22
-      compiler: "GHC 7.10"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
-
     - env: CUDA=7.0-28 GHC=7.10.3 CABAL=1.22
       compiler: "GHC 7.10"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
@@ -53,10 +41,6 @@ matrix:
       compiler: "GHC 7.10"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
 
-    - env: CUDA=6.5-14 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
     - env: CUDA=7.0-28 GHC=7.8.4 CABAL=1.18
       compiler: "GHC 7.8"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
@@ -68,10 +52,6 @@ matrix:
     - env: CUDA=8.0.61-1 GHC=7.8.4 CABAL=1.18
       compiler: "GHC 7.8"
       addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
 
     - env: CUDA=7.0-28 GHC=7.6.3 CABAL=1.18
       compiler: "GHC 7.6"
