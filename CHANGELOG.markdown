@@ -4,6 +4,10 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.8.0.1] - 2017-10-24
+### Fixed
+  * [#50] Escape backslashes used in -D flags on Windows
+
 ## [0.8.0.0] - 2017-08-24
 ### Changed
   * Tested with CUDA toolkit 8.0
@@ -88,7 +92,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
-[unreleased]: https://github.com/tmcdonell/cuda/compare/0.8.0.0...HEAD
+[0.8.0.1]:    https://github.com/tmcdonell/cuda/compare/0.8.0.0...0.8.0.1
 [0.8.0.0]:    https://github.com/tmcdonell/cuda/compare/0.7.5.3...0.8.0.0
 [0.7.5.3]:    https://github.com/tmcdonell/cuda/compare/0.7.5.2...0.7.5.3
 [0.7.5.2]:    https://github.com/tmcdonell/cuda/compare/0.7.5.1...0.7.5.2
@@ -107,4 +111,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 [#44]:        https://github.com/tmcdonell/cuda/issues/44
 [#45]:        https://github.com/tmcdonell/cuda/issues/45
 [#47]:        https://github.com/tmcdonell/cuda/pull/47
+[#50]:        https://github.com/tmcdonell/cuda/pull/50
 
