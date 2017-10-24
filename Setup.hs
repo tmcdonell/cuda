@@ -109,6 +109,10 @@ main = defaultMainWithHooks customHooks
       let pkg_descr' = updatePackageDescription actualBuildInfoToUse pkg_descr
       postConf simpleUserHooks args flags pkg_descr' lbi
 
+escBackslash :: FilePath -> FilePath
+escBackslash []        = []
+escBackslash ('\\':fs) = '\\' : '\\' : escBackslash fs
+escBackslash (f:fs)    = f : escBackslash fs
 
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
@@ -119,10 +123,14 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
       libraryPath       = cudaLibraryPath platform installPath
       includePath       = cudaIncludePath platform installPath
 
+      -- OS-specific escaping for -D path defines
+      escDefPath | os == Windows = escBackslash
+                 | otherwise     = id
+
       -- options for GHC
       extraLibDirs'     = [ libraryPath ]
-      ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ installPath ++ "\""
-                          , "-DCUDA_LIBRARY_PATH=\"" ++ libraryPath ++ "\""
+      ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
+                          , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath libraryPath ++ "\""
                           , "-I" ++ includePath ]
       ldOptions'        = [ "-L" ++ libraryPath ]
       ghcOptions        = map ("-optc"++) ccOptions'
