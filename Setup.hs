@@ -125,12 +125,14 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
       includePath       = cudaIncludePath platform installPath
 
       -- OS-specific escaping for -D path defines
-      escDefPath | os == Windows = escBackslash
-                 | otherwise     = id
+      escDefPath
+        | os == Windows = escBackslash
+        | otherwise     = id
 
       -- options for GHC
-      extraLibDirs' | os == Windows = [ librarypPath, binPath ]
-      extraLibDirs' | otherwise     = [ libraryPath ]
+      extraLibDirs'
+        | os == Windows = [ libraryPath, binPath ]
+        | otherwise     = [ libraryPath ]
 
       ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
                           , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath libraryPath ++ "\""
