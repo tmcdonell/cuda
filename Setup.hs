@@ -121,6 +121,7 @@ libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInf
 libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
   let
       libraryPath       = cudaLibraryPath platform installPath
+      binPath           = installPath </> "bin"
       includePath       = cudaIncludePath platform installPath
 
       -- OS-specific escaping for -D path defines
@@ -128,7 +129,9 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
                  | otherwise     = id
 
       -- options for GHC
-      extraLibDirs'     = [ libraryPath ]
+      extraLibDirs' | os == Windows = [ libraryPath, binPath ]
+                    | otherwise     = [ libraryPath ]
+
       ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
                           , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath libraryPath ++ "\""
                           , "-I" ++ includePath ]
