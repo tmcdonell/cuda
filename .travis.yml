@@ -108,6 +108,7 @@ before_install:
 
   # Install the CUDA toolkit
   - echo "Installing CUDA library"
+  - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
 
 install:
