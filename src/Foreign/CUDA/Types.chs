@@ -24,7 +24,7 @@ module Foreign.CUDA.Types (
   Event(..), EventFlag(..), WaitFlag,
 
   -- * Streams
-  Stream(..), StreamPriority, StreamFlag,
+  Stream(..), StreamFlag(..), StreamPriority,
   defaultStream,
 
 ) where
@@ -98,7 +98,9 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 -- Event creation flags
 --
 {# enum CUevent_flags as EventFlag
-    { underscoreToCase }
+    { underscoreToCase
+    , CU_EVENT_DEFAULT as EventDefault
+    }
     with prefix="CU_EVENT" deriving (Eq, Show, Bounded) #}
 
 -- |
@@ -135,15 +137,23 @@ newtype Stream = Stream { useStream :: {# type CUstream #}}
 type StreamPriority = Int
 
 -- |
--- Possible option flags for stream initialisation. Dummy instance until the API
--- exports actual option values.
+-- Execution stream creation flags
 --
+#if CUDA_VERSION < 7500
 data StreamFlag
 instance Enum StreamFlag where
 #ifdef USE_EMPTY_CASE
   toEnum   x = case x of {}
   fromEnum x = case x of {}
 #endif
+#else
+{# enum CUstream_flags as StreamFlag
+  { underscoreToCase
+  , CU_STREAM_DEFAULT as StreamDefault
+  }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
 
 -- |
 -- The main execution stream. No operations overlap with operations in the
