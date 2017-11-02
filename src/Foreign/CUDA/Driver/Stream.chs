@@ -281,7 +281,7 @@ wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val
 
 {-# INLINE wait64 #-}
 wait64 :: DevicePtr Word64 -> Word64 -> Stream -> [StreamWaitFlag] -> IO ()
-#if CUDA_VERSION < 8000
+#if CUDA_VERSION < 9000
 wait64 _   _   _      _     = requireSDK 'wait64 9.0
 #else
 wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val flags
