@@ -4,6 +4,17 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.9.0.0] - 2017-11-15
+### Fixed
+  * Build fixes for CUDA-9
+
+### Added
+  * `Peer.getAttribute`
+  * `Exec.launchKernelCooperative`
+
+### Changed
+  * Changed type of `Stream.wait` and `Stream.write` to support 64-bit values
+
 ## [0.8.0.1] - 2017-10-24
 ### Fixed
   * [#50] Escape backslashes used in -D flags on Windows
@@ -92,6 +103,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
+[0.9.0.0]:    https://github.com/tmcdonell/cuda/compare/0.8.0.1...0.9.0.0
 [0.8.0.1]:    https://github.com/tmcdonell/cuda/compare/0.8.0.0...0.8.0.1
 [0.8.0.0]:    https://github.com/tmcdonell/cuda/compare/0.7.5.3...0.8.0.0
 [0.7.5.3]:    https://github.com/tmcdonell/cuda/compare/0.7.5.2...0.7.5.3
