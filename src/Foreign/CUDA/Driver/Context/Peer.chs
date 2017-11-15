@@ -153,6 +153,8 @@ remove !ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 --
 -- Requires CUDA-8.0
 --
+-- @since 0.9.0.0@
+--
 {-# INLINEABLE getAttribute #-}
 getAttribute :: PeerAttribute -> Device -> Device -> IO Int
 #if CUDA_VERSION < 8000

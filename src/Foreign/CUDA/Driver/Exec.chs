@@ -303,6 +303,8 @@ launchKernel' = launchKernel
 --
 -- Requires CUDA-9.0
 --
+-- @since 0.9.0.0@
+--
 {-# INLINEABLE launchKernelCooperative #-}
 launchKernelCooperative
     :: Fun                      -- ^ function to execute
