@@ -13,9 +13,10 @@ import qualified Foreign.CUDA.Driver                    as CUDA
 
 main :: IO ()
 main = do
-  version       <- CUDA.driverVersion
+  version    <- CUDA.driverVersion
   printf "CUDA device query (Driver API, statically linked)\n"
   printf "CUDA driver version %d.%d\n" (version`div`1000) ((version`mod`100)`div`10)
+  printf "CUDA API version %d.%d\n" (CUDA.libraryVersion`div`1000) ((CUDA.libraryVersion`mod`100)`div`10)
 
   CUDA.initialise []
   numDevices <- CUDA.count

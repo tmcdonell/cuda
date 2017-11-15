@@ -1,10 +1,11 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 # vim: nospell
 
-resolver: ghc-8.2
+resolver: nightly-2017-11-01
 
 packages:
 - '.'
+
 extra-deps: []
 
 # Override default flag values for local packages and extra-deps

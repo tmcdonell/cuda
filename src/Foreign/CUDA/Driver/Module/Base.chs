@@ -278,10 +278,12 @@ jitOptionUnpack Verbose               = requireSDK 'Verbose 5.5
 
 {-# INLINE jitTargetOfCompute #-}
 jitTargetOfCompute :: Compute -> JITTarget
+#if CUDA_VERSION < 9000
 jitTargetOfCompute (Compute 1 0) = Compute10
 jitTargetOfCompute (Compute 1 1) = Compute11
 jitTargetOfCompute (Compute 1 2) = Compute12
 jitTargetOfCompute (Compute 1 3) = Compute13
+#endif
 jitTargetOfCompute (Compute 2 0) = Compute20
 jitTargetOfCompute (Compute 2 1) = Compute21
 #if CUDA_VERSION >= 5000

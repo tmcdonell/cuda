@@ -13,6 +13,7 @@ module Foreign.CUDA.Runtime.Utils (
 
   runtimeVersion,
   driverVersion,
+  libraryVersion,
 
 ) where
 
@@ -50,4 +51,13 @@ driverVersion =  resultIfOk =<< cudaDriverGetVersion
 {-# INLINE cudaDriverGetVersion #-}
 {# fun unsafe cudaDriverGetVersion
   { alloca- `Int' peekIntConv* } -> `Status' cToEnum #}
+
+
+-- |
+-- Return the version number of the CUDA library (API) that this package was
+-- compiled against.
+--
+{-# INLINEABLE libraryVersion #-}
+libraryVersion :: Int
+libraryVersion = {#const CUDART_VERSION #}
 

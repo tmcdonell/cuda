@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Exec (
   setCacheConfigFun,
   setSharedMemConfigFun,
   launchKernel, launchKernel',
+  launchKernelCooperative,
 
   -- Deprecated since CUDA-4.0
   setBlockShape, setSharedSize, setParams, launch,
@@ -279,6 +280,79 @@ launchKernel !fn (!gx,!gy,_) (!tx,!ty,!tz) !sm !mst !args = do
 launchKernel' = launchKernel
 #endif
 
+
+-- |
+-- Invoke a kernel on a @(gx * gy * gz)@ grid of blocks, where each block
+-- contains @(tx * ty * tz)@ threads and has access to a given number of bytes
+-- of shared memory. The launch may also be associated with a specific stream.
+--
+-- The thread blocks can cooperate and synchronise as they execute.
+--
+-- The device on which this kernel is invoked must have
+-- 'Foreign.CUDA.Driver.Device.attribute'
+-- 'Foreign.CUDA.Driver.Device.CooperativeLaunch'.
+--
+-- The total number of blocks launched can not exceed the maximum number of
+-- active thread blocks per multiprocessor
+-- ('Foreign.CUDA.Analysis.Device.threadBlocksPerMP'), multiplied by the number
+-- of multiprocessors ('Foreign.CUDA.Analysis.Device.multiProcessorCount').
+--
+-- The kernel can not make use of dynamic parallelism.
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EXEC.html#group__CUDA__EXEC_1g06d753134145c4584c0c62525c1894cb>
+--
+-- Requires CUDA-9.0
+--
+-- @since 0.9.0.0@
+--
+{-# INLINEABLE launchKernelCooperative #-}
+launchKernelCooperative
+    :: Fun                      -- ^ function to execute
+    -> (Int,Int,Int)            -- ^ block grid dimension
+    -> (Int,Int,Int)            -- ^ thread block shape
+    -> Int                      -- ^ shared memory (bytes)
+    -> Maybe Stream             -- ^ (optional) stream to execute in
+    -> [FunParam]               -- ^ list of function parameters
+    -> IO ()
+#if CUDA_VERSION < 9000
+launchKernelCooperative _ _ _ _ _ _ = requireSDK 'launchKernelCooperative 9.0
+#else
+launchKernelCooperative !fn (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !mst !args
+  = (=<<) nothingIfOk
+  $ withMany withFP args
+  $ \pa -> withArray pa
+  $ \pp -> cuLaunchCooperativeKernel fn gx gy gz tx ty tz sm st pp
+  where
+    !st = fromMaybe defaultStream mst
+
+    withFP :: FunParam -> (Ptr FunParam -> IO b) -> IO b
+    withFP !p !f = case p of
+      IArg v -> with' v (f . castPtr)
+      FArg v -> with' v (f . castPtr)
+      VArg v -> with' v (f . castPtr)
+
+    -- can't use the standard 'with' because 'alloca' will pass an undefined
+    -- dummy argument when determining 'sizeOf' and 'alignment', but sometimes
+    -- instances in Accelerate need to evaluate this argument.
+    --
+    with' :: Storable a => a -> (Ptr a -> IO b) -> IO b
+    with' !val !f =
+      allocaBytes (sizeOf val) $ \ptr -> do
+        poke ptr val
+        f ptr
+
+{-# INLINE cuLaunchCooperativeKernel #-}
+{# fun unsafe cuLaunchCooperativeKernel
+  { useFun    `Fun'
+  ,           `Int', `Int', `Int'
+  ,           `Int', `Int', `Int'
+  ,           `Int'
+  , useStream `Stream'
+  , castPtr   `Ptr (Ptr FunParam)'
+  } -> `Status' cToEnum #}
+#endif
+
+-- TODO: cuLaunchCooperativeKernelMultiDevice introduced CUDA-9.0
 
 --------------------------------------------------------------------------------
 -- Deprecated

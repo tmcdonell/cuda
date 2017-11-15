@@ -15,7 +15,7 @@
 module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
-  Stream(..), StreamFlag, StreamWriteFlag(..), StreamWaitFlag(..),
+  Stream(..), StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..),
   create, createWithPriority, destroy, finished, block, getPriority,
   write, wait,
 
@@ -27,15 +27,17 @@ module Foreign.CUDA.Driver.Stream (
 {# context lib="cuda" #}
 
 -- Friends
+import Foreign.CUDA.Ptr
 import Foreign.CUDA.Types
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- System
+import Control.Exception                                ( throwIO )
+import Control.Monad                                    ( liftM )
 import Foreign
 import Foreign.C
-import Control.Monad                                    ( liftM )
-import Control.Exception                                ( throwIO )
+import Unsafe.Coerce
 
 
 --------------------------------------------------------------------------------
@@ -187,20 +189,51 @@ data StreamWaitFlag
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g091455366d56dc2f1f69726aafa369b0>
 --
--- Requires CUDA-8.0.
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1gc8af1e8b96d7561840affd5217dd6830>
+--
+-- Requires CUDA-8.0 for 32-bit values.
+--
+-- Requires CUDA-9.0 for 64-bit values.
 --
 {-# INLINEABLE write #-}
-write :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWriteFlag] -> IO ()
+write :: Storable a => DevicePtr a -> a -> Stream -> [StreamWriteFlag] -> IO ()
+write ptr val stream flags =
+  case sizeOf val of
+    4 -> write32 (castDevPtr ptr) (unsafeCoerce val) stream flags
+    8 -> write64 (castDevPtr ptr) (unsafeCoerce val) stream flags
+    _ -> cudaError "Stream.write: can only write 32- and 64-bit values"
+
+{-# INLINE write32 #-}
+write32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWriteFlag] -> IO ()
 #if CUDA_VERSION < 8000
-write _   _   _      _     = requireSDK 'write 8.0
+write32 _   _   _      _     = requireSDK 'write32 8.0
 #else
-write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
+write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
 
 {-# INLINE cuStreamWriteValue32 #-}
 {# fun unsafe cuStreamWriteValue32
   { useStream       `Stream'
-  , useDeviceHandle `DevicePtr Int32'
-  ,                 `Int32'
+  , useDeviceHandle `DevicePtr Word32'
+  ,                 `Word32'
+  , combineBitMasks `[StreamWriteFlag]'
+  }
+  -> `Status' cToEnum #}
+  where
+    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
+#endif
+
+{-# INLINE write64 #-}
+write64 :: DevicePtr Word64 -> Word64 -> Stream -> [StreamWriteFlag] -> IO ()
+#if CUDA_VERSION < 9000
+write64 _   _   _      _     = requireSDK 'write64 9.0
+#else
+write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64 stream ptr val flags
+
+{-# INLINE cuStreamWriteValue64 #-}
+{# fun unsafe cuStreamWriteValue64
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word64'
+  ,                 `Word64'
   , combineBitMasks `[StreamWriteFlag]'
   }
   -> `Status' cToEnum #}
@@ -214,20 +247,50 @@ write ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val
 --
 -- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g629856339de7bc6606047385addbb398>
 --
--- Requires CUDA-8.0.
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__EVENT.html#group__CUDA__EVENT_1g6910c1258c5f15aa5d699f0fd60d6933>
+--
+-- Requires CUDA-8.0 for 32-bit values.
+--
+-- Requires CUDA-9.0 for 64-bit values.
 --
 {-# INLINEABLE wait #-}
-wait :: DevicePtr Int32 -> Int32 -> Stream -> [StreamWaitFlag] -> IO ()
+wait :: Storable a => DevicePtr a -> a -> Stream -> [StreamWaitFlag] -> IO ()
+wait ptr val stream flags =
+  case sizeOf val of
+    4 -> wait32 (castDevPtr ptr) (unsafeCoerce val) stream flags
+    8 -> wait64 (castDevPtr ptr) (unsafeCoerce val) stream flags
+    _ -> cudaError "Stream.wait: can only wait on 32- and 64-bit values"
+
+{-# INLINE wait32 #-}
+wait32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWaitFlag] -> IO ()
 #if CUDA_VERSION < 8000
-wait _   _   _      _     = requireSDK 'wait 8.0
+wait32 _   _   _      _     = requireSDK 'wait32 8.0
 #else
-wait ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
+wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
 
 {-# INLINE cuStreamWaitValue32 #-}
 {# fun unsafe cuStreamWaitValue32
   { useStream       `Stream'
-  , useDeviceHandle `DevicePtr Int32'
-  ,                 `Int32'
+  , useDeviceHandle `DevicePtr Word32'
+  ,                 `Word32'
+  , combineBitMasks `[StreamWaitFlag]'
+  } -> `Status' cToEnum #}
+  where
+    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
+#endif
+
+{-# INLINE wait64 #-}
+wait64 :: DevicePtr Word64 -> Word64 -> Stream -> [StreamWaitFlag] -> IO ()
+#if CUDA_VERSION < 9000
+wait64 _   _   _      _     = requireSDK 'wait64 9.0
+#else
+wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val flags
+
+{-# INLINE cuStreamWaitValue64 #-}
+{# fun unsafe cuStreamWaitValue64
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word64'
+  ,                 `Word64'
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
   where

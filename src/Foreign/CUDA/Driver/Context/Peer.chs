@@ -21,8 +21,8 @@
 module Foreign.CUDA.Driver.Context.Peer (
 
   -- * Peer Access
-  PeerFlag,
-  accessible, add, remove,
+  PeerFlag, PeerAttribute(..),
+  accessible, add, remove, getAttribute,
 
 ) where
 
@@ -52,6 +52,22 @@ instance Enum PeerFlag where
 #ifdef USE_EMPTY_CASE
   toEnum   x = case x of {}
   fromEnum x = case x of {}
+#endif
+
+
+-- | Peer-to-peer attributes
+--
+#if CUDA_VERSION < 8000
+data PeerAttribute
+instance Enum PeerAttribute where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = case x of {}
+  fromEnum x = case x of {}
+#endif
+#else
+{# enum CUdevice_P2PAttribute as PeerAttribute
+  { underscoreToCase }
+  with prefix="CU_DEVICE_P2P_ATTRIBUTE" deriving (Eq, Show) #}
 #endif
 
 
@@ -127,5 +143,31 @@ remove !ctx = nothingIfOk =<< cuCtxDisablePeerAccess ctx
 {-# INLINE cuCtxDisablePeerAccess #-}
 {# fun unsafe cuCtxDisablePeerAccess
   { useContext `Context' } -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- Queries attributes of the link between two devices
+--
+-- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__PEER__ACCESS.html#group__CUDA__PEER__ACCESS_1g4c55c60508f8eba4546b51f2ee545393>
+--
+-- Requires CUDA-8.0
+--
+-- @since 0.9.0.0@
+--
+{-# INLINEABLE getAttribute #-}
+getAttribute :: PeerAttribute -> Device -> Device -> IO Int
+#if CUDA_VERSION < 8000
+getAttribute _      _   _   = requireSDK 'getAttribute 8.0
+#else
+getAttribute attrib src dst = resultIfOk =<< cuDeviceGetP2PAttribute attrib src dst
+
+{-# INLINE cuDeviceGetP2PAttribute #-}
+{# fun unsafe cuDeviceGetP2PAttribute
+  { alloca-   `Int' peekIntConv*
+  , cFromEnum `PeerAttribute'
+  , useDevice `Device'
+  , useDevice `Device'
+  } -> `Status' cToEnum #}
 #endif
 
