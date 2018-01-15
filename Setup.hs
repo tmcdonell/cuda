@@ -140,6 +140,7 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
                             else []
       extraLibs'        = cudaLibraries platform
       frameworks'       = [ "CUDA" | os == OSX ]
+      frameworkDirs'    = [ "/Library/Frameworks" | os == OSX ]
 
       -- options or c2hs
       archFlag          = case arch of
@@ -158,14 +159,15 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
 
   extraGHCiLibs' <- cudaGHCiLibraries platform installPath extraLibs'
   buildInfo'     <- addSystemSpecificOptions $ emptyBuildInfo
-    { ccOptions      = ccOptions'
-    , ldOptions      = ldOptions'
-    , extraLibs      = extraLibs'
-    , extraGHCiLibs  = extraGHCiLibs'
-    , extraLibDirs   = extraLibDirs'
-    , frameworks     = frameworks'
-    , options        = [(GHC, ghcOptions) | os /= Windows]
-    , customFieldsBI = [c2hsExtraOptions]
+    { ccOptions           = ccOptions'
+    , ldOptions           = ldOptions'
+    , extraLibs           = extraLibs'
+    , extraGHCiLibs       = extraGHCiLibs'
+    , extraLibDirs        = extraLibDirs'
+    , frameworks          = frameworks'
+    , extraFrameworkDirs  = frameworkDirs'
+    , options             = [(GHC, ghcOptions) | os /= Windows]
+    , customFieldsBI      = [c2hsExtraOptions]
     }
 
   return (Just buildInfo', [])
