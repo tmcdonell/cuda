@@ -6,6 +6,7 @@ import Numeric
 import Control.Monad
 import Text.Printf
 import Text.PrettyPrint
+import Prelude                                          hiding ( (<>) )
 
 import Foreign.CUDA.Analysis                            as CUDA
 import qualified Foreign.CUDA.Driver                    as CUDA
