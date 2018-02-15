@@ -101,8 +101,9 @@ before_install:
   - cabal update
   - |
       case ${GHC} in
-        7.6.*) cabal install Cabal --constraint="Cabal >= 1.22" --constraint="Cabal < 2.0" ;;
-        7.8.*) cabal install Cabal --constraint="Cabal >= 1.22" --constraint="Cabal < 2.0" ;;
+        7.6.*)  cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
+        7.8.*)  cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
+        7.10.*) cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
       esac
   - cabal install c2hs
 
