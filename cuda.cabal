@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.9.0.0
+Version:                0.9.0.1
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -33,10 +33,10 @@ Description:
     .
     [/NOTES:/]
     .
-    The setup script for this package requires at least Cabal-1.22. To upgrade,
+    The setup script for this package requires at least Cabal-1.24. To upgrade,
     execute one of:
     .
-    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.22"@
+    * cabal users: @cabal install Cabal --constraint="Cabal >= 1.24"@
     .
     * stack users: @stack setup --upgrade-cabal@
     .
@@ -63,7 +63,7 @@ Maintainer:             Trevor L. McDonell <tmcdonell@cse.unsw.edu.au>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
-Cabal-version:          >= 1.22
+Cabal-version:          >= 1.24
 Tested-with:            GHC >= 7.6
 
 Build-type:             Custom
@@ -78,7 +78,7 @@ Extra-source-files:     cbits/stubs.h
 custom-setup
   setup-depends:
       base              >= 4.6
-    , Cabal             >= 1.22
+    , Cabal             >= 1.24
     , directory         >= 1.0
     , filepath          >= 1.0
 
@@ -181,6 +181,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.9.0.0
+    tag:                0.9.0.1
 
 -- vim: nospell

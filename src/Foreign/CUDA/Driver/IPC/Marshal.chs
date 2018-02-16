@@ -104,7 +104,7 @@ export !dptr = do
 -- Open an inter-process memory handle exported from another process,
 -- returning a device pointer usable in the current process.
 --
--- Maps memory exported by another process with 'create' into the current
+-- Maps memory exported by another process with 'export into the current
 -- device address space. For contexts on different devices, 'open' can
 -- attempt to enable peer access if the user called
 -- 'Foreign.CUDA.Driver.Context.Peer.add', and is controlled by the
