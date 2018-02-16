@@ -4,7 +4,7 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [0.9.0.1] - 2018-05-16
+## [0.9.0.1] - 2018-02-16
 ###
   * Build fix for macOS High Sierra (10.13)
 
