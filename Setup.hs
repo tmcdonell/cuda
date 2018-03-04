@@ -133,7 +133,7 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion extr
       takeFirstExisting paths = do
           existing <- filterM doesDirectoryExist libraryPaths
           case existing of
-               (p0:_) -> pure p0
+               (p0:_) -> return p0
                _      -> die $ "Could not find path: " ++ show paths
 
   -- This can only be defined once, so take the first path which exists
