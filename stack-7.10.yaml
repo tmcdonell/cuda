@@ -6,7 +6,8 @@ resolver: lts-6.30
 packages:
 - '.'
 
-# extra-deps: []
+extra-deps:
+- 'Cabal-1.24.2.0'
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -33,7 +33,17 @@ setup-info:
 packages:
 - '.'
 
-# extra-deps: []
+extra-deps:
+- 'alex-3.2.3'
+- 'c2hs-0.28.3'
+- 'dlist-0.8.0.4'
+- 'happy-1.19.9'
+- 'language-c-0.7.2'
+- 'primitive-0.6.3.0'
+- 'QuickCheck-2.11.3'
+- 'random-1.1'
+- 'syb-0.7'
+- 'tf-random-0.5'
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
