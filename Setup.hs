@@ -102,14 +102,14 @@ main = defaultMainWithHooks customHooks
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      (generateAndStoreBuildInfo
+      generateAndStoreBuildInfo
           verbosity
           profile
           currentPlatform
           compilerId_
           (configExtraLibDirs flags)
           (configExtraIncludeDirs flags)
-          generatedBuildInfoFilePath)
+          generatedBuildInfoFilePath
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
