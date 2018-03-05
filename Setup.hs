@@ -539,6 +539,8 @@ candidateCUDAInstallPaths verbosity platform =
   [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
   , (findInPath,              "nvcc compiler executable in PATH")
   , (return defaultPath,      printf "default install location (%s)" defaultPath)
+  , (getEnv "CUDA_PATH_V9_1", "environment variable CUDA_PATH_V9_1")
+  , (getEnv "CUDA_PATH_V9_0", "environment variable CUDA_PATH_V9_0")
   , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
   , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
   , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
