@@ -102,7 +102,14 @@ main = defaultMainWithHooks customHooks
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      generateAndStoreBuildInfo verbosity profile currentPlatform compilerId_ generatedBuildInfoFilePath
+      (generateAndStoreBuildInfo
+          verbosity
+          profile
+          currentPlatform
+          compilerId_
+          (configExtraLibDirs flags)
+          (configExtraIncludeDirs flags)
+          generatedBuildInfoFilePath)
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
@@ -117,22 +124,34 @@ escBackslash (f:fs)    = f : escBackslash fs
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
 --
-libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
-libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
+libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> [FilePath] -> [FilePath] -> IO HookedBuildInfo
+libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
   let
-      libraryPath       = cudaLibraryPath platform installPath
-      includePath       = cudaIncludePath platform installPath
+      libraryPaths      = cudaLibraryPath platform installPath : extraLibs
+      includePaths      = cudaIncludePath platform installPath : extraIncludes
+
+      takeFirstExisting paths = do
+          existing <- filterM doesDirectoryExist libraryPaths
+          case existing of
+               (p0:_) -> return p0
+               _      -> die $ "Could not find path: " ++ show paths
+
+  -- This can only be defined once, so take the first path which exists
+  canonicalLibraryPath <- takeFirstExisting libraryPaths
+
+  let
 
       -- OS-specific escaping for -D path defines
       escDefPath | os == Windows = escBackslash
                  | otherwise     = id
 
+
       -- options for GHC
-      extraLibDirs'     = [ libraryPath ]
+      extraLibDirs'     = libraryPaths
       ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
-                          , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath libraryPath ++ "\""
-                          , "-I" ++ includePath ]
-      ldOptions'        = [ "-L" ++ libraryPath ]
+                          , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath canonicalLibraryPath ++ "\""
+                          ] ++ map ("-I" ++) includePaths
+      ldOptions'        = map ("-L" ++) libraryPaths
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
                        ++ if os /= Windows && not profile
@@ -375,10 +394,17 @@ windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
-generateAndStoreBuildInfo :: Verbosity -> Bool -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo :: Verbosity
+                          -> Bool
+                          -> Platform
+                          -> CompilerId
+                          -> [FilePath]
+                          -> [FilePath]
+                          -> FilePath
+                          -> IO ()
+generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) extraLibs extraIncludes path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo profile installPath platform ghcVersion
+  hbi         <- libraryBuildInfo profile installPath platform ghcVersion extraLibs extraIncludes
   storeHookedBuildInfo verbosity path hbi
 
 storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
