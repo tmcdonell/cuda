@@ -4,6 +4,10 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.9.0.2] - 2018-03-07
+###
+  * [#53]: Build fix for Nix
+
 ## [0.9.0.1] - 2018-02-16
 ###
   * Build fix for macOS High Sierra (10.13)
@@ -107,6 +111,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
+[0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
 [0.9.0.1]:    https://github.com/tmcdonell/cuda/compare/0.9.0.0...0.9.0.1
 [0.9.0.0]:    https://github.com/tmcdonell/cuda/compare/0.8.0.1...0.9.0.0
 [0.8.0.1]:    https://github.com/tmcdonell/cuda/compare/0.8.0.0...0.8.0.1
@@ -129,4 +134,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 [#45]:        https://github.com/tmcdonell/cuda/issues/45
 [#47]:        https://github.com/tmcdonell/cuda/pull/47
 [#50]:        https://github.com/tmcdonell/cuda/pull/50
+[#53]:        https://github.com/tmcdonell/cuda/pull/53
 
