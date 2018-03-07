@@ -1,7 +1,10 @@
 Haskell FFI Bindings to CUDA
 ============================
 
-[![Build status](https://travis-ci.org/tmcdonell/cuda.svg?branch=master)](https://travis-ci.org/tmcdonell/cuda)
+[![Travis build status](https://img.shields.io/travis/tmcdonell/cuda/master.svg?label=linux)](https://travis-ci.org/tmcdonell/cuda)
+[![AppVeyor build status](https://img.shields.io/appveyor/ci/tmcdonell/cuda/master.svg?label=windows)](https://ci.appveyor.com/project/tmcdonell/cuda)
+[![Stackage LTS](https://stackage.org/package/cuda/badge/lts)](https://stackage.org/lts/package/cuda)
+[![Stackage Nightly](https://stackage.org/package/cuda/badge/nightly)](https://stackage.org/nightly/package/cuda)
 [![Hackage](https://img.shields.io/hackage/v/cuda.svg)](https://hackage.haskell.org/package/cuda)
 
 The CUDA library provides a direct, general purpose C-like SPMD programming

@@ -7,7 +7,7 @@ packages:
 - '.'
 
 extra-deps:
-- 'Cabal-1.22.4.0'
+- 'Cabal-1.24.2.0'
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

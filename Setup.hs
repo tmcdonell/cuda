@@ -102,7 +102,14 @@ main = defaultMainWithHooks customHooks
           compilerId_     = compilerId (compiler lbi)
       --
       noExtraFlags args
-      generateAndStoreBuildInfo verbosity profile currentPlatform compilerId_ generatedBuildInfoFilePath
+      generateAndStoreBuildInfo
+          verbosity
+          profile
+          currentPlatform
+          compilerId_
+          (configExtraLibDirs flags)
+          (configExtraIncludeDirs flags)
+          generatedBuildInfoFilePath
       validateLinker verbosity currentPlatform $ withPrograms lbi
       --
       actualBuildInfoToUse <- getHookedBuildInfo verbosity
@@ -117,22 +124,41 @@ escBackslash (f:fs)    = f : escBackslash fs
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
 --
-libraryBuildInfo :: Bool -> FilePath -> Platform -> Version -> IO HookedBuildInfo
-libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion = do
+libraryBuildInfo
+    :: Bool
+    -> FilePath
+    -> Platform
+    -> Version
+    -> [FilePath]
+    -> [FilePath]
+    -> IO HookedBuildInfo
+libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
   let
-      libraryPath       = cudaLibraryPath platform installPath
-      includePath       = cudaIncludePath platform installPath
+      libraryPaths      = cudaLibraryPath platform installPath : extraLibs
+      includePaths      = cudaIncludePath platform installPath : extraIncludes
+
+      takeFirstExisting paths = do
+          existing <- filterM doesDirectoryExist libraryPaths
+          case existing of
+               (p0:_) -> return p0
+               _      -> die $ "Could not find path: " ++ show paths
+
+  -- This can only be defined once, so take the first path which exists
+  canonicalLibraryPath <- takeFirstExisting libraryPaths
+
+  let
 
       -- OS-specific escaping for -D path defines
       escDefPath | os == Windows = escBackslash
                  | otherwise     = id
 
+
       -- options for GHC
-      extraLibDirs'     = [ libraryPath ]
+      extraLibDirs'     = libraryPaths
       ccOptions'        = [ "-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
-                          , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath libraryPath ++ "\""
-                          , "-I" ++ includePath ]
-      ldOptions'        = [ "-L" ++ libraryPath ]
+                          , "-DCUDA_LIBRARY_PATH=\"" ++ escDefPath canonicalLibraryPath ++ "\""
+                          ] ++ map ("-I" ++) includePaths
+      ldOptions'        = map ("-L" ++) libraryPaths
       ghcOptions        = map ("-optc"++) ccOptions'
                        ++ map ("-optl"++) ldOptions'
                        ++ if os /= Windows && not profile
@@ -203,7 +229,11 @@ cudaLibraries (Platform _ os) =
     OSX -> ["cudadevrt", "cudart_static"]
     _   -> ["cudart", "cuda"]
 
-cudaGHCiLibraries :: Platform -> FilePath -> [String] -> IO [String]
+cudaGHCiLibraries
+    :: Platform
+    -> FilePath
+    -> [String]
+    -> IO [String]
 cudaGHCiLibraries platform@(Platform _ os) installPath libraries =
   case os of
     Windows -> cudaGhciLibrariesWindows platform installPath libraries
@@ -219,7 +249,11 @@ cudaGHCiLibraries platform@(Platform _ os) installPath libraries =
 --
 -- Eg: "C:\cuda\toolkit\lib\x64" -> ["cudart", "cuda"] -> ["cudart64_65", "ncuda"]
 --
-cudaGhciLibrariesWindows :: Platform -> FilePath -> [FilePath] -> IO [FilePath]
+cudaGhciLibrariesWindows
+    :: Platform
+    -> FilePath
+    -> [FilePath]
+    -> IO [FilePath]
 cudaGhciLibrariesWindows platform installPath libraries = do
   candidates <- mapM importLibraryToDLLFileName [ cudaLibraryPath platform installPath </> lib <.> "lib" | lib <- libraries ]
   return [ dropExtension dll | Just dll <- candidates ]
@@ -375,13 +409,25 @@ windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
 
 -- Runs CUDA detection procedure and stores .buildinfo to a file.
 --
-generateAndStoreBuildInfo :: Verbosity -> Bool -> Platform -> CompilerId -> FilePath -> IO ()
-generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) path = do
+generateAndStoreBuildInfo
+    :: Verbosity
+    -> Bool
+    -> Platform
+    -> CompilerId
+    -> [FilePath]
+    -> [FilePath]
+    -> FilePath
+    -> IO ()
+generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) extraLibs extraIncludes path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo profile installPath platform ghcVersion
+  hbi         <- libraryBuildInfo profile installPath platform ghcVersion extraLibs extraIncludes
   storeHookedBuildInfo verbosity path hbi
 
-storeHookedBuildInfo :: Verbosity -> FilePath -> HookedBuildInfo -> IO ()
+storeHookedBuildInfo
+    :: Verbosity
+    -> FilePath
+    -> HookedBuildInfo
+    -> IO ()
 storeHookedBuildInfo verbosity path hbi = do
   notice verbosity $ "Storing parameters to " ++ path
   writeHookedBuildInfo path hbi
@@ -396,7 +442,10 @@ storeHookedBuildInfo verbosity path hbi = do
 --
 -- In case of failure, calls die with the pretty long message from below.
 --
-findCUDAInstallPath :: Verbosity -> Platform -> IO FilePath
+findCUDAInstallPath
+    :: Verbosity
+    -> Platform
+    -> IO FilePath
 findCUDAInstallPath verbosity platform = do
   result <- findFirstValidLocation verbosity platform (candidateCUDAInstallPaths verbosity platform)
   case result of
@@ -425,7 +474,11 @@ cudaNotFoundMsg = unlines
 -- Function iterates over action yielding possible locations, evaluating them
 -- and returning the first valid one. Returns Nothing if no location matches.
 --
-findFirstValidLocation :: Verbosity -> Platform -> [(IO FilePath, String)] -> IO (Maybe FilePath)
+findFirstValidLocation
+    :: Verbosity
+    -> Platform
+    -> [(IO FilePath, String)]
+    -> IO (Maybe FilePath)
 findFirstValidLocation verbosity platform = go
   where
     go :: [(IO FilePath, String)] -> IO (Maybe FilePath)
@@ -442,7 +495,11 @@ findFirstValidLocation verbosity platform = go
 -- Evaluates IO to obtain the path, handling any possible exceptions.
 -- If path is evaluable and points to valid CUDA toolkit returns True.
 --
-validateIOLocation :: Verbosity -> Platform -> IO FilePath -> IO Bool
+validateIOLocation
+    :: Verbosity
+    -> Platform
+    -> IO FilePath
+    -> IO Bool
 validateIOLocation verbosity platform iopath =
   let handler :: IOError -> IO Bool
       handler err = do
@@ -454,7 +511,11 @@ validateIOLocation verbosity platform iopath =
 
 -- Checks whether given location looks like a valid CUDA toolkit directory
 --
-validateLocation :: Verbosity -> Platform -> FilePath -> IO Bool
+validateLocation
+    :: Verbosity
+    -> Platform
+    -> FilePath
+    -> IO Bool
 validateLocation verbosity platform path = do
   -- TODO: Ideally this should check for e.g. cuda.lib and whether it exports
   -- relevant symbols. This should be achievable with some `nm` trickery
@@ -470,11 +531,16 @@ validateLocation verbosity platform path = do
 
 -- Returns pairs of (action yielding candidate path, String description of that location)
 --
-candidateCUDAInstallPaths :: Verbosity -> Platform -> [(IO FilePath, String)]
+candidateCUDAInstallPaths
+    :: Verbosity
+    -> Platform
+    -> [(IO FilePath, String)]
 candidateCUDAInstallPaths verbosity platform =
   [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
   , (findInPath,              "nvcc compiler executable in PATH")
   , (return defaultPath,      printf "default install location (%s)" defaultPath)
+  , (getEnv "CUDA_PATH_V9_1", "environment variable CUDA_PATH_V9_1")
+  , (getEnv "CUDA_PATH_V9_0", "environment variable CUDA_PATH_V9_0")
   , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
   , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
   , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
@@ -496,14 +562,20 @@ candidateCUDAInstallPaths verbosity platform =
 -- NOTE: this function throws an exception when there is no `nvcc` in PATH.
 -- The exception contains a meaningful message.
 --
-findProgramLocationOrError :: Verbosity -> String -> IO FilePath
+findProgramLocationOrError
+    :: Verbosity
+    -> String
+    -> IO FilePath
 findProgramLocationOrError verbosity execName = do
   location <- findProgram verbosity execName
   case location of
     Just path -> return path
     Nothing   -> ioError $ mkIOError doesNotExistErrorType ("not found: " ++ execName) Nothing Nothing
 
-findProgram :: Verbosity -> FilePath -> IO (Maybe FilePath)
+findProgram
+    :: Verbosity
+    -> FilePath
+    -> IO (Maybe FilePath)
 findProgram verbosity prog = do
   result <- findProgramOnSearchPath verbosity defaultProgramSearchPath prog
 #if MIN_VERSION_Cabal(1,25,0)
@@ -521,7 +593,9 @@ findProgram verbosity prog = do
 -- Calls die when neither of the files is available.
 -- (generated one should be always present, as it is created in the post-conf step)
 --
-getHookedBuildInfo :: Verbosity -> IO HookedBuildInfo
+getHookedBuildInfo
+    :: Verbosity
+    -> IO HookedBuildInfo
 getHookedBuildInfo verbosity = do
   doesCustomBuildInfoExists <- doesFileExist customBuildInfoFilePath
   if doesCustomBuildInfoExists
