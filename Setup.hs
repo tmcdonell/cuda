@@ -129,14 +129,15 @@ escBackslash (f:fs)    = f : escBackslash fs
 -- visible to underlying build tools.
 --
 libraryBuildInfo
-    :: Bool
+    :: Verbosity
+    -> Bool
     -> FilePath
     -> Platform
     -> Version
     -> [FilePath]
     -> [FilePath]
     -> IO HookedBuildInfo
-libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
+libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
   let
       libraryPaths      = cudaLibraryPath platform installPath : extraLibs
       includePaths      = cudaIncludePath platform installPath : extraIncludes
@@ -145,7 +146,7 @@ libraryBuildInfo profile installPath platform@(Platform arch os) ghcVersion extr
           existing <- filterM doesDirectoryExist libraryPaths
           case existing of
                (p0:_) -> return p0
-               _      -> die $ "Could not find path: " ++ show paths
+               _      -> die' verbosity $ "Could not find path: " ++ show paths
 
   -- This can only be defined once, so take the first path which exists
   canonicalLibraryPath <- takeFirstExisting libraryPaths
@@ -381,7 +382,7 @@ validateLinker verbosity (Platform arch os) db =
           Nothing        -> warn verbosity $ "Unknown ld.exe version. If generated executables crash when making calls to CUDA, please see " ++ windowsHelpPage
           Just ldVersion -> do
             debug verbosity $ "Found ld.exe version: " ++ show ldVersion
-            when (ldVersion < [2,25,1]) $ die $ windowsLinkerBugMsg ldPath
+            when (ldVersion < [2,25,1]) $ die' verbosity $ windowsLinkerBugMsg ldPath
 
 
 windowsHelpPage :: String
@@ -424,7 +425,7 @@ generateAndStoreBuildInfo
     -> IO ()
 generateAndStoreBuildInfo verbosity profile platform (CompilerId _ghcFlavor ghcVersion) extraLibs extraIncludes path = do
   installPath <- findCUDAInstallPath verbosity platform
-  hbi         <- libraryBuildInfo profile installPath platform ghcVersion extraLibs extraIncludes
+  hbi         <- libraryBuildInfo verbosity profile installPath platform ghcVersion extraLibs extraIncludes
   storeHookedBuildInfo verbosity path hbi
 
 storeHookedBuildInfo
@@ -456,7 +457,7 @@ findCUDAInstallPath verbosity platform = do
     Just installPath -> do
       notice verbosity $ printf "Found CUDA toolkit at: %s" installPath
       return installPath
-    Nothing -> die cudaNotFoundMsg
+    Nothing -> die' verbosity cudaNotFoundMsg
 
 
 cudaNotFoundMsg :: String
@@ -614,7 +615,7 @@ getHookedBuildInfo verbosity = do
           notice verbosity $ printf "Provide a '%s' file to override this behaviour.\n" customBuildInfoFilePath
           readHookedBuildInfo verbosity generatedBuildInfoFilePath
         else
-          die $ printf "Unexpected failure. Neither the default %s nor custom %s exist.\n" generatedBuildInfoFilePath customBuildInfoFilePath
+          die' verbosity $ printf "Unexpected failure. Neither the default %s nor custom %s exist.\n" generatedBuildInfoFilePath customBuildInfoFilePath
 
 
 -- Replicate the default C2HS preprocessor hook here, and inject a value for
@@ -633,7 +634,7 @@ ppC2hs bi lbi
         platformIndependent = False,
         runPreProcessor     = \(inBaseDir, inRelativeFile)
                                (outBaseDir, outRelativeFile) verbosity ->
-          rawSystemProgramConf verbosity c2hsProgram (withPrograms lbi) . filter (not . null) $
+          runDbProgram verbosity c2hsProgram (withPrograms lbi) . filter (not . null) $
             maybe [] words (lookup "x-extra-c2hs-options" (customFieldsBI bi))
             ++ ["--include=" ++ outBaseDir]
             ++ ["--cppopts=" ++ opt | opt <- getCppOptions bi lbi]
@@ -672,5 +673,10 @@ versionInt v =
 #if MIN_VERSION_Cabal(1,25,0)
 versionBranch :: Version -> [Int]
 versionBranch = versionNumbers
+#endif
+
+#if !MIN_VERSION_Cabal(2,0,0)
+die' :: Verbosity -> String -> IO a
+die' _ = die
 #endif
 
