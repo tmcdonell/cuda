@@ -4,6 +4,10 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.9.0.3] - 2018-03-12
+### Fixed
+  * Build fix for Cabal-2.2 (ghc-8.4)
+
 ## [0.9.0.2] - 2018-03-07
 ### Fixed
   * Build fix for Nix ([#53])
@@ -111,6 +115,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
+[0.9.0.3]:    https://github.com/tmcdonell/cuda/compare/0.9.0.2...0.9.0.3
 [0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
 [0.9.0.1]:    https://github.com/tmcdonell/cuda/compare/0.9.0.0...0.9.0.1
 [0.9.0.0]:    https://github.com/tmcdonell/cuda/compare/0.8.0.1...0.9.0.0
