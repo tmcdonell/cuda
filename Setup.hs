@@ -123,7 +123,7 @@ main = defaultMainWithHooks customHooks
 escBackslash :: FilePath -> FilePath
 escBackslash []        = []
 escBackslash ('\\':fs) = '\\' : '\\' : escBackslash fs
-escBackslash (f:fs)    = f : escBackslash fs
+escBackslash (f:fs)    = f           : escBackslash fs
 
 -- Generates build info with flags needed for CUDA Toolkit to be properly
 -- visible to underlying build tools.
@@ -152,7 +152,6 @@ libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVe
   canonicalLibraryPath <- takeFirstExisting libraryPaths
 
   let
-
       -- OS-specific escaping for -D path defines
       escDefPath | os == Windows = escBackslash
                  | otherwise     = id
