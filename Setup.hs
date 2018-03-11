@@ -8,7 +8,6 @@
 #endif
 
 import Distribution.PackageDescription
-import Distribution.PackageDescription.Parse
 import Distribution.Simple
 import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
@@ -25,6 +24,11 @@ import Distribution.Verbosity
 #if MIN_VERSION_Cabal(1,25,0)
 import Distribution.PackageDescription.PrettyPrint
 import Distribution.Version
+#endif
+#if MIN_VERSION_Cabal(2,2,0)
+import Distribution.PackageDescription.Parsec
+#else
+import Distribution.PackageDescription.Parse
 #endif
 
 import Control.Exception
