@@ -39,6 +39,7 @@ before_build:
 
   - ln -s stack-%GHC%.yaml stack.yaml
   - stack setup --no-terminal > NUL
+  - stack build --no-terminal --fast --jobs=1 happy alex c2hs
   - stack build --no-terminal --no-copy-bins --fast --jobs=1 --only-dependencies --test --no-run-tests --haddock --no-haddock-deps
 
 build_script:
