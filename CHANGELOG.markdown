@@ -4,12 +4,16 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.9.0.3] - 2018-03-12
+### Fixed
+  * Build fix for Cabal-2.2 (ghc-8.4)
+
 ## [0.9.0.2] - 2018-03-07
-###
-  * [#53]: Build fix for Nix
+### Fixed
+  * Build fix for Nix ([#53])
 
 ## [0.9.0.1] - 2018-02-16
-###
+### Fixed
   * Build fix for macOS High Sierra (10.13)
 
 ## [0.9.0.0] - 2017-11-15
@@ -25,7 +29,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [0.8.0.1] - 2017-10-24
 ### Fixed
-  * [#50] Escape backslashes used in -D flags on Windows
+  * Escape backslashes used in -D flags on Windows ([#50])
 
 ## [0.8.0.0] - 2017-08-24
 ### Changed
@@ -43,15 +47,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [0.7.5.2] - 2017-01-06
 ### Fixed
-  * [#43]: Build fails with library profiling
-  * [#45]: On Windows, the Cabal installer is looking in the wrong place
-  * [#47]: Windows install fix
+  * Build fails with library profiling ([#43])
+  * On Windows, the Cabal installer is looking in the wrong place ([#45])
+  * Windows install fix ([#47])
 
 ## [0.7.5.1] - 2016-10-21
 ### Fixed
   * Re-enable support for Cabal-1.22
-  * [#40]: Unknown CUDA device compute capability 6.1
-  * [#44]: Compilation fails for CUDA-8 [was: ghc 7.10.3 fail to install]
+  * Unknown CUDA device compute capability 6.1 ([#40])
+  * Compilation fails for CUDA-8 [was: ghc 7.10.3 fail to install] ([#44])
 
 ## [0.7.5.0] - 2016-10-07
 ### Changed
@@ -111,6 +115,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
+[0.9.0.3]:    https://github.com/tmcdonell/cuda/compare/0.9.0.2...0.9.0.3
 [0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
 [0.9.0.1]:    https://github.com/tmcdonell/cuda/compare/0.9.0.0...0.9.0.1
 [0.9.0.0]:    https://github.com/tmcdonell/cuda/compare/0.8.0.1...0.9.0.0
