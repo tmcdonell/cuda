@@ -1,5 +1,5 @@
 # vim: nospell
-language: generic
+language: minimal
 dist: trusty
 sudo: required
 
