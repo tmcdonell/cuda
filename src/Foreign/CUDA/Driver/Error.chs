@@ -17,7 +17,7 @@ module Foreign.CUDA.Driver.Error (
   Status(..), CUDAException(..),
   describe,
   cudaError, cudaErrorIO, requireSDK,
-  resultIfOk, nothingIfOk,
+  resultIfOk, nothingIfOk, checkStatus,
 
 ) where
 
@@ -209,4 +209,8 @@ nothingIfOk status =
     case status of
         Success -> return  ()
         _       -> throwIO (ExitCode status)
+
+{-# INLINE checkStatus #-}
+checkStatus :: CInt -> IO ()
+checkStatus = nothingIfOk . cToEnum
 
