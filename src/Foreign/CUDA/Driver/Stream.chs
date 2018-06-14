@@ -16,7 +16,7 @@ module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
   Stream(..), StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..),
-  create, createWithPriority, destroy, finished, block, getPriority,
+  create, createWithPriority, destroy, finished, block, getPriority, getContext,
   write, wait,
 
   defaultStream,
@@ -30,6 +30,7 @@ module Foreign.CUDA.Driver.Stream (
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Types
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Context.Base                 ( Context(..) )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
@@ -166,6 +167,29 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
   , alloca-   `StreamPriority' peekIntConv*
   }
   -> `Status' cToEnum #}
+#endif
+
+
+-- |
+-- Query the context associated with a stream
+--
+-- Requires CUDA-9.2.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g5bd5cb26915a2ecf1921807339488484>
+--
+{-# INLINEABLE getContext #-}
+getContext :: Stream -> IO Context
+#if CUDA_VERSION < 9020
+getContext _   = requireSDK 'getContext 9.2
+#else
+getContext !st = resultIfOk =<< cuStreamGetCtx st
+
+{-# INLINE cuStreamGetCtx #-}
+{# fun unsafe cuStreamGetCtx
+  { useStream `Stream'
+  , alloca-   `Context' peekCtx* } -> `Status' cToEnum #}
+  where
+    peekCtx = liftM Context . peek
 #endif
 
 
