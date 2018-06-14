@@ -20,7 +20,7 @@ module Foreign.CUDA.Driver.Device (
   -- * Device Management
   Device(..),
   DeviceProperties(..), DeviceAttribute(..), Compute(..), ComputeMode(..), InitFlag,
-  initialise, capability, device, attribute, count, name, props, totalMem
+  initialise, capability, device, attribute, count, name, props, uuid, totalMem,
 
 ) where
 
@@ -33,10 +33,12 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- System
+import Control.Applicative
+import Control.Monad                                    ( liftM )
+import Data.Bits
+import Data.UUID.Types
 import Foreign
 import Foreign.C
-import Control.Monad                                    ( liftM )
-import Control.Applicative
 import Prelude
 
 
@@ -241,6 +243,48 @@ name !d = resultIfOk =<< cuDeviceGetName d
     len       = 512
     allocaS a = allocaBytes len $ \p -> a (p, cIntConv len)
     peekS s _ = peekCString s
+
+
+-- | Returns a UUID for the device
+--
+-- Requires CUDA-9.2
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g987b46b884c101ed5be414ab4d9e60e4>
+--
+{-# INLINE uuid #-}
+uuid :: Device -> IO UUID
+#if CUDA_VERSION < 9020
+uuid _ = requireSDK 'uuid 9.2
+#else
+uuid !dev =
+  allocaBytes 16 $ \ptr -> do
+    cuDeviceGetUuid ptr dev
+    unpack ptr
+  where
+    {-# INLINE cuDeviceGetUuid #-}
+    {# fun unsafe cuDeviceGetUuid
+      {           `Ptr ()'
+      , useDevice `Device'
+      } -> `()' checkStatus*- #}
+
+    {-# INLINE unpack #-}
+    unpack :: Ptr () -> IO UUID
+    unpack !p = do
+      let !q = castPtr p
+      a <- word <$> peekElemOff q  0 <*> peekElemOff q  1 <*> peekElemOff q  2 <*> peekElemOff q  3
+      b <- word <$> peekElemOff q  4 <*> peekElemOff q  5 <*> peekElemOff q  6 <*> peekElemOff q  7
+      c <- word <$> peekElemOff q  8 <*> peekElemOff q  9 <*> peekElemOff q 10 <*> peekElemOff q 11
+      d <- word <$> peekElemOff q 12 <*> peekElemOff q 13 <*> peekElemOff q 14 <*> peekElemOff q 15
+      return $! fromWords a b c d
+
+    {-# INLINE word #-}
+    word :: Word8 -> Word8 -> Word8 -> Word8 -> Word32
+    word !a !b !c !d
+      =  (fromIntegral a `shiftL` 24)
+     .|. (fromIntegral b `shiftL` 16)
+     .|. (fromIntegral c `shiftL`  8)
+     .|. (fromIntegral d            )
+#endif
 
 
 -- |

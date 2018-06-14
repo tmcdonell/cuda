@@ -144,6 +144,7 @@ Library
     , bytestring
     , filepath          >= 1.0
     , template-haskell
+    , uuid-types        >= 1.0
 
   default-language:     Haskell98
   Extensions:
