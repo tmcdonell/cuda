@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
@@ -40,6 +41,7 @@ import Foreign
 import Foreign.C
 import Unsafe.Coerce
 
+import GHC.Ptr
 import Data.ByteString.Char8                            ( ByteString )
 import qualified Data.ByteString.Char8                  as B
 
@@ -203,10 +205,11 @@ addDataFromPtr _ _ _ _ = requireSDK 'addDataFromPtr 5.5
 #else
 addDataFromPtr !ls !n !img !t !options =
   let (opt,val) = unzip $ map jitOptionUnpack options
+      name      = Ptr "<unknown>"#
   in
   withArrayLen (map cFromEnum opt)    $ \i p_opts ->
   withArray    (map unsafeCoerce val) $ \  p_vals ->
-    nothingIfOk =<< cuLinkAddData ls t img n "<unknown>" i p_opts p_vals
+    nothingIfOk =<< cuLinkAddData ls t img n name i p_opts p_vals
 
 {-# INLINE cuLinkAddData #-}
 {# fun unsafe cuLinkAddData
@@ -214,7 +217,7 @@ addDataFromPtr !ls !n !img !t !options =
   , cFromEnum    `JITInputType'
   , castPtr      `Ptr Word8'
   ,              `Int'
-  ,              `String'
+  , id           `Ptr CChar'
   ,              `Int'
   , id           `Ptr CInt'
   , id           `Ptr (Ptr ())'
