@@ -298,5 +298,5 @@ foreign import ccall unsafe "string.h strnlen" c_strnlen'
 
 {-# INLINE c_strnlen #-}
 c_strnlen :: CString -> Int -> IO Int
-c_strnlen str maxlen = cIntConv `fmap` c_strnlen' str (cIntConv maxlen)
+c_strnlen str maxlen = fromIntegral `fmap` c_strnlen' str (fromIntegral maxlen)
 

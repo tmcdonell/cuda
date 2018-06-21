@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
@@ -73,6 +74,10 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Storable
 import qualified Foreign.Marshal                        as F
+
+import GHC.Ptr
+import GHC.Word
+import GHC.Base
 
 #c
 typedef enum CUmemhostalloc_option_enum {
@@ -354,7 +359,7 @@ prefetchArrayAsync ptr n mdev mst = go undefined ptr
 {# fun unsafe cuMemPrefetchAsync
   { useDeviceHandle `DevicePtr a'
   ,                 `Int'
-  ,                 `CInt'
+  , id              `CInt'
   , useStream       `Stream'
   }
   -> `Status' cToEnum #}
@@ -1138,11 +1143,14 @@ type DeviceHandle = {# type CUdeviceptr #}
 --
 {-# INLINE peekDeviceHandle #-}
 peekDeviceHandle :: Ptr DeviceHandle -> IO (DevicePtr a)
-peekDeviceHandle !p = DevicePtr . intPtrToPtr . fromIntegral <$> peek p
+peekDeviceHandle !p = do
+  CULLong (W64# w#) <- peek p
+  return $! DevicePtr (Ptr (int2Addr# (word2Int# w#)))
 
 -- Use a device pointer as an opaque handle type
 --
 {-# INLINE useDeviceHandle #-}
 useDeviceHandle :: DevicePtr a -> DeviceHandle
-useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
+useDeviceHandle (DevicePtr (Ptr addr#)) =
+  CULLong (W64# (int2Word# (addr2Int# addr#)))
 

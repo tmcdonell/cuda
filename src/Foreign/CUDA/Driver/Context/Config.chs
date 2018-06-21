@@ -158,7 +158,7 @@ setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
 {-# INLINE cuCtxSetLimit #-}
 {# fun unsafe cuCtxSetLimit
   { cFromEnum `Limit'
-  , cIntConv  `Int'   } -> `Status' cToEnum #}
+  ,           `Int'   } -> `Status' cToEnum #}
 #endif
 
 

@@ -402,8 +402,8 @@ setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 
 {-# INLINE cuFuncSetSharedSize #-}
 {# fun unsafe cuFuncSetSharedSize
-  { useFun   `Fun'
-  , cIntConv `Integer' } -> `Status' cToEnum #}
+  { useFun      `Fun'
+  , fromInteger `Integer' } -> `Status' cToEnum #}
 
 
 -- |
@@ -441,7 +441,7 @@ setParams !fn !prs = do
 {# fun unsafe cuParamSetf
   { useFun `Fun'
   ,        `Int'
-  ,        `Float' } -> `Status' cToEnum #}
+  , CFloat `Float' } -> `Status' cToEnum #}
 
 {-# INLINE cuParamSetv #-}
 {# fun unsafe cuParamSetv

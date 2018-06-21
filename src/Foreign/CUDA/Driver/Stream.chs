@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE TemplateHaskell          #-}
 --------------------------------------------------------------------------------
 -- |
@@ -39,6 +40,10 @@ import Control.Monad                                    ( liftM )
 import Foreign
 import Foreign.C
 import Unsafe.Coerce
+
+import GHC.Base
+import GHC.Ptr
+import GHC.Word
 
 
 --------------------------------------------------------------------------------
@@ -89,7 +94,7 @@ createWithPriority !priority !flags = resultIfOk =<< cuStreamCreateWithPriority 
 {# fun unsafe cuStreamCreateWithPriority
   { alloca-         `Stream'         peekStream*
   , combineBitMasks `[StreamFlag]'
-  , cIntConv        `StreamPriority'
+  , fromIntegral    `StreamPriority'
   }
   -> `Status' cToEnum #}
   where
@@ -242,8 +247,6 @@ write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr v
   , combineBitMasks `[StreamWriteFlag]'
   }
   -> `Status' cToEnum #}
-  where
-    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 #endif
 
 {-# INLINE write64 #-}
@@ -261,8 +264,6 @@ write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64 stream ptr v
   , combineBitMasks `[StreamWriteFlag]'
   }
   -> `Status' cToEnum #}
-  where
-    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 #endif
 
 
@@ -299,8 +300,6 @@ wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val
   ,                 `Word32'
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
-  where
-    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 #endif
 
 {-# INLINE wait64 #-}
@@ -317,7 +316,16 @@ wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val
   ,                 `Word64'
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
-  where
-    useDeviceHandle = fromIntegral . ptrToIntPtr . useDevicePtr
 #endif
+
+--------------------------------------------------------------------------------
+-- Internal
+--------------------------------------------------------------------------------
+
+-- Use a device pointer as an opaque handle type
+--
+{-# INLINE useDeviceHandle #-}
+useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
+useDeviceHandle (DevicePtr (Ptr addr#)) =
+  CULLong (W64# (int2Word# (addr2Int# addr#)))
 

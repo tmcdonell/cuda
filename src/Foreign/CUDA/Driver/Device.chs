@@ -92,17 +92,17 @@ instance Storable CUDevProp where
 
   poke _ _    = error "no instance for Foreign.Storable.poke DeviceProperties"
   peek p      = do
-    tb <- cIntConv `fmap` {#get CUdevprop.maxThreadsPerBlock#} p
-    sm <- cIntConv `fmap` {#get CUdevprop.sharedMemPerBlock#} p
-    cm <- cIntConv `fmap` {#get CUdevprop.totalConstantMemory#} p
-    ws <- cIntConv `fmap` {#get CUdevprop.SIMDWidth#} p
-    mp <- cIntConv `fmap` {#get CUdevprop.memPitch#} p
-    rb <- cIntConv `fmap` {#get CUdevprop.regsPerBlock#} p
-    cl <- cIntConv `fmap` {#get CUdevprop.clockRate#} p
-    ta <- cIntConv `fmap` {#get CUdevprop.textureAlign#} p
+    tb <- fromIntegral `fmap` {#get CUdevprop.maxThreadsPerBlock#} p
+    sm <- fromIntegral `fmap` {#get CUdevprop.sharedMemPerBlock#} p
+    cm <- fromIntegral `fmap` {#get CUdevprop.totalConstantMemory#} p
+    ws <- fromIntegral `fmap` {#get CUdevprop.SIMDWidth#} p
+    mp <- fromIntegral `fmap` {#get CUdevprop.memPitch#} p
+    rb <- fromIntegral `fmap` {#get CUdevprop.regsPerBlock#} p
+    cl <- fromIntegral `fmap` {#get CUdevprop.clockRate#} p
+    ta <- fromIntegral `fmap` {#get CUdevprop.textureAlign#} p
 
-    [t1,t2,t3] <- peekArrayWith cIntConv 3 =<< {#get CUdevprop.maxThreadsDim#} p
-    [g1,g2,g3] <- peekArrayWith cIntConv 3 =<< {#get CUdevprop.maxGridSize#} p
+    [t1,t2,t3] <- peekArrayWith fromIntegral 3 =<< {#get CUdevprop.maxThreadsDim#} p
+    [g1,g2,g3] <- peekArrayWith fromIntegral 3 =<< {#get CUdevprop.maxGridSize#} p
 
     return CUDevProp
       {
@@ -193,7 +193,7 @@ device !d = resultIfOk =<< cuDeviceGet d
 {-# INLINE cuDeviceGet #-}
 {# fun unsafe cuDeviceGet
   { alloca-  `Device' dev*
-  , cIntConv `Int'           } -> `Status' cToEnum #}
+  ,          `Int'           } -> `Status' cToEnum #}
   where dev = liftM Device . peek
 
 
@@ -242,7 +242,7 @@ name !d = resultIfOk =<< cuDeviceGetName d
   , useDevice `Device'         } -> `Status' cToEnum #}
   where
     len       = 512
-    allocaS a = allocaBytes len $ \p -> a (p, cIntConv len)
+    allocaS a = allocaBytes len $ \p -> a (p, fromIntegral len)
     peekS s _ = peekCString s
 
 
