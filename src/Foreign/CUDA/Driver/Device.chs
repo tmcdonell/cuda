@@ -127,7 +127,7 @@ instance Storable CUDevProp where
 data InitFlag
 instance Enum InitFlag where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("InitFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 

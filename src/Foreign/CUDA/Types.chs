@@ -109,7 +109,7 @@ newtype Event = Event { useEvent :: {# type CUevent #}}
 data WaitFlag
 instance Enum WaitFlag where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("WaitFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 
@@ -143,7 +143,7 @@ type StreamPriority = Int
 data StreamFlag
 instance Enum StreamFlag where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("StreamFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 #else

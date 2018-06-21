@@ -340,7 +340,7 @@ reset = nothingIfOk =<< cudaThreadExit
 data PeerFlag
 instance Enum PeerFlag where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("PeerFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 
