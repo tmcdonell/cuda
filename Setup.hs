@@ -259,7 +259,7 @@ cudaGhciLibrariesWindows
     -> [FilePath]
     -> IO [FilePath]
 cudaGhciLibrariesWindows platform installPath libraries = do
-  candidates <- mapM importLibraryToDLLFileName [ cudaLibraryPath platform installPath </> lib <.> "lib" | lib <- libraries ]
+  candidates <- mapM (importLibraryToDLLFileName platform) [ cudaLibraryPath platform installPath </> lib <.> "lib" | lib <- libraries ]
   return [ dropExtension dll | Just dll <- candidates ]
 
 
@@ -283,8 +283,8 @@ cudaGhciLibrariesWindows platform installPath libraries = do
 -- The function is meant to be used on Windows. Other platforms may or may
 -- not work.
 --
-importLibraryToDLLFileName :: FilePath -> IO (Maybe FilePath)
-importLibraryToDLLFileName importLibPath = do
+importLibraryToDLLFileName :: Platform -> FilePath -> IO (Maybe FilePath)
+importLibraryToDLLFileName platform importLibPath = do
   -- Sample output nm generates on cudart.lib
   --
   -- nvcuda.dll:
@@ -298,7 +298,11 @@ importLibraryToDLLFileName importLibPath = do
   --          U nvcuda_NULL_THUNK_DATA
   --
   nmOutput <- getProgramInvocationOutput normal (simpleProgramInvocation "nm" [importLibPath])
-  return $ find (isInfixOf ("" <.> dllExtension)) (lines nmOutput)
+#if MIN_VERSION_Cabal(2,3,0)
+  return $ find (isInfixOf ("" <.> dllExtension platform)) (lines nmOutput)
+#else
+  return $ find (isInfixOf ("" <.> dllExtension))          (lines nmOutput)
+#endif
 
 
 -- Slightly modified version of `words` from base - it takes predicate saying on
