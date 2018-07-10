@@ -18,8 +18,9 @@ addons:
       - cabal-install-1.22
       - cabal-install-1.24
       - cabal-install-2.0
-      - happy-1.19.5
-      - alex-3.1.7
+      - alex
+      - c2hs
+      - happy
 
 compiler:
   - GHC-8.6.1
@@ -53,7 +54,7 @@ before_install:
         8.4)  export CABAL=2.0  ;;
         8.6)  export CABAL=2.0  ;;
       esac
-  - export PATH=/opt/cabal/$CABAL/bin:/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$HOME/.cabal/bin:$PATH
+  - export PATH=/opt/cabal/$CABAL/bin:$HOME/.cabal/bin:$PATH
   - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
   - source .travis/install-stack.sh
@@ -66,7 +67,6 @@ before_install:
   - nvcc --version
 
 install:
-  - travis_retry stack install c2hs --fast --no-terminal
   - travis_retry stack build --fast --only-dependencies --no-terminal
 
 script:
