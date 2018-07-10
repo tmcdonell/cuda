@@ -21,9 +21,14 @@ packages:
 - '.'
 
 extra-deps:
+- git:    https://github.com/tmcdonell/language-c.git
+  commit: e6e3684d76015cdbdd5e716e1acc9a3a23f38fdf
+
+- dlist-0.8.0.4
 - happy-1.19.9
 - hashable-1.2.7.0
 - random-1.1
+- syb-0.7
 - uuid-types-1.0.3
 
 # Override default flag values for local packages and extra-deps
