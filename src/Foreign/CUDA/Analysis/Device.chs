@@ -158,6 +158,7 @@ data DeviceResources = DeviceResources
   , sharedMemAllocUnit      :: !Int         -- ^ Shared memory allocation unit size (bytes)
   , warpAllocUnit           :: !Int         -- ^ Warp allocation granularity
   , warpRegAllocUnit        :: !Int         -- ^ Warp register allocation granularity
+  , maxGridsPerDevice       :: !Int         -- ^ Maximum number of resident grids per device (concurrent kernels)
   }
 
 
@@ -187,6 +188,7 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 512
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 1
         }
       Compute 1 2 ->  resources (Compute 1 3)     -- Tesla G9x
       Compute 1 3 -> (resources (Compute 1 1))    -- Tesla GT200
@@ -213,12 +215,13 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 128
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 64
+        , maxGridsPerDevice     = 16
         }
       Compute 2 1 -> (resources (Compute 2 0))    -- Fermi GF10x
         { coresPerMP            = 48
         }
 
-      Compute 3 0 -> DeviceResources
+      Compute 3 0 -> DeviceResources              -- Kepler GK10x
         { threadsPerWarp        = 32
         , coresPerMP            = 192
         , warpsPerMP            = 64
@@ -234,10 +237,15 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 4
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 16
         }
       Compute 3 2 -> (resources (Compute 3 5))    -- Jetson TK1
+        { maxRegPerBlock        = 32768
+        , maxGridsPerDevice     = 4
+        }
       Compute 3 5 -> (resources (Compute 3 0))    -- Kepler GK11x
         { maxRegPerThread       = 255
+        , maxGridsPerDevice     = 32
         }
       Compute 3 7 -> (resources (Compute 3 5))    -- Kepler GK21x
         { sharedMemPerMP        = 114688
@@ -260,6 +268,7 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 4
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 32
         }
       Compute 5 2 -> (resources (Compute 5 0))    -- Maxwell GM20x
         { sharedMemPerMP        = 98304
@@ -269,6 +278,7 @@ deviceResources = resources . computeCapability
       Compute 5 3 -> (resources (Compute 5 0))    -- Maxwell GM20B
         { maxRegPerBlock        = 32768
         , warpAllocUnit         = 2
+        , maxGridsPerDevice     = 16
         }
 
       Compute 6 0 -> DeviceResources              -- Pascal GP100
@@ -287,17 +297,40 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
         }
       Compute 6 1 -> (resources (Compute 6 0))    -- Pascal GP10x
         { coresPerMP            = 128
         , sharedMemPerMP        = 98304
         , warpAllocUnit         = 4
+        , maxGridsPerDevice     = 32
         }
-      Compute 6 2 -> (resources (Compute 6 0))    -- Pascal ??
+      Compute 6 2 -> (resources (Compute 6 0))    -- Pascal GP10B
         { coresPerMP            = 128
         , warpsPerMP            = 128
         , threadBlocksPerMP     = 4096
+        , maxRegPerBlock        = 32768
         , warpAllocUnit         = 4
+        , maxGridsPerDevice     = 16
+        }
+
+      Compute 7 _ -> DeviceResources              -- Volta GV100
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 98304
+        , maxSharedMemPerBlock  = 49152           -- XXX: or 96KB?
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 2
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
         }
 
       -- Something might have gone wrong, or the library just needs to be
