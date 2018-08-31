@@ -1,21 +1,47 @@
 # For more information, see: https://github.com/commercialhaskell/stack/blob/release/doc/yaml_configuration.md
 # vim: nospell
 
-resolver: ghc-8.6.0.20180627
-compiler: ghc-8.6.0.20180627
+# resolver: ghc-8.6.0.20180627 #rc1
+# resolver: ghc-8.6.0.20180714 #rc2
+resolver: ghc-8.6.0.20180810 #rc3
 compiler-check: match-exact
 allow-newer: true
 
 setup-info:
   ghc:
-    linux64: # x86_64-unknown-linux
-      8.6.0.20180627:
-        url:    https://downloads.haskell.org/~ghc/8.6.1-alpha1/ghc-8.6.0.20180627-x86_64-deb8-linux.tar.xz
-        sha256: e891e9e6ad0d53382e79b5c1005af6123501fbc95088ed849c3a1c22979db319
+    # # rc1
+    # linux64: # x86_64-unknown-linux
+    #   8.6.0.20180627:
+    #     url:    https://downloads.haskell.org/~ghc/8.6.1-alpha1/ghc-8.6.0.20180627-x86_64-deb8-linux.tar.xz
+    #     sha256: e891e9e6ad0d53382e79b5c1005af6123501fbc95088ed849c3a1c22979db319
+    # windows64:
+    #   8.6.0.20180627:
+    #     url:    https://downloads.haskell.org/~ghc/8.6.1-alpha1/ghc-8.6.0.20180627-x86_64-unknown-mingw32.tar.xz
+    #     sha256: ccff1f896425f932581c804e1fd6dd14dea7b7423f7f4970ff1d99ab03c97504
+
+    # # rc2
+    # linux64:
+    #   8.6.0.20180714:
+    #     url:    https://downloads.haskell.org/~ghc/8.6.1-alpha2/ghc-8.6.0.20180714-x86_64-deb8-linux.tar.xz
+    #     sha256: 5cfbac190b2d8be4457c7f39ac9697bfa7f458c3b456c254f685f6fcbb7ab48b
+    # windows64:
+    #   8.6.0.20180714:
+    #     url:    https://downloads.haskell.org/~ghc/8.6.1-alpha2/ghc-8.6.0.20180714-x86_64-unknown-mingw32.tar.xz
+    #     sha256: a9704c4ef91a4301a79de428455e283a4ac40dd30c4ff6635c766896153bcc07
+
+    # rc3
+    macosx:
+      8.6.0.20180810:
+        url:    https://downloads.haskell.org/~ghc/8.6.1-beta1/ghc-8.6.0.20180810-x86_64-darwin.tar.xz
+        sha256: 53fcac63a4eb04970a47f63c123076d14946208033e0811e90357831995f541a
+    linux64:
+      8.6.0.20180810:
+        url:    https://downloads.haskell.org/~ghc/8.6.1-beta1/ghc-8.6.0.20180810-x86_64-deb8-linux.tar.xz
+        sha256: 69e2e5c579e71c5fed1cf9be9760af4bce5f99865211c8eb6073722b8baffbd9
     windows64:
-      8.6.0.20180627:
-        url:    https://downloads.haskell.org/~ghc/8.6.1-alpha1/ghc-8.6.0.20180627-x86_64-unknown-mingw32.tar.xz
-        sha256: ccff1f896425f932581c804e1fd6dd14dea7b7423f7f4970ff1d99ab03c97504
+      8.6.0.20180810:
+        url:    https://downloads.haskell.org/~ghc/8.6.1-beta1/ghc-8.6.0.20180810-x86_64-unknown-mingw32.tar.xz
+        sha256: f6492ac6a6561e78b43e905c3cee260d64246868b88bfb177de5b29d3029783c
 
 packages:
 - '.'
@@ -23,6 +49,9 @@ packages:
 extra-deps:
 - git:    https://github.com/tmcdonell/language-c.git
   commit: e6e3684d76015cdbdd5e716e1acc9a3a23f38fdf
+
+- git:    https://github.com/vmchale/c2hs.git
+  commit: 6f4ca7de6ba240dbcd78dd03d81dad750c002893
 
 - dlist-0.8.0.4
 - happy-1.19.9
