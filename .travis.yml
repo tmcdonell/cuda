@@ -7,6 +7,7 @@ sudo: required
 cache:
   directories:
     - $HOME/.stack/snapshots
+    - $HOME/.cabal/bin
     - .stack-work/install
 
 addons:
@@ -14,12 +15,7 @@ addons:
     sources:
       - hvr-ghc
     packages:
-      - cabal-install-1.18
-      - cabal-install-1.22
-      - cabal-install-1.24
-      - cabal-install-2.0
       - alex
-      - c2hs
       - happy
 
 compiler:
@@ -52,19 +48,32 @@ before_install:
         8.0)  export CABAL=1.24 ;;
         8.2)  export CABAL=2.0  ;;
         8.4)  export CABAL=2.0  ;;
-        8.6)  export CABAL=2.0  ;;
+        8.6)  export CABAL=2.2  ;;
       esac
+  - travis_retry sudo apt-get install -yq cabal-install-${CABAL}
   - export PATH=/opt/cabal/$CABAL/bin:$HOME/.cabal/bin:$PATH
   - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
   - source .travis/install-stack.sh
   - source .travis/update-ghc-settings.sh
 
+  # ghc-8.6 builds a broken version of c2hs
+  - |
+      if [ ${GHC%.*} == "8.6" ]; then
+        if [ ! -x $HOME/.cabal/bin/c2hs ]; then
+          export PATH=${PATH}:/opt/ghc/8.4.3/bin
+          travis_retry sudo apt-get install -yq ghc-8.4.3
+          travis_retry cabal update
+          travis_retry cabal install c2hs
+        fi
+      fi
+
   # build environment
   - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
   - cabal --version
   - stack --version
   - nvcc --version
+  - c2hs --version
 
 install:
   - travis_retry stack build --fast --only-dependencies --no-terminal

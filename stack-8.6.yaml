@@ -47,9 +47,6 @@ packages:
 - '.'
 
 extra-deps:
-- git:    https://github.com/vmchale/c2hs.git
-  commit: 6f4ca7de6ba240dbcd78dd03d81dad750c002893
-
 - alex-3.2.4
 - dlist-0.8.0.4
 - happy-1.19.9
