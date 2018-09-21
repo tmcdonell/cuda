@@ -60,7 +60,7 @@ before_install:
   - |
       if [ ${GHC%.*} == "8.6" ]; then
         travis_retry stack --stack-yaml=stack-8.4.yaml setup --no-terminal --no-system-ghc
-        travis_retry stack --stack-yaml=stack-8.4.yaml install c2hs --no-terminal
+        travis_retry stack --stack-yaml=stack-8.4.yaml install c2hs --fast --no-terminal
       fi
 
   # build environment
