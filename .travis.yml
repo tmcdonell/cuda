@@ -40,17 +40,6 @@ matrix:
 before_install:
   - export GHC=${CC:4}
   - unset CC
-  - |
-      case ${GHC%.*} in
-        7.8)  export CABAL=1.18 ;;
-        7.10) export CABAL=1.22 ;;
-        8.0)  export CABAL=1.24 ;;
-        8.2)  export CABAL=2.0  ;;
-        8.4)  export CABAL=2.0  ;;
-        8.6)  export CABAL=2.2  ;;
-      esac
-  - travis_retry sudo apt-get install -yq cabal-install-${CABAL}
-  - export PATH=/opt/cabal/$CABAL/bin:$HOME/.cabal/bin:$PATH
   - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
   - source .travis/install-stack.sh
@@ -65,7 +54,6 @@ before_install:
 
   # build environment
   - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - cabal --version
   - stack --version
   - nvcc --version
 
