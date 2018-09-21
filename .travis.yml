@@ -7,7 +7,6 @@ sudo: required
 cache:
   directories:
     - $HOME/.stack/snapshots
-    - $HOME/.cabal/bin
     - .stack-work/install
 
 addons:
@@ -60,12 +59,8 @@ before_install:
   # ghc-8.6 builds a broken version of c2hs
   - |
       if [ ${GHC%.*} == "8.6" ]; then
-        if [ ! -x $HOME/.cabal/bin/c2hs ]; then
-          export PATH=${PATH}:/opt/ghc/8.4.3/bin
-          travis_retry sudo apt-get install -yq ghc-8.4.3
-          travis_retry cabal update
-          travis_retry cabal install c2hs
-        fi
+        travis_retry stack --stack-yaml=stack-8.4.yaml setup --no-terminal --no-system-ghc
+        travis_retry stack --stack-yaml=stack-8.4.yaml install c2hs --no-terminal
       fi
 
   # build environment
@@ -73,7 +68,6 @@ before_install:
   - cabal --version
   - stack --version
   - nvcc --version
-  - c2hs --version
 
 install:
   - travis_retry stack build --fast --only-dependencies --no-terminal
