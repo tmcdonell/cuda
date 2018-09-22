@@ -252,6 +252,8 @@ name !d = resultIfOk =<< cuDeviceGetName d
 --
 -- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__DEVICE.html#group__CUDA__DEVICE_1g987b46b884c101ed5be414ab4d9e60e4>
 --
+-- @since 0.10.0.0
+--
 {-# INLINE uuid #-}
 uuid :: Device -> IO UUID
 #if CUDA_VERSION < 9020

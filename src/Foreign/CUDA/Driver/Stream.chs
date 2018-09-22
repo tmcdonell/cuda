@@ -182,6 +182,8 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
 --
 -- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g5bd5cb26915a2ecf1921807339488484>
 --
+-- @since 0.10.0.0
+--
 {-# INLINEABLE getContext #-}
 getContext :: Stream -> IO Context
 #if CUDA_VERSION < 9020

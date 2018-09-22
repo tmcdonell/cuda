@@ -4,6 +4,16 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [next]
+### Added
+  * Device properties for SM7
+  * Functions from CUDA-9.2
+    * `Device.uuid`
+    * `Stream.getContext`
+
+### Removed
+  * Support for ghc-7.6
+
 ## [0.9.0.3] - 2018-03-12
 ### Fixed
   * Build fix for Cabal-2.2 (ghc-8.4)
@@ -115,6 +125,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
+[next]:       https://github.com/tmcdonell/cuda/compare/0.9.0.3...HEAD
 [0.9.0.3]:    https://github.com/tmcdonell/cuda/compare/0.9.0.2...0.9.0.3
 [0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
 [0.9.0.1]:    https://github.com/tmcdonell/cuda/compare/0.9.0.0...0.9.0.1
