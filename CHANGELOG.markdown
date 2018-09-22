@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
     * `Device.uuid`
     * `Stream.getContext`
 
+### Changed
+  * Replace uses of `String` with `ShortByteString`
+
 ### Removed
   * Support for ghc-7.6
 
