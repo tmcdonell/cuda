@@ -3,6 +3,9 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE TemplateHaskell          #-}
+#ifdef USE_EMPTY_CASE
+{-# LANGUAGE EmptyCase                #-}
+#endif
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Stream
