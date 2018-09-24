@@ -29,8 +29,12 @@ module Foreign.CUDA.Driver.Graph.Base
 -- Data Types
 --------------------------------------------------------------------------------
 
+#if CUDA_VERSION < 10000
+data Graph
+#else
 newtype Graph = Graph { useGraph :: {# type CUgraph #}}
   deriving (Eq, Show)
+#endif
 
 data GraphFlag
 instance Enum GraphFlag where
@@ -39,15 +43,31 @@ instance Enum GraphFlag where
   fromEnum x = case x of {}
 #endif
 
+#if CUDA_VERSION < 10000
+data Node
+data NodeType
+
+instance Enum NodeType where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("NodeType.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+#else
 newtype Node = Node { useNode :: {# type CUgraphNode #}}
   deriving (Eq, Show)
 
-{# enum CUgraphNodeType
+{# enum CUgraphNodeType as NodeType
   { underscoreToCase
   , CU_GRAPH_NODE_TYPE_GRAPH as Subgraph
   }
   with prefix="CU_GRAPH_NODE_TYPE" deriving (Eq, Show, Bounded) #}
+#endif
 
+
+#if CUDA_VERSION < 10000
+data Executable
+#else
 newtype Executable = Executable { useExecutable :: {# type CUgraphExec #}}
   deriving (Eq, Show)
+#endif
 
