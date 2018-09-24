@@ -353,6 +353,7 @@ launchKernelCooperative !fn (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !mst !args
 #endif
 
 -- TODO: cuLaunchCooperativeKernelMultiDevice introduced CUDA-9.0
+-- TODO: cuLaunchHostFunc introduced CUDA-10.0
 
 --------------------------------------------------------------------------------
 -- Deprecated
