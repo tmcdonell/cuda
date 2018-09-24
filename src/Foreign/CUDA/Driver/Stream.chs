@@ -19,9 +19,10 @@
 module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
-  Stream(..), StreamFlag(..), StreamPriority, StreamWriteFlag(..), StreamWaitFlag(..),
+  Stream(..), StreamPriority, StreamCallback,
+  StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..), StreamCallbackFlag,
 
-  create, createWithPriority, destroy, finished, block,
+  create, createWithPriority, destroy, finished, block, callback,
   getFlags, getPriority, getContext,
   write, wait,
 
@@ -111,6 +112,22 @@ instance Enum StreamWaitFlag where
 {# enum CUstreamWaitValue_flags as StreamWaitFlag
   { underscoreToCase }
   with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
+
+-- | A 'Stream' callback function
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html#group__CUDA__TYPES_1ge5743a8c48527f1040107a68205c5ba9>
+--
+-- @since 0.10.0.0
+--
+type StreamCallback = {# type CUstreamCallback #}
+
+data StreamCallbackFlag
+instance Enum StreamCallbackFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamCallbackFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
 #endif
 
 
@@ -244,8 +261,6 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
 
 
 -- | Query the flags of a given stream
---
--- Requires CUDA-x.x
 --
 -- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g4d39786855a6bed01215c1907fbbfbb7>
 --
@@ -395,6 +410,22 @@ wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
 #endif
+
+
+-- | Add a callback to a compute stream. This function will be executed on the
+-- host after all currently queued items in the stream have completed.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g613d97a277d7640f4cb1c03bd51c2483>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE callback #-}
+{# fun unsafe cuStreamAddCallback as callback
+  { useStream       `Stream'
+  , id              `StreamCallback'
+  , id              `Ptr ()'
+  , combineBitMasks `[StreamCallbackFlag]'
+  } -> `()' checkStatus*- #}
 
 
 -- | The default execution stream. This can be configured to have either
