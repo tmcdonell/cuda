@@ -3,6 +3,7 @@
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash                #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
@@ -29,6 +30,7 @@ module Foreign.CUDA.Driver.Marshal (
   AttachFlag(..),
   mallocManagedArray,
   prefetchArrayAsync,
+  attachArrayAsync,
 
   -- * Marshalling
   peekArray, peekArrayAsync, peekArray2D, peekArray2DAsync, peekListArray,
@@ -364,6 +366,25 @@ prefetchArrayAsync ptr n mdev mst = go undefined ptr
   }
   -> `Status' cToEnum #}
 #endif
+
+
+-- | Attach an array of the given number of elements to a stream asynchronously
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g6e468d680e263e7eba02a56643c50533>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE attachArrayAsync #-}
+attachArrayAsync :: forall a. Storable a => [AttachFlag] -> Stream -> DevicePtr a -> Int -> IO ()
+attachArrayAsync !flags !stream !ptr !n = cuStreamAttachMemAsync stream ptr (n * sizeOf (undefined::a)) flags
+  where
+    {# fun unsafe cuStreamAttachMemAsync
+      { useStream       `Stream'
+      , useDeviceHandle `DevicePtr a'
+      ,                 `Int'
+      , combineBitMasks `[AttachFlag]'
+      }
+      -> `()' checkStatus*- #}
 
 
 --------------------------------------------------------------------------------
