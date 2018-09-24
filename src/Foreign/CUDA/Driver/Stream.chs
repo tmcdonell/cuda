@@ -21,6 +21,8 @@ module Foreign.CUDA.Driver.Stream (
   write, wait,
 
   defaultStream,
+  defaultStreamLegacy,
+  defaultStreamPerThread,
 
 ) where
 
@@ -360,6 +362,44 @@ wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
 #endif
+
+
+-- | The default execution stream. This can be configured to have either
+-- 'defaultStreamLegacy' or 'defaultStreamPerThread' synchronisation behaviour.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+{-# INLINE defaultStream #-}
+defaultStream :: Stream
+defaultStream = Stream (Ptr (int2Addr# 0#))
+
+
+-- | The legacy default stream is an implicit stream which synchronises with all
+-- other streams in the same 'Context', except for non-blocking streams.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+-- @since 0.10.0.0
+--
+{-# INLINE defaultStreamLegacy #-}
+defaultStreamLegacy :: Stream
+defaultStreamLegacy = Stream (Ptr (int2Addr# 0x1#))
+
+
+-- | The per-thread default stream is an implicit stream local to both the
+-- thread and the calling 'Context', and which does not synchronise with other
+-- streams (just like explicitly created streams). The per-thread default stream
+-- is not a non-blocking stream and will synchronise with the legacy default
+-- stream if both are used in the same program.
+--
+-- <file:///Developer/NVIDIA/CUDA-9.2/doc/html/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+-- @since 0.10.0.0
+--
+{-# INLINE defaultStreamPerThread #-}
+defaultStreamPerThread :: Stream
+defaultStreamPerThread = Stream (Ptr (int2Addr# 0x2#))
+
 
 --------------------------------------------------------------------------------
 -- Internal
