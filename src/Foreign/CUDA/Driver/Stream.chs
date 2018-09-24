@@ -76,27 +76,34 @@ type StreamPriority = Int
 -- |
 -- Execution stream creation flags
 --
-#if CUDA_VERSION < 7500
+#if CUDA_VERSION < 8000
 data StreamFlag
+data StreamWriteFlag
+data StreamWaitFlag
+
 instance Enum StreamFlag where
 #ifdef USE_EMPTY_CASE
   toEnum   x = error ("StreamFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
-#else
-{# enum CUstream_flags as StreamFlag
-  { underscoreToCase
-  }
-  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
-#endif
-
-#if CUDA_VERSION < 8000
-data StreamWriteFlag
-data StreamWaitFlag
 
 instance Enum StreamWriteFlag where
-instance Enum StreamWaitFlag  where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamWriteFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
+instance Enum StreamWaitFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamWaitFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
 #else
+{# enum CUstream_flags as StreamFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+
 {# enum CUstreamWriteValue_flags as StreamWriteFlag
   { underscoreToCase }
   with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
@@ -251,10 +258,10 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
   }
   -> `()' checkStatus*- #}
   where
-#if CUDA_VERSION > 7050
-    extract p = extractBitMasks `fmap` peek p
+#if CUDA_VERSION < 8000
+    extract _ = return []
 #else
-    extract _ = []
+    extract p = extractBitMasks `fmap` peek p
 #endif
 
 
