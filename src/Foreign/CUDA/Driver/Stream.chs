@@ -251,7 +251,11 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
   }
   -> `()' checkStatus*- #}
   where
+#if CUDA_VERSION > 7050
     extract p = extractBitMasks `fmap` peek p
+#else
+    extract _ = []
+#endif
 
 
 -- |
