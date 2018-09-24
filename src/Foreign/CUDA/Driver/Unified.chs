@@ -101,7 +101,7 @@ import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Marshal
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Types
+import Foreign.CUDA.Ptr
 
 -- System
 import Control.Applicative

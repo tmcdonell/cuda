@@ -25,16 +25,17 @@ module Foreign.CUDA.Runtime.Event (
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Types
-import Foreign.CUDA.Runtime.Error
+import Foreign.CUDA.Driver.Event                          ( Event(..), EventFlag(..), WaitFlag )
+import Foreign.CUDA.Driver.Stream                         ( Stream(..), defaultStream )
 import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Runtime.Error
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                                    ( liftM )
-import Control.Exception                                ( throwIO )
-import Data.Maybe                                       ( fromMaybe )
+import Control.Monad                                      ( liftM )
+import Control.Exception                                  ( throwIO )
+import Data.Maybe                                         ( fromMaybe )
 
 
 --------------------------------------------------------------------------------

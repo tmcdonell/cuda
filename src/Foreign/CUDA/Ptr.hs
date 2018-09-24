@@ -36,10 +36,6 @@ module Foreign.CUDA.Ptr (
 
 ) where
 
--- friends
-import Foreign.CUDA.Types
-
--- system
 import Foreign.Ptr
 import Foreign.Storable
 
@@ -47,6 +43,22 @@ import Foreign.Storable
 --------------------------------------------------------------------------------
 -- Device Pointer
 --------------------------------------------------------------------------------
+
+-- |
+-- A reference to data stored on the device.
+--
+newtype DevicePtr a = DevicePtr { useDevicePtr :: Ptr a }
+  deriving (Eq,Ord)
+
+instance Show (DevicePtr a) where
+  showsPrec n (DevicePtr p) = showsPrec n p
+
+instance Storable (DevicePtr a) where
+  sizeOf _    = sizeOf    (undefined :: Ptr a)
+  alignment _ = alignment (undefined :: Ptr a)
+  peek p      = DevicePtr `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useDevicePtr v)
+
 
 -- |
 -- Look at the contents of device memory. This takes an IO action that will be
@@ -125,6 +137,32 @@ advanceDevPtr = doAdvance undefined
 --------------------------------------------------------------------------------
 -- Host Pointer
 --------------------------------------------------------------------------------
+
+-- |
+-- A reference to page-locked host memory.
+--
+-- A 'HostPtr' is just a plain 'Ptr', but the memory has been allocated by CUDA
+-- into page locked memory. This means that the data can be copied to the GPU
+-- via DMA (direct memory access). Note that the use of the system function
+-- `mlock` is not sufficient here --- the CUDA version ensures that the
+-- /physical/ address stays this same, not just the virtual address.
+--
+-- To copy data into a 'HostPtr' array, you may use for example 'withHostPtr'
+-- together with 'Foreign.Marshal.Array.copyArray' or
+-- 'Foreign.Marshal.Array.moveArray'.
+--
+newtype HostPtr a = HostPtr { useHostPtr :: Ptr a }
+  deriving (Eq,Ord)
+
+instance Show (HostPtr a) where
+  showsPrec n (HostPtr p) = showsPrec n p
+
+instance Storable (HostPtr a) where
+  sizeOf _    = sizeOf    (undefined :: Ptr a)
+  alignment _ = alignment (undefined :: Ptr a)
+  peek p      = HostPtr `fmap` peek (castPtr p)
+  poke p v    = poke (castPtr p) (useHostPtr v)
+
 
 -- |
 -- Apply an IO action to the memory reference living inside the host pointer

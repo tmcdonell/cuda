@@ -89,7 +89,6 @@ Library
       Foreign.CUDA
       Foreign.CUDA.Path
       Foreign.CUDA.Ptr
-      Foreign.CUDA.Types
 
       -- Kernel and device analysis
       Foreign.CUDA.Analysis

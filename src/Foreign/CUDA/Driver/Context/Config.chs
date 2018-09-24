@@ -46,7 +46,7 @@ module Foreign.CUDA.Driver.Context.Config (
 import Foreign.CUDA.Driver.Context.Base
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Types
+import Foreign.CUDA.Driver.Stream                         ( Stream, StreamPriority )
 
 -- System
 import Control.Monad

@@ -14,7 +14,9 @@ module Foreign.CUDA.Runtime.Stream (
 
   -- * Stream Management
   Stream(..),
-  create, destroy, finished, block, defaultStream
+  create, destroy, finished, block,
+
+  defaultStream, defaultStreamLegacy, defaultStreamPerThread,
 
 ) where
 
@@ -22,15 +24,15 @@ module Foreign.CUDA.Runtime.Stream (
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Types
-import Foreign.CUDA.Runtime.Error
+import Foreign.CUDA.Driver.Stream                         ( Stream(..), defaultStream, defaultStreamLegacy, defaultStreamPerThread )
 import Foreign.CUDA.Internal.C2HS
+import Foreign.CUDA.Runtime.Error
 
 -- System
 import Foreign
 import Foreign.C
-import Control.Monad                                    ( liftM )
-import Control.Exception                                ( throwIO )
+import Control.Monad                                      ( liftM )
+import Control.Exception                                  ( throwIO )
 
 
 --------------------------------------------------------------------------------

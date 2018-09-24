@@ -47,6 +47,61 @@ import GHC.Word
 
 
 --------------------------------------------------------------------------------
+-- Data Types
+--------------------------------------------------------------------------------
+
+-- |
+-- A processing stream. All operations in a stream are synchronous and executed
+-- in sequence, but operations in different non-default streams may happen
+-- out-of-order or concurrently with one another.
+--
+-- Use 'Event's to synchronise operations between streams.
+--
+newtype Stream = Stream { useStream :: {# type CUstream #}}
+  deriving (Eq, Show)
+
+-- |
+-- Priority of an execution stream. Work submitted to a higher priority
+-- stream may preempt execution of work already executing in a lower
+-- priority stream. Lower numbers represent higher priorities.
+--
+type StreamPriority = Int
+
+-- |
+-- Execution stream creation flags
+--
+#if CUDA_VERSION < 7500
+data StreamFlag
+instance Enum StreamFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+#else
+{# enum CUstream_flags as StreamFlag
+  { underscoreToCase
+  }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
+#if CUDA_VERSION < 8000
+data StreamWriteFlag
+data StreamWaitFlag
+
+instance Enum StreamWriteFlag where
+instance Enum StreamWaitFlag  where
+#else
+{# enum CUstreamWriteValue_flags as StreamWriteFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+
+{# enum CUstreamWaitValue_flags as StreamWaitFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
+
+--------------------------------------------------------------------------------
 -- Stream management
 --------------------------------------------------------------------------------
 
@@ -197,20 +252,6 @@ getContext !st = resultIfOk =<< cuStreamGetCtx st
   , alloca-   `Context' peekCtx* } -> `Status' cToEnum #}
   where
     peekCtx = liftM Context . peek
-#endif
-
-
-#if CUDA_VERSION < 8000
-data StreamWriteFlag
-data StreamWaitFlag
-#else
-{# enum CUstreamWriteValue_flags as StreamWriteFlag
-  { underscoreToCase }
-  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
-
-{# enum CUstreamWaitValue_flags as StreamWaitFlag
-  { underscoreToCase }
-  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
 #endif
 
 
