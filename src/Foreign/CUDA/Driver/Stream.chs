@@ -16,8 +16,10 @@
 module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
-  Stream(..), StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..),
-  create, createWithPriority, destroy, finished, block, getPriority, getContext,
+  Stream(..), StreamFlag(..), StreamPriority, StreamWriteFlag(..), StreamWaitFlag(..),
+
+  create, createWithPriority, destroy, finished, block,
+  getFlags, getPriority, getContext,
   write, wait,
 
   defaultStream,
@@ -31,14 +33,13 @@ module Foreign.CUDA.Driver.Stream (
 
 -- Friends
 import Foreign.CUDA.Ptr
-import Foreign.CUDA.Types
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Context.Base                 ( Context(..) )
+import Foreign.CUDA.Driver.Context.Base                   ( Context(..) )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Control.Exception                                ( throwIO )
-import Control.Monad                                    ( liftM )
+import Control.Exception                                  ( throwIO )
+import Control.Monad                                      ( liftM )
 import Foreign
 import Foreign.C
 import Unsafe.Coerce
@@ -230,6 +231,24 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
   }
   -> `Status' cToEnum #}
 #endif
+
+
+-- | Query the flags of a given stream
+--
+-- Requires CUDA-x.x
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g4d39786855a6bed01215c1907fbbfbb7>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getFlags #-}
+{# fun unsafe cuStreamGetFlags as getFlags
+  { useStream `Stream'
+  , alloca-   `[StreamFlag]' extract*
+  }
+  -> `()' checkStatus*- #}
+  where
+    extract p = extractBitMasks `fmap` peek p
 
 
 -- |
