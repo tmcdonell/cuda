@@ -39,6 +39,7 @@ module Foreign.CUDA.Driver.Module.Base (
 import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
+import Foreign.C.Extra
 
 -- System
 import Foreign
@@ -279,24 +280,4 @@ jitOptionUnpack Verbose               = requireSDK 'Verbose 5.5
 {-# INLINE jitTargetOfCompute #-}
 jitTargetOfCompute :: Compute -> JITTarget
 jitTargetOfCompute (Compute x y) = toEnum (10*x + y)
-
-
-#if defined(WIN32)
-{-# INLINE c_strnlen' #-}
-c_strnlen' :: CString -> CSize -> IO CSize
-c_strnlen' str size = do
-  str' <- peekCStringLen (str, fromIntegral size)
-  return $ stringLen 0 str'
-  where
-    stringLen acc []       = acc
-    stringLen acc ('\0':_) = acc
-    stringLen acc (_:xs)   = stringLen (acc+1) xs
-#else
-foreign import ccall unsafe "string.h strnlen" c_strnlen'
-  :: CString -> CSize -> IO CSize
-#endif
-
-{-# INLINE c_strnlen #-}
-c_strnlen :: CString -> Int -> IO Int
-c_strnlen str maxlen = fromIntegral `fmap` c_strnlen' str (fromIntegral maxlen)
 

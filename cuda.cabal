@@ -130,6 +130,9 @@ Library
       Foreign.CUDA.Runtime.Texture
       Foreign.CUDA.Runtime.Utils
 
+      -- Extras
+      Foreign.C.Extra
+
   Other-modules:
       Foreign.CUDA.Internal.C2HS
       Text.Show.Describe
