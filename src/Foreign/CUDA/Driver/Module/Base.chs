@@ -224,7 +224,7 @@ loadDataFromPtrEx !img !options = do
 
     _       -> do
       errLog  <- peekCString p_elog
-      cudaError (unlines [describe s, errLog])
+      cudaErrorIO (unlines [describe s, errLog])
 
 
 {-# INLINE cuModuleLoadDataEx #-}

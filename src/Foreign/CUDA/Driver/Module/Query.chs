@@ -120,7 +120,7 @@ resultIfFound :: String -> ShortByteString -> (Status, a) -> IO a
 resultIfFound kind name (!status,!result) =
   case status of
        Success  -> return result
-       NotFound -> cudaError (kind ++ ' ' : describe status ++ ": " ++ unpack name)
+       NotFound -> cudaErrorIO (kind ++ ' ' : describe status ++ ": " ++ unpack name)
        _        -> throwIO (ExitCode status)
 
 

@@ -1016,7 +1016,7 @@ memset !dptr !n !val = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8  dptr val n
     2 -> nothingIfOk =<< cuMemsetD16 dptr val n
     4 -> nothingIfOk =<< cuMemsetD32 dptr val n
-    _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
+    _ -> cudaErrorIO "can only memset 8-, 16-, and 32-bit values"
 
 --
 -- We use unsafe coerce below to reinterpret the bits of the value to memset as,
@@ -1063,7 +1063,7 @@ memsetAsync !dptr !n !val !mst = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8Async  dptr val n stream
     2 -> nothingIfOk =<< cuMemsetD16Async dptr val n stream
     4 -> nothingIfOk =<< cuMemsetD32Async dptr val n stream
-    _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
+    _ -> cudaErrorIO "can only memset 8-, 16-, and 32-bit values"
     where
       stream = fromMaybe defaultStream mst
 

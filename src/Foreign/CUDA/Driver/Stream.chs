@@ -323,7 +323,7 @@ write ptr val stream flags =
   case sizeOf val of
     4 -> write32 (castDevPtr ptr) (unsafeCoerce val) stream flags
     8 -> write64 (castDevPtr ptr) (unsafeCoerce val) stream flags
-    _ -> cudaError "Stream.write: can only write 32- and 64-bit values"
+    _ -> cudaErrorIO "Stream.write: can only write 32- and 64-bit values"
 
 {-# INLINE write32 #-}
 write32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWriteFlag] -> IO ()
@@ -377,7 +377,7 @@ wait ptr val stream flags =
   case sizeOf val of
     4 -> wait32 (castDevPtr ptr) (unsafeCoerce val) stream flags
     8 -> wait64 (castDevPtr ptr) (unsafeCoerce val) stream flags
-    _ -> cudaError "Stream.wait: can only wait on 32- and 64-bit values"
+    _ -> cudaErrorIO "Stream.wait: can only wait on 32- and 64-bit values"
 
 {-# INLINE wait32 #-}
 wait32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWaitFlag] -> IO ()
