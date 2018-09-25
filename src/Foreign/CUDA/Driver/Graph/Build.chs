@@ -71,7 +71,7 @@ import Foreign.Storable
 -- @since 0.10.0.0
 --
 #if CUDA_VERSION < 10000
-type HostCallback = FunPtr a
+type HostCallback = FunPtr ()
 #else
 type HostCallback = {# type CUhostFn #}
 #endif
