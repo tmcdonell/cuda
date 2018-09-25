@@ -107,6 +107,7 @@ Library
       Foreign.CUDA.Driver.Event
       Foreign.CUDA.Driver.Exec
       Foreign.CUDA.Driver.Graph.Base
+      Foreign.CUDA.Driver.Graph.Build
       Foreign.CUDA.Driver.Graph.Exec
       Foreign.CUDA.Driver.IPC.Event
       Foreign.CUDA.Driver.IPC.Marshal

@@ -17,7 +17,7 @@
 module Foreign.CUDA.Driver.Exec (
 
   -- * Kernel Execution
-  Fun(Fun), FunParam(..), FunAttribute(..), SharedMem(..),
+  Fun(..), FunParam(..), FunAttribute(..), SharedMem(..),
   requires,
   setCacheConfigFun,
   setSharedMemConfigFun,

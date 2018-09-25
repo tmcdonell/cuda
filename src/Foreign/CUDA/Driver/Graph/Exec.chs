@@ -44,7 +44,6 @@ import qualified Data.ByteString.Internal                 as B
 -- Graph execution
 --------------------------------------------------------------------------------
 
-
 -- | Execute a graph in the given stream. Only one instance may execute at
 -- a time; to execute a graph concurrently, it must be 'instantiate'd into
 -- multiple executables.
@@ -57,6 +56,7 @@ import qualified Data.ByteString.Internal                 as B
 --
 {-# INLINEABLE launch #-}
 #if CUDA_VERSION < 10000
+launch :: Executable -> Stream -> IO ()
 launch _ _ = requireSDK 'launch 10.0
 #else
 {# fun unsafe cuGraphLaunch as launch
@@ -102,10 +102,10 @@ instantiate !g = do
   }
   -> `Status' cToEnum #}
   where
-    peekExecutable  = fmap Executable . peek
+    peekExecutable  = liftM Executable . peek
     peekErrNode p   = if p == nullPtr
                         then return Nothing
-                        else fmap (Just . Node) (peek p)
+                        else liftM (Just . Node) (peek p)
 #endif
 
 
@@ -119,6 +119,7 @@ instantiate !g = do
 --
 {-# INLINEABLE destroy #-}
 #if CUDA_VERSION < 10000
+destroy :: Executable -> IO ()
 destroy _ = requireSDK 'destroy 10.0
 #else
 {# fun unsafe cuGraphExecDestroy as destroy

@@ -1,10 +1,11 @@
-{-# LANGUAGE BangPatterns             #-}
-{-# LANGUAGE CPP                      #-}
-{-# LANGUAGE EmptyDataDecls           #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE TemplateHaskell          #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE ForeignFunctionInterface   #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell            #-}
 #ifdef USE_EMPTY_CASE
-{-# LANGUAGE EmptyCase                #-}
+{-# LANGUAGE EmptyCase                  #-}
 #endif
 --------------------------------------------------------------------------------
 -- |
@@ -23,6 +24,8 @@ module Foreign.CUDA.Driver.Graph.Base
 
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
+
+import Foreign.Storable
 
 
 --------------------------------------------------------------------------------
@@ -54,7 +57,7 @@ instance Enum NodeType where
 #endif
 #else
 newtype Node = Node { useNode :: {# type CUgraphNode #}}
-  deriving (Eq, Show)
+  deriving (Eq, Show, Storable)
 
 {# enum CUgraphNodeType as NodeType
   { underscoreToCase

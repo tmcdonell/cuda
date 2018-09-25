@@ -393,3 +393,79 @@ CUresult CUDAAPI cuLinkAddFile(CUlinkState state, CUjitInputType type, const cha
 }
 #endif
 
+#if CUDA_VERSION >= 10000
+CUresult CUDAAPI cuGraphAddHostNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUhostFn fn, void* userData)
+{
+    CUDA_HOST_NODE_PARAMS nodeParams;
+    nodeParams.fn       = fn;
+    nodeParams.userData = userData;
+
+    return cuGraphAddHostNode(phGraphNode, hGraph, dependencies, numDependencies, &nodeParams);
+}
+
+CUresult CUDAAPI cuGraphAddKernelNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUfunction func, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, void** kernelParams)
+{
+    CUDA_KERNEL_NODE_PARAMS nodeParams;
+    nodeParams.func           = func;
+    nodeParams.gridDimX       = gridDimX;
+    nodeParams.gridDimY       = gridDimY;
+    nodeParams.gridDimZ       = gridDimZ;
+    nodeParams.blockDimX      = blockDimX;
+    nodeParams.blockDimY      = blockDimY;
+    nodeParams.blockDimZ      = blockDimZ;
+    nodeParams.sharedMemBytes = sharedMemBytes;
+    nodeParams.kernelParams   = kernelParams;
+    nodeParams.extra          = NULL;
+
+    return cuGraphAddKernelNode(phGraphNode, hGraph, dependencies, numDependencies, &nodeParams);
+}
+
+CUresult CUDAAPI cuGraphAddMemcpyNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUcontext ctx, size_t srcXInBytes, size_t srcY, size_t srcZ, size_t srcLOD, CUmemorytype srcMemoryType, const void *srcPtr, size_t srcPitch, size_t srcHeight, size_t dstXInBytes, size_t dstY, size_t dstZ, size_t dstLOD, CUmemorytype dstMemoryType, void *dstPtr, size_t dstPitch, size_t dstHeight, size_t widthInBytes, size_t height, size_t depth)
+{
+    CUDA_MEMCPY3D copyParams;
+
+    copyParams.srcXInBytes   = srcXInBytes;
+    copyParams.srcY          = srcY;
+    copyParams.srcZ          = srcZ;
+    copyParams.srcLOD        = srcLOD;
+    copyParams.srcMemoryType = srcMemoryType;
+    copyParams.srcHost       = (void*) srcPtr;
+    copyParams.srcDevice     = (CUdeviceptr) srcPtr;
+    copyParams.srcArray      = (CUarray) srcPtr;
+    copyParams.reserved0     = NULL;
+    copyParams.srcPitch      = srcPitch;
+    copyParams.srcHeight     = srcHeight;
+
+    copyParams.dstXInBytes   = dstXInBytes;
+    copyParams.dstY          = dstY;
+    copyParams.dstZ          = dstZ;
+    copyParams.dstLOD        = dstLOD;
+    copyParams.dstMemoryType = dstMemoryType;
+    copyParams.dstHost       = (void*) dstPtr;
+    copyParams.dstDevice     = (CUdeviceptr) dstPtr;
+    copyParams.dstArray      = (CUarray) dstPtr;
+    copyParams.reserved1     = NULL;
+    copyParams.dstPitch      = dstPitch;
+    copyParams.dstHeight     = dstHeight;
+
+    copyParams.WidthInBytes  = widthInBytes;
+    copyParams.Height        = height;
+    copyParams.Depth         = depth;
+
+    return cuGraphAddMemcpyNode(phGraphNode, hGraph, dependencies, numDependencies, &copyParams, ctx);
+}
+
+CUresult CUDAAPI cuGraphAddMemsetNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUcontext ctx, CUdeviceptr dst, unsigned int elementSize, size_t height, size_t pitch, unsigned int value, size_t width)
+{
+    CUDA_MEMSET_NODE_PARAMS memsetParams;
+    memsetParams.dst         = dst;
+    memsetParams.elementSize = elementSize;
+    memsetParams.height      = height;
+    memsetParams.pitch       = pitch;
+    memsetParams.value       = value;
+    memsetParams.width       = width;
+
+    return cuGraphAddMemsetNode(phGraphNode, hGraph, dependencies, numDependencies, &memsetParams, ctx);
+}
+#endif
+
