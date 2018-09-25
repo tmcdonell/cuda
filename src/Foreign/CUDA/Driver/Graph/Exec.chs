@@ -17,6 +17,8 @@
 module Foreign.CUDA.Driver.Graph.Exec (
 
   Executable(..),
+
+  -- ** Execution
   launch,
   instantiate,
   destroy,
