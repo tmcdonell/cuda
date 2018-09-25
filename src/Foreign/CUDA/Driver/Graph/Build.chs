@@ -22,14 +22,23 @@ module Foreign.CUDA.Driver.Graph.Build (
 
   -- ** Construction
   addChild,
-  addDependencies,
   addEmpty,
   addHost,
   addKernel,
   addMemcpy,
   addMemset,
+  addDependencies,
+  removeDependencies,
 
   -- ** Querying
+  getType,
+  getChildGraph,
+  getEdges,
+  getNodes,
+  getRootNodes,
+  getDependencies,
+  getDependents,
+  findInClone,
 
 ) where
 
@@ -153,7 +162,7 @@ remove = requireSDK 'remove 10.0
 #endif
 
 
--- | Create a child node and add it to the graph
+-- | Create a child graph node and add it to the graph
 --
 -- Requires CUDA-10.0
 --
@@ -187,16 +196,46 @@ addChild parent child dependencies = cuGraphAddChildGraphNode parent dependencie
 -- @since 0.10.0.0
 --
 {-# INLINEABLE addDependencies #-}
+addDependencies :: Graph -> [(Node,Node)] -> IO ()
 #if CUDA_VERSION < 10000
-addDependencies :: Graph -> [Node] -> [Node] -> IO ()
 addDependencies = requireSDK 'addDependencies 10.0
 #else
-{# fun unsafe cuGraphAddDependencies as addDependencies
-  { useGraph          `Graph'
-  , withNodeArray*    `[Node]'      -- ^ from
-  , withNodeArrayLen* `[Node]'&     -- ^ to
-  }
-  -> `()' checkStatus*- #}
+addDependencies !g !deps = cuGraphAddDependencies g from to
+  where
+    (from, to) = unzip deps
+
+    {# fun unsafe cuGraphAddDependencies
+      { useGraph          `Graph'
+      , withNodeArray*    `[Node]'
+      , withNodeArrayLen* `[Node]'&
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Remove dependency edges from the graph
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1g8ab696a6b3ccd99db47feba7e97fb579>
+--
+-- @since 0.10.0.0
+--
+{-# INLINE removeDependencies #-}
+removeDependencies :: Graph -> [(Node,Node)] -> IO ()
+#if CUDA_VERSION < 10000
+removeDependencies = requireSDK 'removeDependencies 10.0
+#else
+removeDependencies !g !deps = cuGraphRemoveDependencies g from to
+  where
+    (from, to) = unzip deps
+
+    {# fun unsafe cuGraphRemoveDependencies
+      { useGraph          `Graph'
+      , withNodeArray*    `[Node]'
+      , withNodeArrayLen* `[Node]'&
+      }
+      -> `()' checkStatus*- #}
 #endif
 
 
@@ -397,6 +436,234 @@ addMemset !g !ns !ctx !dptr !val !h !p !w =
       -> `()' checkStatus*- #}
 #endif
 
+
+--------------------------------------------------------------------------------
+-- Query
+--------------------------------------------------------------------------------
+
+-- | Return the type of a node
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gdb1776d97aa1c9d5144774b29e4b8c3e>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getType #-}
+#if CUDA_VERSION < 10000
+getType :: Node -> IO NodeType
+getType = requireSDK 'getType 10.0
+#else
+{# fun unsafe cuGraphNodeGetType as getType
+  { useNode `Node'
+  , alloca- `NodeType' peekEnum*
+  }
+  -> `()' checkStatus*- #}
+#endif
+
+
+-- | Retrieve the embedded graph of a child sub-graph node
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gbe9fc9267316b3778ef0db507917b4fd>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getChildGraph #-}
+#if CUDA_VERSION < 10000
+getChildGraph :: Node -> IO Graph
+getChildGraph = requireSDK 'getChildGraph 10.0
+#else
+{# fun unsafe cuGraphChildGraphNodeGetGraph as getChildGraph
+  { useNode `Node'
+  , alloca- `Graph' peekGraph*
+  }
+  -> `()' checkStatus*- #}
+#endif
+
+
+-- | Return a graph's dependency edges
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1g2b7bd71b0b2b8521f141996e0975a0d7>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getEdges #-}
+getEdges :: Graph -> IO [(Node, Node)]
+#if CUDA_VERSION < 10000
+getEdges = requireSDK 'getEdges 10.0
+#else
+getEdges !g =
+  alloca $ \p_count -> do
+    cuGraphGetEdges g nullPtr nullPtr p_count
+    count <- peekIntConv p_count
+    allocaArray  count $ \p_from -> do
+     allocaArray count $ \p_to   -> do
+       cuGraphGetEdges g p_from p_to p_count
+       from <- peekArray count p_from
+       to   <- peekArray count p_to
+       return $ zip from to
+  where
+    {# fun unsafe cuGraphGetEdges
+      { useGraph     `Graph'
+      , castPtr      `Ptr Node'
+      , castPtr      `Ptr Node'
+      , id           `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Return a graph's nodes
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gfa35a8e2d2fc32f48dbd67ba27cf27e5>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getNodes #-}
+getNodes :: Graph -> IO [Node]
+#if CUDA_VERSION < 10000
+getNodes = requireSDK 'getNodes 10.0
+#else
+getNodes !g =
+  alloca $ \p_count -> do
+    cuGraphGetNodes g nullPtr p_count
+    count <- peekIntConv p_count
+    allocaArray count $ \p_nodes -> do
+      cuGraphGetNodes g p_nodes p_count
+      peekArray count p_nodes
+  where
+    {# fun unsafe cuGraphGetNodes
+      { useGraph `Graph'
+      , castPtr  `Ptr Node'
+      , id       `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Returns the root nodes of a graph
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gf8517646bd8b39ab6359f8e7f0edffbd>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getRootNodes #-}
+getRootNodes :: Graph -> IO [Node]
+#if CUDA_VERSION < 10000
+getRootNodes = requireSDK 'getRootNodes 10.0
+#else
+getRootNodes g =
+  alloca $ \p_count -> do
+    cuGraphGetRootNodes g nullPtr p_count
+    count <- peekIntConv p_count
+    allocaArray count $ \p_nodes -> do
+      cuGraphGetRootNodes g p_nodes p_count
+      peekArray count p_nodes
+  where
+    {# fun unsafe cuGraphGetRootNodes
+      { useGraph `Graph'
+      , castPtr  `Ptr Node'
+      , id       `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Return the dependencies of a node
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1g048f4c0babcbba64a933fc277cd45083>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getDependencies #-}
+getDependencies :: Node -> IO [Node]
+#if CUDA_VERSION < 10000
+getDependencies = requireSDK 'getDependencies 10.0
+#else
+getDependencies !n =
+  alloca $ \p_count -> do
+    cuGraphNodeGetDependencies n nullPtr p_count
+    count <- peekIntConv p_count
+    allocaArray count $ \p_deps -> do
+      cuGraphNodeGetDependencies n p_deps p_count
+      peekArray count p_deps
+  where
+    {# fun unsafe cuGraphNodeGetDependencies
+      { useNode `Node'
+      , castPtr `Ptr Node'
+      , id      `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Return a node's dependent nodes
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1g4b73d9e3b386a9c0b094a452b8431f59>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getDependents #-}
+getDependents :: Node -> IO [Node]
+#if CUDA_VERSION < 10000
+getDependents = requireSDK 'getDependents 10.0
+#else
+getDependents n =
+  alloca $ \p_count -> do
+    cuGraphNodeGetDependentNodes n nullPtr p_count
+    count <- peekIntConv p_count
+    allocaArray count $ \p_deps -> do
+      cuGraphNodeGetDependentNodes n p_deps p_count
+      peekArray count p_deps
+  where
+    {# fun unsafe cuGraphNodeGetDependentNodes
+      { useNode `Node'
+      , castPtr `Ptr Node'
+      , id      `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
+-- | Find a cloned version of a node
+--
+-- Requires CUDA-10.0
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gf21f6c968e346f028737c1118bfd41c2>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE findInClone #-}
+#if CUDA_VERSION < 10000
+findInClone :: Node -> Graph -> IO Node
+findInClone = requireSDK 'findInClone 10
+#else
+{# fun unsafe cuGraphNodeFindInClone as findInClone
+  { alloca-  `Node' peekNode*
+  , useNode  `Node'
+  , useGraph `Graph'
+  }
+  -> `()' checkStatus*- #}
+#endif
+
+
+-- TODO: since CUDA-10.0
+--  * cuGraphHostNode[Get/Set]Params
+--  * cuGraphKernelNode[Get/Set]Params
+--  * cuGraphMemcpyNode[Get/Set]Params
+--  * cuGraphMemsetNode[Get/Set]Params
 
 --------------------------------------------------------------------------------
 -- Internal
