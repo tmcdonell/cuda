@@ -112,7 +112,7 @@ instance Storable DeviceProperties where
     maxTextureDim1D               <- cIntConv <$> {#get cudaDeviceProp.maxTexture1D#} p
 #endif
 #if CUDART_VERSION >= 3000 && CUDART_VERSION < 3010
-    -- not visible from CUDA runtime API 3.0 (only driver API)
+    -- XXX: not visible from CUDA runtime API 3.0 (only accessible from the driver API)
     let eccEnabled = False
 #endif
 #if CUDART_VERSION >= 3010
@@ -151,7 +151,12 @@ instance Storable DeviceProperties where
     multiGPUBoardGroupID          <- cIntConv <$> {#get cudaDeviceProp.multiGpuBoardGroupID#} p
 #endif
 #if CUDART_VERSION >= 8000
+#if CUDART_VERSION == 8000
+    -- XXX: Not visible from the CUDA runtime API 8.0 (only accessible from the driver API)
+    let preemption = False
+#else
     preemption                    <- cToBool  <$> {#get cudaDeviceProp.computePreemptionSupported#} p
+#endif
     singleToDoublePerfRatio       <- cIntConv <$> {#get cudaDeviceProp.singleToDoublePrecisionPerfRatio#} p
 #endif
 #if CUDART_VERSION >= 9000
