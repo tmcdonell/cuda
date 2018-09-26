@@ -67,7 +67,7 @@ instance Enum Status where
 --
 #if CUDA_VERSION < 10000
 start :: Stream -> IO ()
-start = requireSDK 'begin 10.0
+start = requireSDK 'start 10.0
 #else
 {# fun unsafe cuStreamBeginCapture as start
   { useStream `Stream'
@@ -86,7 +86,7 @@ start = requireSDK 'begin 10.0
 --
 #if CUDA_VERSION < 10000
 stop :: Stream -> IO Graph
-stop = requireSDK 'end 10.0
+stop = requireSDK 'stop 10.0
 #else
 {# fun unsafe cuStreamEndCapture as stop
   { useStream `Stream'
