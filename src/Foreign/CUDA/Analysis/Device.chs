@@ -69,59 +69,67 @@ cap a b = let a' = fromIntegral a in
 --
 data DeviceProperties = DeviceProperties
   {
-    deviceName                  :: !String              -- ^ Identifier
-  , computeCapability           :: !Compute             -- ^ Supported compute capability
-  , totalGlobalMem              :: !Int64               -- ^ Available global memory on the device in bytes
-  , totalConstMem               :: !Int64               -- ^ Available constant memory on the device in bytes
-  , sharedMemPerBlock           :: !Int64               -- ^ Available shared memory per block in bytes
-  , regsPerBlock                :: !Int                 -- ^ 32-bit registers per block
-  , warpSize                    :: !Int                 -- ^ Warp size in threads (SIMD width)
-  , maxThreadsPerBlock          :: !Int                 -- ^ Maximum number of threads per block
+    deviceName                    :: !String          -- ^ Identifier
+  , computeCapability             :: !Compute         -- ^ Supported compute capability
+  , totalGlobalMem                :: !Int64           -- ^ Available global memory on the device in bytes
+  , totalConstMem                 :: !Int64           -- ^ Available constant memory on the device in bytes
+  , sharedMemPerBlock             :: !Int64           -- ^ Available shared memory per block in bytes
+  , regsPerBlock                  :: !Int             -- ^ 32-bit registers per block
+  , warpSize                      :: !Int             -- ^ Warp size in threads (SIMD width)
+  , maxThreadsPerBlock            :: !Int             -- ^ Maximum number of threads per block
 #if CUDA_VERSION >= 4000
-  , maxThreadsPerMultiProcessor :: !Int                 -- ^ Maximum number of threads per multiprocessor
+  , maxThreadsPerMultiProcessor   :: !Int             -- ^ Maximum number of threads per multiprocessor
 #endif
-  , maxBlockSize                :: !(Int,Int,Int)       -- ^ Maximum size of each dimension of a block
-  , maxGridSize                 :: !(Int,Int,Int)       -- ^ Maximum size of each dimension of a grid
+  , maxBlockSize                  :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a block
+  , maxGridSize                   :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a grid
 #if CUDA_VERSION >= 3000
-  , maxTextureDim1D             :: !Int                 -- ^ Maximum texture dimensions
-  , maxTextureDim2D             :: !(Int,Int)
-  , maxTextureDim3D             :: !(Int,Int,Int)
+  , maxTextureDim1D               :: !Int             -- ^ Maximum texture dimensions
+  , maxTextureDim2D               :: !(Int,Int)
+  , maxTextureDim3D               :: !(Int,Int,Int)
 #endif
-  , clockRate                   :: !Int                 -- ^ Clock frequency in kilohertz
-  , multiProcessorCount         :: !Int                 -- ^ Number of multiprocessors on the device
-  , memPitch                    :: !Int64               -- ^ Maximum pitch in bytes allowed by memory copies
+  , clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
+  , multiProcessorCount           :: !Int             -- ^ Number of multiprocessors on the device
+  , memPitch                      :: !Int64           -- ^ Maximum pitch in bytes allowed by memory copies
 #if CUDA_VERSION >= 4000
-  , memBusWidth                 :: !Int                 -- ^ Global memory bus width in bits
-  , memClockRate                :: !Int                 -- ^ Peak memory clock frequency in kilohertz
+  , memBusWidth                   :: !Int             -- ^ Global memory bus width in bits
+  , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
 #endif
-  , textureAlignment            :: !Int64               -- ^ Alignment requirement for textures
-  , computeMode                 :: !ComputeMode
-  , deviceOverlap               :: !Bool                -- ^ Device can concurrently copy memory and execute a kernel
+  , textureAlignment              :: !Int64           -- ^ Alignment requirement for textures
+  , computeMode                   :: !ComputeMode
+  , deviceOverlap                 :: !Bool            -- ^ Device can concurrently copy memory and execute a kernel
 #if CUDA_VERSION >= 3000
-  , concurrentKernels           :: !Bool                -- ^ Device can possibly execute multiple kernels concurrently
-  , eccEnabled                  :: !Bool                -- ^ Device supports and has enabled error correction
+  , concurrentKernels             :: !Bool            -- ^ Device can possibly execute multiple kernels concurrently
+  , eccEnabled                    :: !Bool            -- ^ Device supports and has enabled error correction
 #endif
 #if CUDA_VERSION >= 4000
-  , asyncEngineCount            :: !Int                 -- ^ Number of asynchronous engines
-  , cacheMemL2                  :: !Int                 -- ^ Size of the L2 cache in bytes
-  , pciInfo                     :: !PCI                 -- ^ PCI device information for the device
-  , tccDriverEnabled            :: !Bool                -- ^ Whether this is a Tesla device using the TCC driver
+  , asyncEngineCount              :: !Int             -- ^ Number of asynchronous engines
+  , cacheMemL2                    :: !Int             -- ^ Size of the L2 cache in bytes
+  , pciInfo                       :: !PCI             -- ^ PCI device information for the device
+  , tccDriverEnabled              :: !Bool            -- ^ Whether this is a Tesla device using the TCC driver
 #endif
-  , kernelExecTimeoutEnabled    :: !Bool                -- ^ Whether there is a runtime limit on kernels
-  , integrated                  :: !Bool                -- ^ As opposed to discrete
-  , canMapHostMemory            :: !Bool                -- ^ Device can use pinned memory
+  , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
+  , integrated                    :: !Bool            -- ^ As opposed to discrete
+  , canMapHostMemory              :: !Bool            -- ^ Device can use pinned memory
 #if CUDA_VERSION >= 4000
-  , unifiedAddressing           :: !Bool                -- ^ Device shares a unified address space with the host
+  , unifiedAddressing             :: !Bool            -- ^ Device shares a unified address space with the host
 #endif
 #if CUDA_VERSION >= 5050
-  , streamPriorities            :: !Bool                -- ^ Device supports stream priorities
+  , streamPriorities              :: !Bool            -- ^ Device supports stream priorities
 #endif
 #if CUDA_VERSION >= 6000
-  , globalL1Cache               :: !Bool                -- ^ Device supports caching globals in L1 cache
-  , localL1Cache                :: !Bool                -- ^ Device supports caching locals in L1 cache
-  , managedMemory               :: !Bool                -- ^ Device supports allocating managed memory on this system
-  , multiGPUBoard               :: !Bool                -- ^ Device is on a multi-GPU board
-  , multiGPUBoardGroupID        :: !Int                 -- ^ Unique identifier for a group of devices associated with the same board
+  , globalL1Cache                 :: !Bool            -- ^ Device supports caching globals in L1 cache
+  , localL1Cache                  :: !Bool            -- ^ Device supports caching locals in L1 cache
+  , managedMemory                 :: !Bool            -- ^ Device supports allocating managed memory on this system
+  , multiGPUBoard                 :: !Bool            -- ^ Device is on a multi-GPU board
+  , multiGPUBoardGroupID          :: !Int             -- ^ Unique identifier for a group of devices associated with the same board
+#endif
+#if CUDA_VERSION >= 8000
+  , preemption                    :: !Bool            -- ^ Device supports compute pre-emption
+  , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
+#endif
+#if CUDA_VERSION >= 9000
+  , cooperativeLaunch             :: !Bool            -- ^ Device supports launching cooperative kernels
+  , cooperativeLaunchMultiDevice  :: !Bool            -- ^ Device can participate in cooperative multi-device kernels
 #endif
   }
   deriving (Show)
@@ -129,9 +137,9 @@ data DeviceProperties = DeviceProperties
 
 data PCI = PCI
   {
-    busID       :: !Int,                -- ^ PCI bus ID of the device
-    deviceID    :: !Int,                -- ^ PCI device ID
-    domainID    :: !Int                 -- ^ PCI domain ID
+    busID       :: !Int,      -- ^ PCI bus ID of the device
+    deviceID    :: !Int,      -- ^ PCI device ID
+    domainID    :: !Int       -- ^ PCI domain ID
   }
   deriving (Show)
 
