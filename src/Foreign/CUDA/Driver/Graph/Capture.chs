@@ -26,7 +26,7 @@ module Foreign.CUDA.Driver.Graph.Capture (
 #include "cbits/stubs.h"
 {# context lib="cuda" #}
 
-import Foreign.CUDA.Driver.Error                          ( checkStatus )
+import Foreign.CUDA.Driver.Error                          hiding ( Status )
 import Foreign.CUDA.Driver.Graph.Base
 import Foreign.CUDA.Driver.Stream
 import Foreign.CUDA.Internal.C2HS
