@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE RecordWildCards          #-}
 {-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 #ifdef USE_EMPTY_CASE
@@ -10,7 +11,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Device
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Device management routines
@@ -42,8 +43,10 @@ import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
 -- System
+import Control.Applicative
 import Foreign
 import Foreign.C
+import Prelude
 
 #c
 typedef struct cudaDeviceProp   cudaDeviceProp;
@@ -86,115 +89,82 @@ instance Storable DeviceProperties where
 
   poke _ _    = error "no instance for Foreign.Storable.poke DeviceProperties"
   peek p      = do
-    n  <- peekCString   =<<   {#get cudaDeviceProp.name#} p
-    gm <- cIntConv     `fmap` {#get cudaDeviceProp.totalGlobalMem#} p
-    sm <- cIntConv     `fmap` {#get cudaDeviceProp.sharedMemPerBlock#} p
-    rb <- cIntConv     `fmap` {#get cudaDeviceProp.regsPerBlock#} p
-    ws <- cIntConv     `fmap` {#get cudaDeviceProp.warpSize#} p
-    mp <- cIntConv     `fmap` {#get cudaDeviceProp.memPitch#} p
-    tb <- cIntConv     `fmap` {#get cudaDeviceProp.maxThreadsPerBlock#} p
-    cl <- cIntConv     `fmap` {#get cudaDeviceProp.clockRate#} p
-    cm <- cIntConv     `fmap` {#get cudaDeviceProp.totalConstMem#} p
-    v1 <- fromIntegral `fmap` {#get cudaDeviceProp.major#} p
-    v2 <- fromIntegral `fmap` {#get cudaDeviceProp.minor#} p
-    ta <- cIntConv     `fmap` {#get cudaDeviceProp.textureAlignment#} p
-    ov <- cToBool      `fmap` {#get cudaDeviceProp.deviceOverlap#} p
-    pc <- cIntConv     `fmap` {#get cudaDeviceProp.multiProcessorCount#} p
-    ke <- cToBool      `fmap` {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
-    tg <- cToBool      `fmap` {#get cudaDeviceProp.integrated#} p
-    hm <- cToBool      `fmap` {#get cudaDeviceProp.canMapHostMemory#} p
-    md <- cToEnum      `fmap` {#get cudaDeviceProp.computeMode#} p
+    deviceName                    <- peekCString =<< {#get cudaDeviceProp.name#} p
+    computeCapability             <- Compute <$> (fromIntegral <$> {#get cudaDeviceProp.major#} p)
+                                             <*> (fromIntegral <$> {#get cudaDeviceProp.minor#} p)
+    totalGlobalMem                <- cIntConv <$> {#get cudaDeviceProp.totalGlobalMem#} p
+    sharedMemPerBlock             <- cIntConv <$> {#get cudaDeviceProp.sharedMemPerBlock#} p
+    regsPerBlock                  <- cIntConv <$> {#get cudaDeviceProp.regsPerBlock#} p
+    warpSize                      <- cIntConv <$> {#get cudaDeviceProp.warpSize#} p
+    memPitch                      <- cIntConv <$> {#get cudaDeviceProp.memPitch#} p
+    maxThreadsPerBlock            <- cIntConv <$> {#get cudaDeviceProp.maxThreadsPerBlock#} p
+    clockRate                     <- cIntConv <$> {#get cudaDeviceProp.clockRate#} p
+    totalConstMem                 <- cIntConv <$> {#get cudaDeviceProp.totalConstMem#} p
+    textureAlignment              <- cIntConv <$> {#get cudaDeviceProp.textureAlignment#} p
+    deviceOverlap                 <- cToBool  <$> {#get cudaDeviceProp.deviceOverlap#} p
+    multiProcessorCount           <- cIntConv <$> {#get cudaDeviceProp.multiProcessorCount#} p
+    kernelExecTimeoutEnabled      <- cToBool  <$> {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
+    integrated                    <- cToBool  <$> {#get cudaDeviceProp.integrated#} p
+    canMapHostMemory              <- cToBool  <$> {#get cudaDeviceProp.canMapHostMemory#} p
+    computeMode                   <- cToEnum  <$> {#get cudaDeviceProp.computeMode#} p
 #if CUDART_VERSION >= 3000
-    ck <- cToBool      `fmap` {#get cudaDeviceProp.concurrentKernels#} p
-    u1 <- cIntConv     `fmap` {#get cudaDeviceProp.maxTexture1D#} p
-#endif
-#if CUDART_VERSION >= 3010
-    ee <- cToBool      `fmap` {#get cudaDeviceProp.ECCEnabled#} p
-#endif
-#if CUDART_VERSION >= 4000
-    ae <- cIntConv     `fmap` {#get cudaDeviceProp.asyncEngineCount#} p
-    l2 <- cIntConv     `fmap` {#get cudaDeviceProp.l2CacheSize#} p
-    tm <- cIntConv     `fmap` {#get cudaDeviceProp.maxThreadsPerMultiProcessor#} p
-    mw <- cIntConv     `fmap` {#get cudaDeviceProp.memoryBusWidth#} p
-    mc <- cIntConv     `fmap` {#get cudaDeviceProp.memoryClockRate#} p
-    pb <- cIntConv     `fmap` {#get cudaDeviceProp.pciBusID#} p
-    pd <- cIntConv     `fmap` {#get cudaDeviceProp.pciDeviceID#} p
-    pm <- cIntConv     `fmap` {#get cudaDeviceProp.pciDomainID#} p
-    tc <- cToBool      `fmap` {#get cudaDeviceProp.tccDriver#} p
-    ua <- cToBool      `fmap` {#get cudaDeviceProp.unifiedAddressing#} p
-#endif
-    [t1,t2,t3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxThreadsDim#} p
-    [g1,g2,g3]    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxGridSize#} p
-#if CUDART_VERSION >= 3000
-    [u21,u22]     <- peekArrayWith cIntConv 2 =<< {#get cudaDeviceProp.maxTexture2D#} p
-    [u31,u32,u33] <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxTexture3D#} p
-#endif
-#if CUDART_VERSION >= 5050
-    sp  <- cToBool     `fmap` {#get cudaDeviceProp.streamPrioritiesSupported#} p
-#endif
-#if CUDART_VERSION >= 6000
-    gl1 <- cToBool     `fmap` {#get cudaDeviceProp.globalL1CacheSupported#} p
-    ll1 <- cToBool     `fmap` {#get cudaDeviceProp.localL1CacheSupported#} p
-    mm  <- cToBool     `fmap` {#get cudaDeviceProp.managedMemory#} p
-    mg  <- cToBool     `fmap` {#get cudaDeviceProp.isMultiGpuBoard#} p
-    mid <- cIntConv    `fmap` {#get cudaDeviceProp.multiGpuBoardGroupID#} p
-#endif
-
-    return DeviceProperties
-      {
-        deviceName                      = n
-      , computeCapability               = Compute v1 v2
-      , totalGlobalMem                  = gm
-      , totalConstMem                   = cm
-      , sharedMemPerBlock               = sm
-      , regsPerBlock                    = rb
-      , warpSize                        = ws
-      , maxThreadsPerBlock              = tb
-      , maxBlockSize                    = (t1,t2,t3)
-      , maxGridSize                     = (g1,g2,g3)
-      , clockRate                       = cl
-      , multiProcessorCount             = pc
-      , memPitch                        = mp
-      , textureAlignment                = ta
-      , computeMode                     = md
-      , deviceOverlap                   = ov
-      , kernelExecTimeoutEnabled        = ke
-      , integrated                      = tg
-      , canMapHostMemory                = hm
-#if CUDART_VERSION >= 3000
-      , concurrentKernels               = ck
-      , maxTextureDim1D                 = u1
-      , maxTextureDim2D                 = (u21,u22)
-      , maxTextureDim3D                 = (u31,u32,u33)
-#endif
-#if CUDART_VERSION >= 3010
-      , eccEnabled                      = ee
+    concurrentKernels             <- cToBool  <$> {#get cudaDeviceProp.concurrentKernels#} p
+    maxTextureDim1D               <- cIntConv <$> {#get cudaDeviceProp.maxTexture1D#} p
 #endif
 #if CUDART_VERSION >= 3000 && CUDART_VERSION < 3010
-        -- not visible from CUDA runtime API 3.0
-      , eccEnabled                      = False
+    -- XXX: not visible from CUDA runtime API 3.0 (only accessible from the driver API)
+    let eccEnabled = False
+#endif
+#if CUDART_VERSION >= 3010
+    eccEnabled                    <- cToBool  <$> {#get cudaDeviceProp.ECCEnabled#} p
 #endif
 #if CUDART_VERSION >= 4000
-      , asyncEngineCount                = ae
-      , cacheMemL2                      = l2
-      , maxThreadsPerMultiProcessor     = tm
-      , memBusWidth                     = mw
-      , memClockRate                    = mc
-      , tccDriverEnabled                = tc
-      , unifiedAddressing               = ua
-      , pciInfo                         = PCI pb pd pm
+    asyncEngineCount              <- cIntConv <$> {#get cudaDeviceProp.asyncEngineCount#} p
+    cacheMemL2                    <- cIntConv <$> {#get cudaDeviceProp.l2CacheSize#} p
+    maxThreadsPerMultiProcessor   <- cIntConv <$> {#get cudaDeviceProp.maxThreadsPerMultiProcessor#} p
+    memBusWidth                   <- cIntConv <$> {#get cudaDeviceProp.memoryBusWidth#} p
+    memClockRate                  <- cIntConv <$> {#get cudaDeviceProp.memoryClockRate#} p
+    pciInfo                       <- PCI <$> (cIntConv <$> {#get cudaDeviceProp.pciBusID#} p)
+                                         <*> (cIntConv <$> {#get cudaDeviceProp.pciDeviceID#} p)
+                                         <*> (cIntConv <$> {#get cudaDeviceProp.pciDomainID#} p)
+    tccDriverEnabled              <- cToBool <$> {#get cudaDeviceProp.tccDriver#} p
+    unifiedAddressing             <- cToBool <$> {#get cudaDeviceProp.unifiedAddressing#} p
 #endif
-#if CUDA_VERSION >= 5050
-      , streamPriorities                = sp
+    [t1,t2,t3]                    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxThreadsDim#} p
+    [g1,g2,g3]                    <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxGridSize#} p
+    let maxBlockSize = (t1,t2,t3)
+        maxGridSize  = (g1,g2,g3)
+#if CUDART_VERSION >= 3000
+    [u21,u22]                     <- peekArrayWith cIntConv 2 =<< {#get cudaDeviceProp.maxTexture2D#} p
+    [u31,u32,u33]                 <- peekArrayWith cIntConv 3 =<< {#get cudaDeviceProp.maxTexture3D#} p
+    let maxTextureDim2D = (u21,u22)
+        maxTextureDim3D = (u31,u32,u33)
 #endif
-#if CUDA_VERSION >= 6000
-      , globalL1Cache                   = gl1
-      , localL1Cache                    = ll1
-      , managedMemory                   = mm
-      , multiGPUBoard                   = mg
-      , multiGPUBoardGroupID            = mid
+#if CUDART_VERSION >= 5050
+    streamPriorities              <- cToBool  <$> {#get cudaDeviceProp.streamPrioritiesSupported#} p
 #endif
-      }
+#if CUDART_VERSION >= 6000
+    globalL1Cache                 <- cToBool  <$> {#get cudaDeviceProp.globalL1CacheSupported#} p
+    localL1Cache                  <- cToBool  <$> {#get cudaDeviceProp.localL1CacheSupported#} p
+    managedMemory                 <- cToBool  <$> {#get cudaDeviceProp.managedMemory#} p
+    multiGPUBoard                 <- cToBool  <$> {#get cudaDeviceProp.isMultiGpuBoard#} p
+    multiGPUBoardGroupID          <- cIntConv <$> {#get cudaDeviceProp.multiGpuBoardGroupID#} p
+#endif
+#if CUDART_VERSION >= 8000
+#if CUDART_VERSION == 8000
+    -- XXX: Not visible from the CUDA runtime API 8.0 (only accessible from the driver API)
+    let preemption = False
+#else
+    preemption                    <- cToBool  <$> {#get cudaDeviceProp.computePreemptionSupported#} p
+#endif
+    singleToDoublePerfRatio       <- cIntConv <$> {#get cudaDeviceProp.singleToDoublePrecisionPerfRatio#} p
+#endif
+#if CUDART_VERSION >= 9000
+    cooperativeLaunch             <- cToBool <$> {#get cudaDeviceProp.cooperativeLaunch#} p
+    cooperativeLaunchMultiDevice  <- cToBool <$> {#get cudaDeviceProp.cooperativeMultiDeviceLaunch#} p
+#endif
+
+    return DeviceProperties{..}
 
 
 --------------------------------------------------------------------------------

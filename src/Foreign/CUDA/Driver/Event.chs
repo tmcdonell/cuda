@@ -3,10 +3,13 @@
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE TemplateHaskell          #-}
+#ifdef USE_EMPTY_CASE
+{-# LANGUAGE EmptyCase                #-}
+#endif
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Event management for low-level driver interface
@@ -25,16 +28,46 @@ module Foreign.CUDA.Driver.Event (
 {# context lib="cuda" #}
 
 -- Friends
-import Foreign.CUDA.Types
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Stream                         ( Stream(..), defaultStream )
 
 -- System
 import Foreign
 import Foreign.C
 import Data.Maybe
-import Control.Monad                                    ( liftM )
-import Control.Exception                                ( throwIO )
+import Control.Monad                                      ( liftM )
+import Control.Exception                                  ( throwIO )
+
+
+--------------------------------------------------------------------------------
+-- Data Types
+--------------------------------------------------------------------------------
+
+-- |
+-- Events are markers that can be inserted into the CUDA execution stream and
+-- later queried.
+--
+newtype Event = Event { useEvent :: {# type CUevent #}}
+  deriving (Eq, Show)
+
+-- |
+-- Event creation flags
+--
+{# enum CUevent_flags as EventFlag
+    { underscoreToCase
+    }
+    with prefix="CU_EVENT" deriving (Eq, Show, Bounded) #}
+
+-- |
+-- Possible option flags for waiting for events
+--
+data WaitFlag
+instance Enum WaitFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("WaitFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
 
 
 --------------------------------------------------------------------------------

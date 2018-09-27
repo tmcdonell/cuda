@@ -11,6 +11,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
     * `Device.uuid`
     * `Stream.getContext`
 
+  * Functions from CUDA-10.0
+    * `Foreign.CUDA.Driver.Graph*`
+
+  * Additional bindings from older CUDA releases
+
 ### Changed
   * Replace uses of `String` with `ShortByteString`
 

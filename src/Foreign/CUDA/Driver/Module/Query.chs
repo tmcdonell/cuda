@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Module.Query
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Querying module attributes for low-level driver interface
@@ -120,7 +120,7 @@ resultIfFound :: String -> ShortByteString -> (Status, a) -> IO a
 resultIfFound kind name (!status,!result) =
   case status of
        Success  -> return result
-       NotFound -> cudaError (kind ++ ' ' : describe status ++ ": " ++ unpack name)
+       NotFound -> cudaErrorIO (kind ++ ' ' : describe status ++ ": " ++ unpack name)
        _        -> throwIO (ExitCode status)
 
 

@@ -3,10 +3,13 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash                #-}
 {-# LANGUAGE TemplateHaskell          #-}
+#ifdef USE_EMPTY_CASE
+{-# LANGUAGE EmptyCase                #-}
+#endif
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Stream
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Stream management for low-level driver interface
@@ -16,11 +19,16 @@
 module Foreign.CUDA.Driver.Stream (
 
   -- * Stream Management
-  Stream(..), StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..),
-  create, createWithPriority, destroy, finished, block, getPriority, getContext,
+  Stream(..), StreamPriority, StreamCallback,
+  StreamFlag(..), StreamWriteFlag(..), StreamWaitFlag(..), StreamCallbackFlag,
+
+  create, createWithPriority, destroy, finished, block, callback,
+  getFlags, getPriority, getContext,
   write, wait,
 
   defaultStream,
+  defaultStreamLegacy,
+  defaultStreamPerThread,
 
 ) where
 
@@ -29,14 +37,13 @@ module Foreign.CUDA.Driver.Stream (
 
 -- Friends
 import Foreign.CUDA.Ptr
-import Foreign.CUDA.Types
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Context.Base                 ( Context(..) )
+import Foreign.CUDA.Driver.Context.Base                   ( Context(..) )
 import Foreign.CUDA.Internal.C2HS
 
 -- System
-import Control.Exception                                ( throwIO )
-import Control.Monad                                    ( liftM )
+import Control.Exception                                  ( throwIO )
+import Control.Monad                                      ( liftM )
 import Foreign
 import Foreign.C
 import Unsafe.Coerce
@@ -44,6 +51,84 @@ import Unsafe.Coerce
 import GHC.Base
 import GHC.Ptr
 import GHC.Word
+
+
+--------------------------------------------------------------------------------
+-- Data Types
+--------------------------------------------------------------------------------
+
+-- |
+-- A processing stream. All operations in a stream are synchronous and executed
+-- in sequence, but operations in different non-default streams may happen
+-- out-of-order or concurrently with one another.
+--
+-- Use 'Event's to synchronise operations between streams.
+--
+newtype Stream = Stream { useStream :: {# type CUstream #}}
+  deriving (Eq, Show)
+
+-- |
+-- Priority of an execution stream. Work submitted to a higher priority
+-- stream may preempt execution of work already executing in a lower
+-- priority stream. Lower numbers represent higher priorities.
+--
+type StreamPriority = Int
+
+-- |
+-- Execution stream creation flags
+--
+#if CUDA_VERSION < 8000
+data StreamFlag
+data StreamWriteFlag
+data StreamWaitFlag
+
+instance Enum StreamFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
+instance Enum StreamWriteFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamWriteFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
+instance Enum StreamWaitFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamWaitFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
+#else
+{# enum CUstream_flags as StreamFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+
+{# enum CUstreamWriteValue_flags as StreamWriteFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+
+{# enum CUstreamWaitValue_flags as StreamWaitFlag
+  { underscoreToCase }
+  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
+#endif
+
+
+-- | A 'Stream' callback function
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__TYPES.html#group__CUDA__TYPES_1ge5743a8c48527f1040107a68205c5ba9>
+--
+-- @since 0.10.0.0
+--
+type StreamCallback = {# type CUstreamCallback #}
+
+data StreamCallbackFlag
+instance Enum StreamCallbackFlag where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("StreamCallbackFlag.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
 
 
 --------------------------------------------------------------------------------
@@ -175,6 +260,26 @@ getPriority !st = resultIfOk =<< cuStreamGetPriority st
 #endif
 
 
+-- | Query the flags of a given stream
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g4d39786855a6bed01215c1907fbbfbb7>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE getFlags #-}
+{# fun unsafe cuStreamGetFlags as getFlags
+  { useStream `Stream'
+  , alloca-   `[StreamFlag]' extract*
+  }
+  -> `()' checkStatus*- #}
+  where
+#if CUDA_VERSION < 8000
+    extract _ = return []
+#else
+    extract p = extractBitMasks `fmap` peek p
+#endif
+
+
 -- |
 -- Query the context associated with a stream
 --
@@ -200,20 +305,6 @@ getContext !st = resultIfOk =<< cuStreamGetCtx st
 #endif
 
 
-#if CUDA_VERSION < 8000
-data StreamWriteFlag
-data StreamWaitFlag
-#else
-{# enum CUstreamWriteValue_flags as StreamWriteFlag
-  { underscoreToCase }
-  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
-
-{# enum CUstreamWaitValue_flags as StreamWaitFlag
-  { underscoreToCase }
-  with prefix="CU_STREAM" deriving (Eq, Show, Bounded) #}
-#endif
-
-
 -- | Write a value to memory, (presumably) after all preceding work in the
 -- stream has completed. Unless the option 'WriteValueNoMemoryBarrier' is
 -- supplied, the write is preceded by a system-wide memory fence.
@@ -232,7 +323,7 @@ write ptr val stream flags =
   case sizeOf val of
     4 -> write32 (castDevPtr ptr) (unsafeCoerce val) stream flags
     8 -> write64 (castDevPtr ptr) (unsafeCoerce val) stream flags
-    _ -> cudaError "Stream.write: can only write 32- and 64-bit values"
+    _ -> cudaErrorIO "Stream.write: can only write 32- and 64-bit values"
 
 {-# INLINE write32 #-}
 write32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWriteFlag] -> IO ()
@@ -286,7 +377,7 @@ wait ptr val stream flags =
   case sizeOf val of
     4 -> wait32 (castDevPtr ptr) (unsafeCoerce val) stream flags
     8 -> wait64 (castDevPtr ptr) (unsafeCoerce val) stream flags
-    _ -> cudaError "Stream.wait: can only wait on 32- and 64-bit values"
+    _ -> cudaErrorIO "Stream.wait: can only wait on 32- and 64-bit values"
 
 {-# INLINE wait32 #-}
 wait32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWaitFlag] -> IO ()
@@ -319,6 +410,60 @@ wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
 #endif
+
+
+-- | Add a callback to a compute stream. This function will be executed on the
+-- host after all currently queued items in the stream have completed.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g613d97a277d7640f4cb1c03bd51c2483>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE callback #-}
+{# fun unsafe cuStreamAddCallback as callback
+  { useStream       `Stream'
+  , id              `StreamCallback'
+  , id              `Ptr ()'
+  , combineBitMasks `[StreamCallbackFlag]'
+  } -> `()' checkStatus*- #}
+
+
+-- | The default execution stream. This can be configured to have either
+-- 'defaultStreamLegacy' or 'defaultStreamPerThread' synchronisation behaviour.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+{-# INLINE defaultStream #-}
+defaultStream :: Stream
+defaultStream = Stream (Ptr (int2Addr# 0#))
+
+
+-- | The legacy default stream is an implicit stream which synchronises with all
+-- other streams in the same 'Context', except for non-blocking streams.
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+-- @since 0.10.0.0
+--
+{-# INLINE defaultStreamLegacy #-}
+defaultStreamLegacy :: Stream
+defaultStreamLegacy = Stream (Ptr (int2Addr# 0x1#))
+
+
+-- | The per-thread default stream is an implicit stream local to both the
+-- thread and the calling 'Context', and which does not synchronise with other
+-- streams (just like explicitly created streams). The per-thread default stream
+-- is not a non-blocking stream and will synchronise with the legacy default
+-- stream if both are used in the same program.
+--
+-- <file:///Developer/NVIDIA/CUDA-9.2/doc/html/cuda-driver-api/stream-sync-behavior.html#stream-sync-behavior__default-stream>
+--
+-- @since 0.10.0.0
+--
+{-# INLINE defaultStreamPerThread #-}
+defaultStreamPerThread :: Stream
+defaultStreamPerThread = Stream (Ptr (int2Addr# 0x2#))
+
 
 --------------------------------------------------------------------------------
 -- Internal

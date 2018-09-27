@@ -29,6 +29,7 @@ compiler:
 env:
   # global:
   matrix:
+    - CUDA=10.0.130-1
     - CUDA=8.0.61-1
     - CUDA=7.5-18
     - CUDA=7.0-28

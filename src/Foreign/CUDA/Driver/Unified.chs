@@ -8,7 +8,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Unified
--- Copyright : [2017] Trevor L. McDonell
+-- Copyright : [2017..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Unified addressing functions for the low-level driver interface
@@ -101,7 +101,7 @@ import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Marshal
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Types
+import Foreign.CUDA.Ptr
 
 -- System
 import Control.Applicative

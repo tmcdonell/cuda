@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- This module defines an interface to the CUDA driver API. The Driver API
@@ -232,7 +232,7 @@ import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Context      hiding ( useContext, device )
 import Foreign.CUDA.Driver.Device       hiding ( useDevice )
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Exec
+import Foreign.CUDA.Driver.Exec         hiding ( useFun )
 import Foreign.CUDA.Driver.Marshal      hiding ( useDeviceHandle, peekDeviceHandle )
 import Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Driver.Unified

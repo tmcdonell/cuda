@@ -3,12 +3,13 @@
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash                #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TemplateHaskell          #-}
 {-# OPTIONS_HADDOCK prune #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Marshal
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Memory management for low-level driver interface
@@ -29,6 +30,7 @@ module Foreign.CUDA.Driver.Marshal (
   AttachFlag(..),
   mallocManagedArray,
   prefetchArrayAsync,
+  attachArrayAsync,
 
   -- * Marshalling
   peekArray, peekArrayAsync, peekArray2D, peekArray2DAsync, peekListArray,
@@ -364,6 +366,25 @@ prefetchArrayAsync ptr n mdev mst = go undefined ptr
   }
   -> `Status' cToEnum #}
 #endif
+
+
+-- | Attach an array of the given number of elements to a stream asynchronously
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g6e468d680e263e7eba02a56643c50533>
+--
+-- @since 0.10.0.0
+--
+{-# INLINEABLE attachArrayAsync #-}
+attachArrayAsync :: forall a. Storable a => [AttachFlag] -> Stream -> DevicePtr a -> Int -> IO ()
+attachArrayAsync !flags !stream !ptr !n = cuStreamAttachMemAsync stream ptr (n * sizeOf (undefined::a)) flags
+  where
+    {# fun unsafe cuStreamAttachMemAsync
+      { useStream       `Stream'
+      , useDeviceHandle `DevicePtr a'
+      ,                 `Int'
+      , combineBitMasks `[AttachFlag]'
+      }
+      -> `()' checkStatus*- #}
 
 
 --------------------------------------------------------------------------------
@@ -995,7 +1016,7 @@ memset !dptr !n !val = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8  dptr val n
     2 -> nothingIfOk =<< cuMemsetD16 dptr val n
     4 -> nothingIfOk =<< cuMemsetD32 dptr val n
-    _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
+    _ -> cudaErrorIO "can only memset 8-, 16-, and 32-bit values"
 
 --
 -- We use unsafe coerce below to reinterpret the bits of the value to memset as,
@@ -1042,7 +1063,7 @@ memsetAsync !dptr !n !val !mst = case sizeOf val of
     1 -> nothingIfOk =<< cuMemsetD8Async  dptr val n stream
     2 -> nothingIfOk =<< cuMemsetD16Async dptr val n stream
     4 -> nothingIfOk =<< cuMemsetD32Async dptr val n stream
-    _ -> cudaError "can only memset 8-, 16-, and 32-bit values"
+    _ -> cudaErrorIO "can only memset 8-, 16-, and 32-bit values"
     where
       stream = fromMaybe defaultStream mst
 
