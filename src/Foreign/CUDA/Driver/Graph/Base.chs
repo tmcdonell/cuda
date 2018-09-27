@@ -26,6 +26,7 @@ module Foreign.CUDA.Driver.Graph.Base
 {# context lib="cuda" #}
 
 import Foreign.Storable
+import Foreign.Ptr
 
 
 --------------------------------------------------------------------------------

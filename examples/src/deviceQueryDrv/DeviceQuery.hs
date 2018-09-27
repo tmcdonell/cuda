@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP             #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -76,12 +77,14 @@ statDevice dev@DeviceProperties{..} =
         ,("Host page-locked memory mapping:",           bool canMapHostMemory)
         ,("ECC memory support:",                        bool eccEnabled)
         ,("Unified addressing (UVA):",                  bool unifiedAddressing)]++
+#if __GLASGOW_HASKELL__ > 710
         $(if CUDA.libraryVersion >= 8000 then [|
         [("Single to double precision performance:",    text $ printf "%d : 1" singleToDoublePerfRatio)
         ,("Supports compute pre-emption:",              bool preemption)]|] else [|[]|])++
         $(if CUDA.libraryVersion >= 9000 then [|
         [("Supports cooperative launch:",               bool cooperativeLaunch)
         ,("Supports multi-device cooperative launch:",  bool cooperativeLaunchMultiDevice)]|] else [|[]|])++
+#endif
         [("PCI bus/location:",                          int (busID pciInfo) <> char '/' <> int (deviceID pciInfo))
         ,("Compute mode:",                              text (show computeMode))
         ]
