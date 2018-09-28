@@ -15,8 +15,8 @@ addons:
     sources:
       - hvr-ghc
     packages:
-      - alex
-      - happy
+      - alex-1.19.5
+      - happy-3.1.7
 
 compiler:
   - GHC-8.6.1
@@ -42,6 +42,7 @@ matrix:
 before_install:
   - export GHC=${CC:4}
   - unset CC
+  - export PATH=/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$PATH
   - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
   - source .travis/install-stack.sh
