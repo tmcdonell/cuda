@@ -4,7 +4,7 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [next]
+## [0.10.0.0] - 2018-10-02
 ### Added
   * Device properties for SM7
   * Functions from CUDA-9.2
@@ -133,7 +133,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   * Add functions from CUDA-6.5
 
 
-[next]:       https://github.com/tmcdonell/cuda/compare/0.9.0.3...HEAD
+[0.10.0.0]:   https://github.com/tmcdonell/cuda/compare/0.9.0.3...v0.10.0.0
 [0.9.0.3]:    https://github.com/tmcdonell/cuda/compare/0.9.0.2...0.9.0.3
 [0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
 [0.9.0.1]:    https://github.com/tmcdonell/cuda/compare/0.9.0.0...0.9.0.1
