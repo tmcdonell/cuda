@@ -189,6 +189,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                0.10.0.0
+    tag:                v0.10.0.0
 
 -- vim: nospell
