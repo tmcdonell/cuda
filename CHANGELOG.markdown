@@ -4,7 +4,7 @@ Notable changes to the project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [next]
+## [0.10.0.0] - 2018-10-02
 ### Added
   * Device properties for SM7
   * Functions from CUDA-9.2
