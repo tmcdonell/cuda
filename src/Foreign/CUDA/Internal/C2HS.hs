@@ -1,3 +1,5 @@
+{-# LANGUAGE MagicHash #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 --  C->Haskell Compiler: Marshalling library
 --
 --  Copyright (c) [1999...2005] Manuel M T Chakravarty
@@ -55,6 +57,10 @@ module Foreign.CUDA.Internal.C2HS (
 import Foreign
 import Foreign.C
 import Control.Monad                                    ( liftM )
+
+import GHC.Int
+import GHC.Word
+import GHC.Base
 
 
 -- Composite marshalling functions
@@ -189,19 +195,40 @@ extractBitMasks bits =
 cIntConv :: (Integral a, Integral b) => a -> b
 cIntConv  = fromIntegral
 
+-- This is enough to fix the missing specialisation for mallocArray, but perhaps
+-- we should implement a more general solution which avoids the use of
+-- fromIntegral entirely (in particular, without relying on orphan instances).
+--
+{-# RULES
+  "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (narrow32Int# i#)) ;
+  "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# i#) ;
+ #-}
+{-# RULES
+  "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (narrow32Word# (int2Word# i#))) ;
+  "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (int2Word# i#)) ;
+ #-}
+
+  -- The C 'long' type might be 32- or 64-bits wide
+  --
+  -- "fromIntegral/Int->CLong"    fromIntegral = \(I# i#) -> CLong (I64# i#) ;
+  -- "fromIntegral/Int->CULong"   fromIntegral = \(I# i#) -> CULong (W64# (int2Word# i#)) ;
+
 -- |Floating conversion
 --
 {-# INLINE [1] cFloatConv #-}
 cFloatConv :: (RealFloat a, RealFloat b) => a -> b
 cFloatConv  = realToFrac
+
 -- As this conversion by default goes via `Rational', it can be very slow...
 {-# RULES
-  "cFloatConv/Float->Float"    forall (x::Float).  cFloatConv x = x;
-  "cFloatConv/Double->Double"  forall (x::Double). cFloatConv x = x;
-  "cFloatConv/Float->CFloat"   forall (x::Float).  cFloatConv x = CFloat x;
-  "cFloatConv/CFloat->Float"   forall (x::Float).  cFloatConv CFloat x = x;
-  "cFloatConv/Double->CDouble" forall (x::Double). cFloatConv x = CDouble x;
-  "cFloatConv/CDouble->Double" forall (x::Double). cFloatConv CDouble x = x
+  "realToFrac/Float->Float"    realToFrac = \(x::Float) -> x ;
+  "realToFrac/Float->CFloat"   realToFrac = \(x::Float) -> CFloat x ;
+  "realToFrac/CFloat->Float"   realToFrac = \(CFloat x) -> x ;
+ #-}
+{-# RULES
+  "realToFrac/Double->Double"  realToFrac = \(x::Double) -> x;
+  "realToFrac/Double->CDouble" realToFrac = \(x::Double) -> CDouble x ;
+  "realToFrac/CDouble->Double" realToFrac = \(CDouble x) -> x ;
  #-}
 
 -- |Obtain C value from Haskell 'Bool'.

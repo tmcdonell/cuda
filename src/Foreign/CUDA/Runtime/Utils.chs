@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Utils
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Utility functions

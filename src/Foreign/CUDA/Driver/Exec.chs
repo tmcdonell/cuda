@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Exec
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Kernel execution control for low-level driver interface
@@ -17,7 +17,7 @@
 module Foreign.CUDA.Driver.Exec (
 
   -- * Kernel Execution
-  Fun(Fun), FunParam(..), FunAttribute(..), SharedMem(..),
+  Fun(..), FunParam(..), FunAttribute(..), SharedMem(..),
   requires,
   setCacheConfigFun,
   setSharedMemConfigFun,
@@ -353,6 +353,7 @@ launchKernelCooperative !fn (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !mst !args
 #endif
 
 -- TODO: cuLaunchCooperativeKernelMultiDevice introduced CUDA-9.0
+-- TODO: cuLaunchHostFunc introduced CUDA-10.0
 
 --------------------------------------------------------------------------------
 -- Deprecated
@@ -402,8 +403,8 @@ setSharedSize !fn !bytes = nothingIfOk =<< cuFuncSetSharedSize fn bytes
 
 {-# INLINE cuFuncSetSharedSize #-}
 {# fun unsafe cuFuncSetSharedSize
-  { useFun   `Fun'
-  , cIntConv `Integer' } -> `Status' cToEnum #}
+  { useFun      `Fun'
+  , fromInteger `Integer' } -> `Status' cToEnum #}
 
 
 -- |
@@ -441,7 +442,7 @@ setParams !fn !prs = do
 {# fun unsafe cuParamSetf
   { useFun `Fun'
   ,        `Int'
-  ,        `Float' } -> `Status' cToEnum #}
+  , CFloat `Float' } -> `Status' cToEnum #}
 
 {-# INLINE cuParamSetv #-}
 {# fun unsafe cuParamSetv

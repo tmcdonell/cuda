@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Analysis.Device
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Common device functions
@@ -69,59 +69,67 @@ cap a b = let a' = fromIntegral a in
 --
 data DeviceProperties = DeviceProperties
   {
-    deviceName                  :: !String              -- ^ Identifier
-  , computeCapability           :: !Compute             -- ^ Supported compute capability
-  , totalGlobalMem              :: !Int64               -- ^ Available global memory on the device in bytes
-  , totalConstMem               :: !Int64               -- ^ Available constant memory on the device in bytes
-  , sharedMemPerBlock           :: !Int64               -- ^ Available shared memory per block in bytes
-  , regsPerBlock                :: !Int                 -- ^ 32-bit registers per block
-  , warpSize                    :: !Int                 -- ^ Warp size in threads (SIMD width)
-  , maxThreadsPerBlock          :: !Int                 -- ^ Maximum number of threads per block
+    deviceName                    :: !String          -- ^ Identifier
+  , computeCapability             :: !Compute         -- ^ Supported compute capability
+  , totalGlobalMem                :: !Int64           -- ^ Available global memory on the device in bytes
+  , totalConstMem                 :: !Int64           -- ^ Available constant memory on the device in bytes
+  , sharedMemPerBlock             :: !Int64           -- ^ Available shared memory per block in bytes
+  , regsPerBlock                  :: !Int             -- ^ 32-bit registers per block
+  , warpSize                      :: !Int             -- ^ Warp size in threads (SIMD width)
+  , maxThreadsPerBlock            :: !Int             -- ^ Maximum number of threads per block
 #if CUDA_VERSION >= 4000
-  , maxThreadsPerMultiProcessor :: !Int                 -- ^ Maximum number of threads per multiprocessor
+  , maxThreadsPerMultiProcessor   :: !Int             -- ^ Maximum number of threads per multiprocessor
 #endif
-  , maxBlockSize                :: !(Int,Int,Int)       -- ^ Maximum size of each dimension of a block
-  , maxGridSize                 :: !(Int,Int,Int)       -- ^ Maximum size of each dimension of a grid
+  , maxBlockSize                  :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a block
+  , maxGridSize                   :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a grid
 #if CUDA_VERSION >= 3000
-  , maxTextureDim1D             :: !Int                 -- ^ Maximum texture dimensions
-  , maxTextureDim2D             :: !(Int,Int)
-  , maxTextureDim3D             :: !(Int,Int,Int)
+  , maxTextureDim1D               :: !Int             -- ^ Maximum texture dimensions
+  , maxTextureDim2D               :: !(Int,Int)
+  , maxTextureDim3D               :: !(Int,Int,Int)
 #endif
-  , clockRate                   :: !Int                 -- ^ Clock frequency in kilohertz
-  , multiProcessorCount         :: !Int                 -- ^ Number of multiprocessors on the device
-  , memPitch                    :: !Int64               -- ^ Maximum pitch in bytes allowed by memory copies
+  , clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
+  , multiProcessorCount           :: !Int             -- ^ Number of multiprocessors on the device
+  , memPitch                      :: !Int64           -- ^ Maximum pitch in bytes allowed by memory copies
 #if CUDA_VERSION >= 4000
-  , memBusWidth                 :: !Int                 -- ^ Global memory bus width in bits
-  , memClockRate                :: !Int                 -- ^ Peak memory clock frequency in kilohertz
+  , memBusWidth                   :: !Int             -- ^ Global memory bus width in bits
+  , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
 #endif
-  , textureAlignment            :: !Int64               -- ^ Alignment requirement for textures
-  , computeMode                 :: !ComputeMode
-  , deviceOverlap               :: !Bool                -- ^ Device can concurrently copy memory and execute a kernel
+  , textureAlignment              :: !Int64           -- ^ Alignment requirement for textures
+  , computeMode                   :: !ComputeMode
+  , deviceOverlap                 :: !Bool            -- ^ Device can concurrently copy memory and execute a kernel
 #if CUDA_VERSION >= 3000
-  , concurrentKernels           :: !Bool                -- ^ Device can possibly execute multiple kernels concurrently
-  , eccEnabled                  :: !Bool                -- ^ Device supports and has enabled error correction
+  , concurrentKernels             :: !Bool            -- ^ Device can possibly execute multiple kernels concurrently
+  , eccEnabled                    :: !Bool            -- ^ Device supports and has enabled error correction
 #endif
 #if CUDA_VERSION >= 4000
-  , asyncEngineCount            :: !Int                 -- ^ Number of asynchronous engines
-  , cacheMemL2                  :: !Int                 -- ^ Size of the L2 cache in bytes
-  , pciInfo                     :: !PCI                 -- ^ PCI device information for the device
-  , tccDriverEnabled            :: !Bool                -- ^ Whether this is a Tesla device using the TCC driver
+  , asyncEngineCount              :: !Int             -- ^ Number of asynchronous engines
+  , cacheMemL2                    :: !Int             -- ^ Size of the L2 cache in bytes
+  , pciInfo                       :: !PCI             -- ^ PCI device information for the device
+  , tccDriverEnabled              :: !Bool            -- ^ Whether this is a Tesla device using the TCC driver
 #endif
-  , kernelExecTimeoutEnabled    :: !Bool                -- ^ Whether there is a runtime limit on kernels
-  , integrated                  :: !Bool                -- ^ As opposed to discrete
-  , canMapHostMemory            :: !Bool                -- ^ Device can use pinned memory
+  , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
+  , integrated                    :: !Bool            -- ^ As opposed to discrete
+  , canMapHostMemory              :: !Bool            -- ^ Device can use pinned memory
 #if CUDA_VERSION >= 4000
-  , unifiedAddressing           :: !Bool                -- ^ Device shares a unified address space with the host
+  , unifiedAddressing             :: !Bool            -- ^ Device shares a unified address space with the host
 #endif
 #if CUDA_VERSION >= 5050
-  , streamPriorities            :: !Bool                -- ^ Device supports stream priorities
+  , streamPriorities              :: !Bool            -- ^ Device supports stream priorities
 #endif
 #if CUDA_VERSION >= 6000
-  , globalL1Cache               :: !Bool                -- ^ Device supports caching globals in L1 cache
-  , localL1Cache                :: !Bool                -- ^ Device supports caching locals in L1 cache
-  , managedMemory               :: !Bool                -- ^ Device supports allocating managed memory on this system
-  , multiGPUBoard               :: !Bool                -- ^ Device is on a multi-GPU board
-  , multiGPUBoardGroupID        :: !Int                 -- ^ Unique identifier for a group of devices associated with the same board
+  , globalL1Cache                 :: !Bool            -- ^ Device supports caching globals in L1 cache
+  , localL1Cache                  :: !Bool            -- ^ Device supports caching locals in L1 cache
+  , managedMemory                 :: !Bool            -- ^ Device supports allocating managed memory on this system
+  , multiGPUBoard                 :: !Bool            -- ^ Device is on a multi-GPU board
+  , multiGPUBoardGroupID          :: !Int             -- ^ Unique identifier for a group of devices associated with the same board
+#endif
+#if CUDA_VERSION >= 8000
+  , preemption                    :: !Bool            -- ^ Device supports compute pre-emption
+  , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
+#endif
+#if CUDA_VERSION >= 9000
+  , cooperativeLaunch             :: !Bool            -- ^ Device supports launching cooperative kernels
+  , cooperativeLaunchMultiDevice  :: !Bool            -- ^ Device can participate in cooperative multi-device kernels
 #endif
   }
   deriving (Show)
@@ -129,9 +137,9 @@ data DeviceProperties = DeviceProperties
 
 data PCI = PCI
   {
-    busID       :: !Int,                -- ^ PCI bus ID of the device
-    deviceID    :: !Int,                -- ^ PCI device ID
-    domainID    :: !Int                 -- ^ PCI domain ID
+    busID       :: !Int,      -- ^ PCI bus ID of the device
+    deviceID    :: !Int,      -- ^ PCI device ID
+    domainID    :: !Int       -- ^ PCI domain ID
   }
   deriving (Show)
 
@@ -158,6 +166,7 @@ data DeviceResources = DeviceResources
   , sharedMemAllocUnit      :: !Int         -- ^ Shared memory allocation unit size (bytes)
   , warpAllocUnit           :: !Int         -- ^ Warp allocation granularity
   , warpRegAllocUnit        :: !Int         -- ^ Warp register allocation granularity
+  , maxGridsPerDevice       :: !Int         -- ^ Maximum number of resident grids per device (concurrent kernels)
   }
 
 
@@ -187,6 +196,7 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 512
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 1
         }
       Compute 1 2 ->  resources (Compute 1 3)     -- Tesla G9x
       Compute 1 3 -> (resources (Compute 1 1))    -- Tesla GT200
@@ -213,12 +223,13 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 128
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 64
+        , maxGridsPerDevice     = 16
         }
       Compute 2 1 -> (resources (Compute 2 0))    -- Fermi GF10x
         { coresPerMP            = 48
         }
 
-      Compute 3 0 -> DeviceResources
+      Compute 3 0 -> DeviceResources              -- Kepler GK10x
         { threadsPerWarp        = 32
         , coresPerMP            = 192
         , warpsPerMP            = 64
@@ -234,10 +245,15 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 4
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 16
         }
       Compute 3 2 -> (resources (Compute 3 5))    -- Jetson TK1
+        { maxRegPerBlock        = 32768
+        , maxGridsPerDevice     = 4
+        }
       Compute 3 5 -> (resources (Compute 3 0))    -- Kepler GK11x
         { maxRegPerThread       = 255
+        , maxGridsPerDevice     = 32
         }
       Compute 3 7 -> (resources (Compute 3 5))    -- Kepler GK21x
         { sharedMemPerMP        = 114688
@@ -260,6 +276,7 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 4
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 32
         }
       Compute 5 2 -> (resources (Compute 5 0))    -- Maxwell GM20x
         { sharedMemPerMP        = 98304
@@ -269,6 +286,7 @@ deviceResources = resources . computeCapability
       Compute 5 3 -> (resources (Compute 5 0))    -- Maxwell GM20B
         { maxRegPerBlock        = 32768
         , warpAllocUnit         = 2
+        , maxGridsPerDevice     = 16
         }
 
       Compute 6 0 -> DeviceResources              -- Pascal GP100
@@ -287,17 +305,40 @@ deviceResources = resources . computeCapability
         , sharedMemAllocUnit    = 256
         , warpAllocUnit         = 2
         , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
         }
       Compute 6 1 -> (resources (Compute 6 0))    -- Pascal GP10x
         { coresPerMP            = 128
         , sharedMemPerMP        = 98304
         , warpAllocUnit         = 4
+        , maxGridsPerDevice     = 32
         }
-      Compute 6 2 -> (resources (Compute 6 0))    -- Pascal ??
+      Compute 6 2 -> (resources (Compute 6 0))    -- Pascal GP10B
         { coresPerMP            = 128
         , warpsPerMP            = 128
         , threadBlocksPerMP     = 4096
+        , maxRegPerBlock        = 32768
         , warpAllocUnit         = 4
+        , maxGridsPerDevice     = 16
+        }
+
+      Compute 7 _ -> DeviceResources              -- Volta GV100
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 98304
+        , maxSharedMemPerBlock  = 49152           -- XXX: or 96KB?
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 2
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
         }
 
       -- Something might have gone wrong, or the library just needs to be

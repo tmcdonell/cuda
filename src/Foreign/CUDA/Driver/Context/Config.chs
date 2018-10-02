@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context.Config
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Context configuration for the low-level driver interface
@@ -46,7 +46,7 @@ module Foreign.CUDA.Driver.Context.Config (
 import Foreign.CUDA.Driver.Context.Base
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
-import Foreign.CUDA.Types
+import Foreign.CUDA.Driver.Stream                         ( Stream, StreamPriority )
 
 -- System
 import Control.Monad
@@ -158,7 +158,7 @@ setLimit !l !n = nothingIfOk =<< cuCtxSetLimit l n
 {-# INLINE cuCtxSetLimit #-}
 {# fun unsafe cuCtxSetLimit
   { cFromEnum `Limit'
-  , cIntConv  `Int'   } -> `Status' cToEnum #}
+  ,           `Int'   } -> `Status' cToEnum #}
 #endif
 
 

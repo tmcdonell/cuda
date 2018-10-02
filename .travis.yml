@@ -1,164 +1,75 @@
 # vim: nospell
-language: generic
+#
+language: c
 dist: trusty
 sudo: required
 
+cache:
+  directories:
+    - $HOME/.stack/snapshots
+    - $HOME/.local/bin
+    - .stack-work/install
+
+addons:
+  apt:
+    sources:
+      - hvr-ghc
+    packages:
+      - alex-3.1.7
+      - happy-1.19.5
+
+compiler:
+  - GHC-8.6.1
+  - GHC-8.4.1
+  - GHC-8.2.1
+  - GHC-8.0.2
+  - GHC-7.10.3
+  - GHC-7.8.4
+
+env:
+  # global:
+  matrix:
+    - CUDA=10.0.130-1
+    - CUDA=8.0.61-1
+    - CUDA=7.5-18
+    - CUDA=7.0-28
+    - CUDA=6.5-14
+
 matrix:
-  include:
-    - env: CUDA=6.5-14 GHC=8.4.1 CABAL=2.0
-      compiler: "GHC 8.4"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.4.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=8.4.1 CABAL=2.0
-      compiler: "GHC 8.4"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.4.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=8.4.1 CABAL=2.0
-      compiler: "GHC 8.4"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.4.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=8.4.1 CABAL=2.0
-      compiler: "GHC 8.4"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.4.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=8.2.1 CABAL=2.0
-      compiler: "GHC 8.2"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=8.2.1 CABAL=2.0
-      compiler: "GHC 8.2"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=8.2.1 CABAL=2.0
-      compiler: "GHC 8.2"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=8.2.1 CABAL=2.0
-      compiler: "GHC 8.2"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.2.1, cabal-install-2.0, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=8.0.1 CABAL=1.24
-      compiler: "GHC 8.0"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-8.0.1, cabal-install-1.24, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=7.10.3 CABAL=1.22
-      compiler: "GHC 7.10"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=7.10.3 CABAL=1.22
-      compiler: "GHC 7.10"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=7.10.3 CABAL=1.22
-      compiler: "GHC 7.10"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=7.10.3 CABAL=1.22
-      compiler: "GHC 7.10"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.10.3, cabal-install-1.22, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=7.8.4 CABAL=1.18
-      compiler: "GHC 7.8"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.8.4, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=6.5-14 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.0-28 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=7.5-18 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=7.6.3 CABAL=1.18
-      compiler: "GHC 7.6"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-7.6.3, cabal-install-1.18, happy-1.19.5, alex-3.1.7 ] }}
-
-    - env: CUDA=8.0.61-1 GHC=head CABAL=head
-      compiler: "GHC HEAD"
-      addons: { apt: { sources: [ hvr-ghc ], packages: [ ghc-head, cabal-install-head, happy-1.19.5, alex-3.1.7 ] }}
-
-  allow_failures:
-    - env: CUDA=8.0.61-1 GHC=head CABAL=head
-
+  fast_finish: true
+  # allow_failures:
 
 before_install:
-  - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$HOME/.cabal/bin:$PATH
-
-  # Need at least Cabal-1.22 to run the Setup.hs script. This is the default
-  # version of GHC-7.10 and later.
-  - cabal update
-  - |
-      case ${GHC} in
-        7.6.*)  cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
-        7.8.*)  cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
-        7.10.*) cabal install Cabal --constraint="Cabal >= 1.24" --constraint="Cabal < 2.0" ;;
-      esac
-  - cabal install c2hs
-
-  # Install the CUDA toolkit
-  - echo "Installing CUDA library"
+  - export GHC=${CC:4}
+  - unset CC
+  - export PATH=/opt/alex/3.1.7/bin:/opt/happy/1.19.5/bin:$PATH
   - export CUDA_INSTALL_EXTRA_LIBS=0
   - source .travis/install-cuda-trusty.sh
+  - source .travis/install-stack.sh
+  - source .travis/update-ghc-settings.sh
+
+  # ghc-8.6 builds a broken version of c2hs
+  - |
+      if [ ${GHC%.*} == "8.6" -a ! -x "$(which c2hs)" ]; then
+        travis_retry stack --stack-yaml=stack-8.4.yaml setup --no-terminal --no-system-ghc
+        travis_retry stack --stack-yaml=stack-8.4.yaml install c2hs --fast --no-terminal
+      fi
+
+  # build environment
+  - echo "$(stack exec ghc -- --version) [$(stack exec ghc -- --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - stack --version
+  - nvcc --version
 
 install:
-  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - cabal --version
-  - c2hs --version
-  - nvcc --version
-  - cabal install --only-dependencies --enable-tests
+  - travis_retry stack build --fast --only-dependencies --no-terminal
 
 script:
-  # Check the build
-  - cabal configure -v2 -flib-Werror
-  - cabal build
-  - cabal haddock
-  # - cabal test --show-details=always
+  - travis_retry stack build --fast --no-terminal --haddock --no-haddock-deps
 
-  # Check the source distribution can be generated, built, and installed
-  - cabal sdist
-  - |
-      export SRC_TGZ=$(cabal info . | awk '{print $2 ".tar.gz";exit}')
-      pushd dist
-      if [ -f "$SRC_TGZ" ]; then
-          cabal install --force-reinstalls ${SRC_TGZ} || exit 1
-      else
-          echo "'$SRC_TGZ': not found"
-          exit 1
-      fi
-      popd
+after_success:
+  - source .travis/update-accelerate-buildbot.sh
 
 after_failure:
   - dmesg
   - ls -R /usr/local/cuda*
-
-after_success:
-  - source .travis/update-accelerate-buildbot.sh
 

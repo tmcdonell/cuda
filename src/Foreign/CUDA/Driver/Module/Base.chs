@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Module.Base
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Module loading for low-level driver interface
@@ -39,6 +39,7 @@ module Foreign.CUDA.Driver.Module.Base (
 import Foreign.CUDA.Analysis.Device
 import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Internal.C2HS
+import Foreign.C.Extra
 
 -- System
 import Foreign
@@ -223,7 +224,7 @@ loadDataFromPtrEx !img !options = do
 
     _       -> do
       errLog  <- peekCString p_elog
-      cudaError (unlines [describe s, errLog])
+      cudaErrorIO (unlines [describe s, errLog])
 
 
 {-# INLINE cuModuleLoadDataEx #-}
@@ -278,47 +279,5 @@ jitOptionUnpack Verbose               = requireSDK 'Verbose 5.5
 
 {-# INLINE jitTargetOfCompute #-}
 jitTargetOfCompute :: Compute -> JITTarget
-#if CUDA_VERSION < 9000
-jitTargetOfCompute (Compute 1 0) = Compute10
-jitTargetOfCompute (Compute 1 1) = Compute11
-jitTargetOfCompute (Compute 1 2) = Compute12
-jitTargetOfCompute (Compute 1 3) = Compute13
-#endif
-jitTargetOfCompute (Compute 2 0) = Compute20
-jitTargetOfCompute (Compute 2 1) = Compute21
-#if CUDA_VERSION >= 5000
-jitTargetOfCompute (Compute 3 0) = Compute30
-jitTargetOfCompute (Compute 3 5) = Compute35
-#endif
-#if CUDA_VERSION >= 6000
-jitTargetOfCompute (Compute 3 2) = Compute32
-jitTargetOfCompute (Compute 5 0) = Compute50
-#endif
-#if CUDA_VERSION >= 6050
-jitTargetOfCompute (Compute 3 7) = Compute37
-#endif
-#if CUDA_VERSION >= 7000
-jitTargetOfCompute (Compute 5 2) = Compute52
-#endif
-jitTargetOfCompute compute       = error ("Unknown JIT Target for Compute " ++ show compute)
-
-
-#if defined(WIN32)
-{-# INLINE c_strnlen' #-}
-c_strnlen' :: CString -> CSize -> IO CSize
-c_strnlen' str size = do
-  str' <- peekCStringLen (str, fromIntegral size)
-  return $ stringLen 0 str'
-  where
-    stringLen acc []       = acc
-    stringLen acc ('\0':_) = acc
-    stringLen acc (_:xs)   = stringLen (acc+1) xs
-#else
-foreign import ccall unsafe "string.h strnlen" c_strnlen'
-  :: CString -> CSize -> IO CSize
-#endif
-
-{-# INLINE c_strnlen #-}
-c_strnlen :: CString -> Int -> IO Int
-c_strnlen str maxlen = cIntConv `fmap` c_strnlen' str (cIntConv maxlen)
+jitTargetOfCompute (Compute x y) = toEnum (10*x + y)
 

@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Context.Peer
--- Copyright : [2009..2017] Trevor L. McDonell
+-- Copyright : [2009..2018] Trevor L. McDonell
 -- License   : BSD
 --
 -- Direct peer context access functions for the low-level driver interface.
@@ -50,7 +50,7 @@ import Foreign.C
 data PeerFlag
 instance Enum PeerFlag where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("PeerFlag.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 
@@ -61,7 +61,7 @@ instance Enum PeerFlag where
 data PeerAttribute
 instance Enum PeerAttribute where
 #ifdef USE_EMPTY_CASE
-  toEnum   x = case x of {}
+  toEnum   x = error ("PeerAttribute.toEnum: Cannot match " ++ show x)
   fromEnum x = case x of {}
 #endif
 #else

@@ -218,6 +218,13 @@ CUresult CUDAAPI cuLinkAddData(CUlinkState state, CUjitInputType type, void *dat
 CUresult CUDAAPI cuLinkAddFile(CUlinkState state, CUjitInputType type, const char *path, unsigned int numOptions, CUjit_option *options, void **optionValues);
 #endif
 
+#if CUDA_VERSION >= 10000
+CUresult CUDAAPI cuGraphAddHostNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUhostFn fn, void* userData);
+CUresult CUDAAPI cuGraphAddKernelNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUfunction func, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, void** kernelParams);
+CUresult CUDAAPI cuGraphAddMemcpyNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUcontext ctx, size_t srcXInBytes, size_t srcY, size_t srcZ, size_t srcLOD, CUmemorytype srcMemoryType, const void *srcPtr, size_t srcPitch, size_t srcHeight, size_t dstXInBytes, size_t dstY, size_t dstZ, size_t dstLOD, CUmemorytype dstMemoryType, void *dstPtr, size_t dstPitch, size_t dstHeight, size_t widthInBytes, size_t height, size_t depth);
+CUresult CUDAAPI cuGraphAddMemsetNode_simple(CUgraphNode *phGraphNode, CUgraph hGraph, CUgraphNode *dependencies, size_t numDependencies, CUcontext ctx, CUdeviceptr dst, unsigned int elementSize, size_t height, size_t pitch, unsigned int value, size_t width);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
