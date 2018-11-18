@@ -19,7 +19,7 @@ addons:
       - happy-1.19.5
 
 compiler:
-  - GHC-8.6.1
+  - GHC-8.6.2
   - GHC-8.4.1
   - GHC-8.2.1
   - GHC-8.0.2

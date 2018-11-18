@@ -229,11 +229,11 @@ module Foreign.CUDA.Driver (
 ) where
 
 import Foreign.CUDA.Ptr
-import Foreign.CUDA.Driver.Context      hiding ( useContext, device )
-import Foreign.CUDA.Driver.Device       hiding ( useDevice )
+import Foreign.CUDA.Driver.Context                        hiding ( device )
+import Foreign.CUDA.Driver.Device
 import Foreign.CUDA.Driver.Error
-import Foreign.CUDA.Driver.Exec         hiding ( useFun )
-import Foreign.CUDA.Driver.Marshal      hiding ( useDeviceHandle, peekDeviceHandle )
+import Foreign.CUDA.Driver.Exec
+import Foreign.CUDA.Driver.Marshal
 import Foreign.CUDA.Driver.Module
 import Foreign.CUDA.Driver.Unified
 import Foreign.CUDA.Driver.Utils
