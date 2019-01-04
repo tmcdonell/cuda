@@ -228,6 +228,12 @@ module Foreign.CUDA.Driver (
 
 ) where
 
+-- If we don't import everything from a module below, the generated haddocks
+-- will not have the convenient link to a module, but instead enumerate
+-- documentation for everything which was imported. This, unfortunately, looks
+-- like garbage, so it would be nice to find a better solution.
+--    -- TLM 2018-11-18
+--
 import Foreign.CUDA.Ptr
 import Foreign.CUDA.Driver.Context                        hiding ( device )
 import Foreign.CUDA.Driver.Device
