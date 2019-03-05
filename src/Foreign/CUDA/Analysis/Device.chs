@@ -322,14 +322,34 @@ deviceResources = resources . computeCapability
         , maxGridsPerDevice     = 16
         }
 
-      Compute 7 _ -> DeviceResources              -- Volta GV100
+      Compute 7 0 -> resources (Compute 7 2)      -- Volta GV100
+      Compute 7 2 -> DeviceResources
         { threadsPerWarp        = 32
         , coresPerMP            = 64
         , warpsPerMP            = 64
         , threadsPerMP          = 2048
         , threadBlocksPerMP     = 32
-        , sharedMemPerMP        = 98304
-        , maxSharedMemPerBlock  = 49152           -- XXX: or 96KB?
+        , sharedMemPerMP        = 98304           -- of 128KB
+        , maxSharedMemPerBlock  = 98304
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 256
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
+      Compute 7 5 -> DeviceResources              -- Turing TU1xx
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 32
+        , threadsPerMP          = 1024
+        , threadBlocksPerMP     = 16
+        , sharedMemPerMP        = 65536           -- of 96KB
+        , maxSharedMemPerBlock  = 65536
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
         , regAllocUnit          = 256
