@@ -2,3 +2,5 @@
 /cuda.buildinfo.generated
 *.i
 dist/
+/stack.yaml
+/.stack-work
