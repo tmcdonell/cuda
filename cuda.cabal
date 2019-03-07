@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.10.0.0
+Version:                0.10.1.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -189,6 +189,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                v0.10.0.0
+    tag:                v0.10.1.0
 
 -- vim: nospell
