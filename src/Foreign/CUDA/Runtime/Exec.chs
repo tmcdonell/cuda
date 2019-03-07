@@ -203,7 +203,7 @@ launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args
 
 #else
 launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args = do
-  setConfig grid block sm (fromMaybe defaultStream mst)
+  setConfig gx gy bx by bz sm (fromMaybe defaultStream mst)
   setParams args
   launch fn
 

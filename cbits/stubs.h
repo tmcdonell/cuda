@@ -24,7 +24,7 @@ void enable_constructors();
 #if CUDART_VERSION >= 7000
 cudaError_t cudaLaunchKernel_simple(const void *func, unsigned int gridX, unsigned int gridY, unsigned int gridZ, unsigned int blockX, unsigned int blockY, unsigned int blockZ, void **args, size_t sharedMem, cudaStream_t stream);
 #else
-cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, unsigned int blockX, unsigned int blockY, unsigned int blockZ);
+cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, unsigned int blockX, unsigned int blockY, unsigned int blockZ, size_t sharedMem, cudaStream_t stream);
 #endif
 
 CUresult cuTexRefSetAddress2D_simple(CUtexref tex, CUarray_format format, unsigned int numChannels, CUdeviceptr dptr, size_t width, size_t height, size_t pitch);
