@@ -21,16 +21,25 @@ extern "C" {
 
 void enable_constructors();
 
-__host__ cudaError_t CUDARTAPI
+#if CUDART_VERSION >= 7000
+cudaError_t
 cudaLaunchKernelSimple
 (
     const void *func,
-    unsigned int gridDimX,  unsigned int gridDimY,  unsigned int gridDimZ,
-    unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ,
+    unsigned int gridX,  unsigned int gridY,  unsigned int gridZ,
+    unsigned int blockX, unsigned int blockY, unsigned int blockZ,
     void **args,
     size_t sharedMem,
     cudaStream_t stream
 );
+#else
+cudaError_t
+cudaConfigureCallSimple
+(
+    int gridX,  int gridY,
+    int blockX, int blockY, int blockZ,
+);
+#endif
 
 CUresult
 cuTexRefSetAddress2DSimple

@@ -170,6 +170,7 @@ launchKernel
     -> Maybe Stream     -- ^ (optional) execution stream
     -> [FunParam]
     -> IO ()
+#if CUDART_VERSION >= 7000
 launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args
   = (=<<) nothingIfOk
   $ withMany withFP args
@@ -199,6 +200,83 @@ launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args
   , useStream `Stream'
   }
   -> `Status' cToEnum #}
+
+#else
+launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args = do
+  setConfig grid block sm (fromMaybe defaultStream mst)
+  setParams args
+  launch fn
+
+
+-- Invoke the @__global__@ kernel function on the device. This must be preceded
+-- by a call to 'setConfig' and (if appropriate) 'setParams'.
+--
+{-# INLINE launch #-}
+{# fun unsafe cudaLaunch as launch
+  { withFun* `Fun' } -> `()' checkStatus*- #}
+
+
+-- Specify the grid and block dimensions for a device call. Used in conjunction
+-- with 'setParams', this pushes data onto the execution stack that will be
+-- popped when a function is 'launch'ed.
+--
+-- The FFI does not support passing deferenced structures to C functions, as
+-- this is highly platform/compiler dependent. Wrap our own function stub
+-- accepting plain integers.
+--
+{-# INLINE setConfig #-}
+{# fun unsafe cudaConfigureCallSimple as setConfig
+  {           `Int', `Int'
+  ,           `Int', `Int', `Int'
+  , cIntConv  `Int64'
+  , useStream `Stream'
+  }
+  -> `()' checkStatus*- #}
+
+-- |
+-- Set the argument parameters that will be passed to the next kernel
+-- invocation. This is used in conjunction with 'setConfig' to control kernel
+-- execution.
+--
+{-# INLINEABLE setParams #-}
+setParams :: [FunParam] -> IO ()
+setParams = foldM_ k 0
+  where
+    k !offset !arg = do
+      let s = size arg
+      set arg s offset
+      return (offset + s)
+
+    size (IArg _) = sizeOf (undefined :: Int)
+    size (FArg _) = sizeOf (undefined :: Float)
+    size (DArg _) = sizeOf (undefined :: Double)
+    size (VArg a) = sizeOf a
+
+    set (IArg v) s o = cudaSetupArgument v s o
+    set (FArg v) s o = cudaSetupArgument v s o
+    set (VArg v) s o = cudaSetupArgument v s o
+    set (DArg v) s o = do
+      d <- cudaSetDoubleForDevice v
+      cudaSetupArgument d s o
+
+{-# INLINE cudaSetupArgument #-}
+{# fun unsafe cudaSetupArgument
+  `Storable a' =>
+  { with'* `a'
+  ,        `Int'
+  ,        `Int'
+  }
+  -> `()' checkStatus*- #}
+  where
+    with' v a = with v $ \p -> a (castPtr p)
+
+{-# INLINE cudaSetDoubleForDevice #-}
+{# fun unsafe cudaSetDoubleForDevice
+  { with'* `Double' peek'* } -> `()' checkStatus*- #}
+  where
+    with' v a = with v $ \p -> a (castPtr p)
+    peek'     = peek . castPtr
+#endif
 
 --------------------------------------------------------------------------------
 -- Internals
