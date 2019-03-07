@@ -52,6 +52,21 @@ instance Enum Status where
   with prefix="CU_STREAM_CAPTURE_STATUS" deriving (Eq, Show, Bounded) #}
 #endif
 
+#if CUDA_VERSION < 10010
+data Mode
+
+instance Enum Mode where
+#ifdef USE_EMPTY_CASE
+  toEnum   x = error ("Mode.toEnum: Cannot match " ++ show x)
+  fromEnum x = case x of {}
+#endif
+
+#else
+{# enum CUstreamCaptureMode as Mode
+  { underscoreToCase }
+  with prefix="CU_STREAM_CAPTURE_MODE" deriving (Eq, Show, Bounded) #}
+#endif
+
 
 --------------------------------------------------------------------------------
 -- Graph capture
@@ -66,11 +81,20 @@ instance Enum Status where
 -- @since 0.10.0.0
 --
 #if CUDA_VERSION < 10000
-start :: Stream -> IO ()
+start :: Stream -> Mode -> IO ()
 start = requireSDK 'start 10.0
+#elif CUDA_VERSION < 10010
+start :: Stream -> Mode -> IO ()
+start s _ = cuStreamBeginCapture
+  where
+    {# fun unsafe cuStreamBeginCapture
+      { useStream `Stream'
+      }
+      -> `()' checkStatus*- #}
 #else
 {# fun unsafe cuStreamBeginCapture as start
   { useStream `Stream'
+  ,           `Mode'
   }
   -> `()' checkStatus*- #}
 #endif

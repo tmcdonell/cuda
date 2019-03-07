@@ -4,20 +4,27 @@
 
 #include "cbits/stubs.h"
 
-
-cudaError_t
-cudaConfigureCallSimple
+__host__ cudaError_t CUDARTAPI
+cudaLaunchKernelSimple
 (
-    int gridX,  int gridY,
-    int blockX, int blockY, int blockZ,
+    const void *func,
+    unsigned int gridDimX,  unsigned int gridDimY,  unsigned int gridDimZ,
+    unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ,
+    void **args,
     size_t sharedMem,
     cudaStream_t stream
 )
 {
-    dim3 gridDim  = {gridX, gridY, 1};
-    dim3 blockDim = {blockX,blockY,blockZ};
+  dim3 gridDim;
+  dim3 blockDim;
+  gridDim.x  = gridDimX;
+  gridDim.y  = gridDimY;
+  gridDim.y  = gridDimZ;
+  blockDim.x = blockDimX;
+  blockDim.y = blockDimY;
+  blockDim.z = blockDimZ;
 
-    return cudaConfigureCall(gridDim, blockDim, sharedMem, stream);
+  return cudaLaunchKernel(func, gridDim, blockDim, args, sharedMem, stream);
 }
 
 CUresult
@@ -466,6 +473,13 @@ CUresult CUDAAPI cuGraphAddMemsetNode_simple(CUgraphNode *phGraphNode, CUgraph h
     memsetParams.width       = width;
 
     return cuGraphAddMemsetNode(phGraphNode, hGraph, dependencies, numDependencies, &memsetParams, ctx);
+}
+#endif
+
+#if CUDA_VERSION >= 10010
+CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream, CUstreamCaptureMode mode)
+{
+    return cuStreamBeginCapture_v2(hStream, mode);
 }
 #endif
 
