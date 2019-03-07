@@ -175,7 +175,7 @@ launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args
   = (=<<) nothingIfOk
   $ withMany withFP args
   $ \pa -> withArray pa
-  $ \pp -> cudaLaunchKernelSimple fn gx gy 1 bx by bz pp sm (fromMaybe defaultStream mst)
+  $ \pp -> cudaLaunchKernel_simple fn gx gy 1 bx by bz pp sm (fromMaybe defaultStream mst)
   where
     withFP :: FunParam -> (Ptr FunParam -> IO b) -> IO b
     withFP p f = case p of
@@ -190,8 +190,8 @@ launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args
         poke ptr val
         f ptr
 
-{-# INLINE cudaLaunchKernelSimple #-}
-{# fun unsafe cudaLaunchKernelSimple
+{-# INLINE cudaLaunchKernel_simple #-}
+{# fun unsafe cudaLaunchKernel_simple
   { withFun*  `Fun'
   ,           `Int', `Int', `Int'
   ,           `Int', `Int', `Int'
@@ -225,7 +225,7 @@ launchKernel !fn (!gx,!gy) (!bx,!by,!bz) !sm !mst !args = do
 -- accepting plain integers.
 --
 {-# INLINE setConfig #-}
-{# fun unsafe cudaConfigureCallSimple as setConfig
+{# fun unsafe cudaConfigureCall_simple as setConfig
   {           `Int', `Int'
   ,           `Int', `Int', `Int'
   , cIntConv  `Int64'

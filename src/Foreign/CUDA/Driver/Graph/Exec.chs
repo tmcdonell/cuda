@@ -22,6 +22,7 @@ module Foreign.CUDA.Driver.Graph.Exec (
   launch,
   instantiate,
   destroy,
+  setKernel,
 
 ) where
 
@@ -29,6 +30,7 @@ module Foreign.CUDA.Driver.Graph.Exec (
 {# context lib="cuda" #}
 
 import Foreign.CUDA.Driver.Error
+import Foreign.CUDA.Driver.Exec                           ( Fun(..), FunParam(..) )
 import Foreign.CUDA.Driver.Graph.Base
 import Foreign.CUDA.Driver.Stream                         ( Stream(..) )
 import Foreign.CUDA.Internal.C2HS
@@ -59,7 +61,7 @@ import qualified Data.ByteString.Internal                 as B
 {-# INLINEABLE launch #-}
 #if CUDA_VERSION < 10000
 launch :: Executable -> Stream -> IO ()
-launch _ _ = requireSDK 'launch 10.0
+launch = requireSDK 'launch 10.0
 #else
 {# fun unsafe cuGraphLaunch as launch
   { useExecutable `Executable'
@@ -81,7 +83,7 @@ launch _ _ = requireSDK 'launch 10.0
 {-# INLINEABLE instantiate #-}
 instantiate :: Graph -> IO Executable
 #if CUDA_VERSION < 10000
-instantiate _ = requireSDK 'instantiate 10.0
+instantiate = requireSDK 'instantiate 10.0
 #else
 instantiate !g = do
   let logSize = 2048
@@ -111,6 +113,64 @@ instantiate !g = do
 #endif
 
 
+-- | Update the parameters for a kernel node in the given executable graph
+--
+-- Requires CUDA-10.1
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__GRAPH.html#group__CUDA__GRAPH_1gd84243569e4c3d6356b9f2eea20ed48c>
+--
+-- @since 0.10.1.0
+--
+setKernel
+    :: Executable
+    -> Node
+    -> Fun
+    -> (Int, Int, Int)  -- ^ grid dimension
+    -> (Int, Int, Int)  -- ^ thread block dimensions
+    -> Int              -- ^ shared memory (bytes)
+    -> [FunParam]
+    -> IO ()
+#if CUDA_VERSION < 10010
+setKernel = requireSDK 'setKernel 10.1
+#else
+setKernel !exe !n !fun (!gx,!gy,!gz) (!tx,!ty,!tz) !sm !args
+  = withMany withFP args
+  $ \pa -> withArray pa
+  $ \pp -> cuGraphExecKernelNodeSetParams_simple exe n fun gx gy gz tx ty tz sm pp
+  where
+    withFP :: FunParam -> (Ptr () -> IO b) -> IO b
+    withFP !p !f = case p of
+      IArg v -> with' v (f . castPtr)
+      FArg v -> with' v (f . castPtr)
+      VArg v -> with' v (f . castPtr)
+
+    -- can't use the standard 'with' because 'alloca' will pass an undefined
+    -- dummy argument when determining 'sizeOf' and 'alignment', but sometimes
+    -- instances in Accelerate need to evaluate this argument.
+    --
+    with' :: Storable a => a -> (Ptr a -> IO b) -> IO b
+    with' !val !f =
+      allocaBytes (sizeOf val) $ \ptr -> do
+        poke ptr val
+        f ptr
+
+    {# fun unsafe cuGraphExecKernelNodeSetParams_simple
+      { useExecutable `Executable'
+      , useNode       `Node'
+      , useFun        `Fun'
+      ,               `Int'
+      ,               `Int'
+      ,               `Int'
+      ,               `Int'
+      ,               `Int'
+      ,               `Int'
+      ,               `Int'
+      , id            `Ptr (Ptr ())'
+      }
+      -> `()' checkStatus*- #}
+#endif
+
+
 -- | Destroy an executable graph
 --
 -- Requires CUDA-10.0
@@ -122,7 +182,7 @@ instantiate !g = do
 {-# INLINEABLE destroy #-}
 #if CUDA_VERSION < 10000
 destroy :: Executable -> IO ()
-destroy _ = requireSDK 'destroy 10.0
+destroy = requireSDK 'destroy 10.0
 #else
 {# fun unsafe cuGraphExecDestroy as destroy
   { useExecutable `Executable'

@@ -170,10 +170,10 @@ bind !tex !dptr !bytes = nothingIfOk =<< cuTexRefSetAddress tex dptr bytes
 {-# INLINEABLE bind2D #-}
 bind2D :: Texture -> Format -> Int -> DevicePtr a -> (Int,Int) -> Int64 -> IO ()
 bind2D !tex !fmt !chn !dptr (!width,!height) !pitch =
-  nothingIfOk =<< cuTexRefSetAddress2DSimple tex fmt chn dptr width height pitch
+  nothingIfOk =<< cuTexRefSetAddress2D_simple tex fmt chn dptr width height pitch
 
-{-# INLINE cuTexRefSetAddress2DSimple #-}
-{# fun unsafe cuTexRefSetAddress2DSimple
+{-# INLINE cuTexRefSetAddress2D_simple #-}
+{# fun unsafe cuTexRefSetAddress2D_simple
   { useTexture      `Texture'
   , cFromEnum       `Format'
   ,                 `Int'

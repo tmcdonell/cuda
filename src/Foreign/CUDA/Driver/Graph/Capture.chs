@@ -18,8 +18,8 @@
 
 module Foreign.CUDA.Driver.Graph.Capture (
 
-  Status(..),
-  start, stop, status,
+  Status(..), Mode(..),
+  start, stop, status, info, mode,
 
 ) where
 
@@ -135,6 +135,47 @@ status = requireSDK 'status 10.0
 {# fun unsafe cuStreamIsCapturing as status
   { useStream `Stream'
   , alloca-   `Status' peekEnum*
+  }
+  -> `()' checkStatus*- #}
+#endif
+
+
+-- | Query the capture status of a stream and get an id for the capture
+-- sequence, which is unique over the lifetime of the process.
+--
+-- Requires CUDA-10.1
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g13145ece1d79a1d79a1d22abb9663216>
+--
+-- @since 0.10.1.0
+--
+#if CUDA_VERSION < 10010
+info :: Stream -> IO (Status, Int64)
+info = requireSDK 'info 10.1
+#else
+{# fun unsafe cuStreamGetCaptureInfo as info
+  { useStream `Stream'
+  , alloca-   `Status' peekEnum*
+  , alloca-   `Int64'  peekIntConv*
+  }
+  -> `()' checkStatus*- #}
+#endif
+
+
+-- | Set the stream capture interaction mode for this thread. Return the previous value.
+--
+-- Requires CUDA-10.1
+--
+-- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g378135b262f02a43a7caeab239ae493d>
+--
+-- @since 0.10.1.0
+--
+#if CUDA_VERSION < 10010
+mode :: Mode -> IO Mode
+mode = requireSDK 'mode 10.1
+#else
+{# fun unsafe cuThreadExchangeStreamCaptureMode as mode
+  { withEnum* `Mode' peekEnum*
   }
   -> `()' checkStatus*- #}
 #endif

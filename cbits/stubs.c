@@ -5,16 +5,7 @@
 #include "cbits/stubs.h"
 
 #if CUDART_VERSION >= 7000
-cudaError_t
-cudaLaunchKernelSimple
-(
-    const void *func,
-    unsigned int gridX,  unsigned int gridY,  unsigned int gridZ,
-    unsigned int blockX, unsigned int blockY, unsigned int blockZ,
-    void **args,
-    size_t sharedMem,
-    cudaStream_t stream
-)
+cudaError_t cudaLaunchKernel_simple(const void *func, unsigned int gridX, unsigned int gridY, unsigned int gridZ, unsigned int blockX, unsigned int blockY, unsigned int blockZ, void **args, size_t sharedMem, cudaStream_t stream)
 {
     dim3 gridDim  = {gridX, gridY, gridZ};
     dim3 blockDim = {blockX, blockY, blockZ};
@@ -22,12 +13,7 @@ cudaLaunchKernelSimple
     return cudaLaunchKernel(func, gridDim, blockDim, args, sharedMem, stream);
 }
 #else
-cudaError_t
-cudaConfigureCallSimple
-(
-    int gridX,  int gridY,
-    int blockX, int blockY, int blockZ,
-)
+cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, unsigned int blockX, unsigned int blockY, unsigned int blockZ)
 {
     dim3 gridDim  = {gridX, gridY, 1};
     dim3 blockDim = {blockX,blockY,blockZ};
@@ -36,17 +22,7 @@ cudaConfigureCallSimple
 }
 #endif
 
-CUresult
-cuTexRefSetAddress2DSimple
-(
-    CUtexref tex,
-    CUarray_format format,
-    unsigned int numChannels,
-    CUdeviceptr dptr,
-    size_t width,
-    size_t height,
-    size_t pitch
-)
+CUresult cuTexRefSetAddress2D_simple(CUtexref tex, CUarray_format format, unsigned int numChannels, CUdeviceptr dptr, size_t width, size_t height, size_t pitch)
 {
     CUDA_ARRAY_DESCRIPTOR desc;
     desc.Format      = format;
@@ -57,14 +33,7 @@ cuTexRefSetAddress2DSimple
     return cuTexRefSetAddress2D(tex, &desc, dptr, pitch);
 }
 
-CUresult
-cuMemcpy2DHtoD
-(
-    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    void* srcHost,         unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height
-)
+CUresult cuMemcpy2DHtoD(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height)
 {
     CUDA_MEMCPY2D desc;
 
@@ -91,15 +60,7 @@ cuMemcpy2DHtoD
     return cuMemcpy2D(&desc);
 }
 
-CUresult
-cuMemcpy2DHtoDAsync
-(
-    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    void* srcHost,         unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height,
-    CUstream hStream
-)
+CUresult cuMemcpy2DHtoDAsync(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height, CUstream hStream)
 {
     CUDA_MEMCPY2D desc;
 
@@ -126,14 +87,7 @@ cuMemcpy2DHtoDAsync
     return cuMemcpy2DAsync(&desc, hStream);
 }
 
-CUresult
-cuMemcpy2DDtoH
-(
-    void* dstHost,         unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height
-)
+CUresult cuMemcpy2DDtoH(void* dstHost, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height)
 {
     CUDA_MEMCPY2D desc;
 
@@ -160,15 +114,7 @@ cuMemcpy2DDtoH
     return cuMemcpy2D(&desc);
 }
 
-CUresult
-cuMemcpy2DDtoHAsync
-(
-    void* dstHost,         unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height,
-    CUstream hStream
-)
+CUresult cuMemcpy2DDtoHAsync(void* dstHost, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height, CUstream hStream)
 {
     CUDA_MEMCPY2D desc;
 
@@ -195,14 +141,7 @@ cuMemcpy2DDtoHAsync
     return cuMemcpy2DAsync(&desc, hStream);
 }
 
-CUresult
-cuMemcpy2DDtoD
-(
-    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height
-)
+CUresult cuMemcpy2DDtoD(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height)
 {
     CUDA_MEMCPY2D desc;
 
@@ -229,15 +168,7 @@ cuMemcpy2DDtoD
     return cuMemcpy2D(&desc);
 }
 
-CUresult
-cuMemcpy2DDtoDAsync
-(
-    CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY,
-    CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY,
-    unsigned int widthInBytes,
-    unsigned int height,
-    CUstream hStream
-)
+CUresult cuMemcpy2DDtoDAsync(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, CUdeviceptr srcDevice, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height, CUstream hStream)
 {
     CUDA_MEMCPY2D desc;
 
@@ -489,6 +420,23 @@ CUresult CUDAAPI cuGraphAddMemsetNode_simple(CUgraphNode *phGraphNode, CUgraph h
 CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream, CUstreamCaptureMode mode)
 {
     return cuStreamBeginCapture_v2(hStream, mode);
+}
+
+CUresult CUDAAPI cuGraphExecKernelNodeSetParams_simple(CUgraphExec hGraphExec, CUgraphNode hNode, CUfunction func, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, void** kernelParams)
+{
+    CUDA_KERNEL_NODE_PARAMS nodeParams;
+    nodeParams.func           = func;
+    nodeParams.gridDimX       = gridDimX;
+    nodeParams.gridDimY       = gridDimY;
+    nodeParams.gridDimZ       = gridDimZ;
+    nodeParams.blockDimX      = blockDimX;
+    nodeParams.blockDimY      = blockDimY;
+    nodeParams.blockDimZ      = blockDimZ;
+    nodeParams.sharedMemBytes = sharedMemBytes;
+    nodeParams.kernelParams   = kernelParams;
+    nodeParams.extra          = NULL;
+
+    return cuGraphExecKernelNodeSetParams(hGraphExec, hNode, &nodeParams);
 }
 #endif
 
