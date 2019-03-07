@@ -85,7 +85,7 @@ start :: Stream -> Mode -> IO ()
 start = requireSDK 'start 10.0
 #elif CUDA_VERSION < 10010
 start :: Stream -> Mode -> IO ()
-start s _ = cuStreamBeginCapture
+start s _ = cuStreamBeginCapture s
   where
     {# fun unsafe cuStreamBeginCapture
       { useStream `Stream'
