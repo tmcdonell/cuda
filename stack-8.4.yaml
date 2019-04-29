@@ -6,7 +6,7 @@ resolver: lts-12.26
 packages:
 - .
 
-extra-deps: []
+# extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
