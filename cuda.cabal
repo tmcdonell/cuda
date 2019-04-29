@@ -28,7 +28,7 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    Tested with library versions up to CUDA-9.2. See also the
+    Tested with library versions up to CUDA-10.1. See also the
     <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix for
     version compatibility.
     .

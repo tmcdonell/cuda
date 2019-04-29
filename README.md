@@ -20,5 +20,5 @@ and if the `nvcc` compiler is found in your `PATH`, relative to that.
 
 For important information on installing on Windows, see:
 
-  <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown>
+  <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
 
