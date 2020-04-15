@@ -196,7 +196,11 @@ libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVe
     , extraLibDirs        = extraLibDirs'
     , frameworks          = frameworks'
     , extraFrameworkDirs  = frameworkDirs'
+#if MIN_VERSION_Cabal(3,0,0)
+    , options             = PerCompilerFlavor (if os /= Windows then ghcOptions else []) []
+#else
     , options             = [(GHC, ghcOptions) | os /= Windows]
+#endif
     , customFieldsBI      = [c2hsExtraOptions]
     }
 
