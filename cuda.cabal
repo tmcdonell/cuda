@@ -86,7 +86,7 @@ custom-setup
 
 Library
   hs-source-dirs:       src
-  Exposed-Modules:
+  exposed-modules:
       Foreign.CUDA
       Foreign.CUDA.Path
       Foreign.CUDA.Ptr
@@ -138,16 +138,16 @@ Library
       -- Extras
       Foreign.C.Extra
 
-  Other-modules:
+  other-modules:
       Foreign.CUDA.Internal.C2HS
       Text.Show.Describe
 
-  Include-dirs:         .
-  C-sources:            cbits/stubs.c
+  include-dirs:         .
+  c-sources:            cbits/stubs.c
                         cbits/init.c
 
-  Build-tools:          c2hs >= 0.21
-  Build-depends:
+  build-tools:          c2hs >= 0.21
+  build-depends:
       base              >= 4.7 && < 5
     , bytestring        >= 0.10.4
     , filepath          >= 1.0
@@ -155,7 +155,7 @@ Library
     , uuid-types        >= 1.0
 
   default-language:     Haskell98
-  Extensions:
+
   ghc-options:
       -Wall
       -O2
@@ -172,10 +172,10 @@ Library
 
 
 Executable nvidia-device-query
-  Main-is:              DeviceQuery.hs
+  main-is:              DeviceQuery.hs
   hs-source-dirs:       examples/src/deviceQueryDrv
 
-  Build-depends:
+  build-depends:
       base              >= 4 && < 5
     , cuda
     , pretty

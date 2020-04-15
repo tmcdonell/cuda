@@ -9,12 +9,13 @@ environment:
   global:
     STACK_ROOT: "c:\\sr"
   matrix:
+    - GHC: "8.10"
     - GHC: "8.8"
     - GHC: "8.6"
     - GHC: "8.4"
     - GHC: "8.2"
     - GHC: "8.0"
-    - GHC: "7.10"
+    # - GHC: "7.10"
     # - GHC: "7.8"  # failed to install ghc: https://ci.appveyor.com/project/tmcdonell/cuda/build/1.0.4/job/ufhtj0klyq73psas#L149
 
 before_build:
