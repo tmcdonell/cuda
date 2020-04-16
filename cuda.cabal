@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.10.1.0
+Version:                0.10.1.1
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -65,7 +65,7 @@ Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
 Cabal-version:          >= 1.24
-Tested-with:            GHC >= 7.8
+Tested-with:            GHC >= 8.0
 Build-type:             Custom
 
 Extra-tmp-files:
@@ -190,6 +190,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                v0.10.1.0
+    tag:                v0.10.1.1
 
 -- vim: nospell
