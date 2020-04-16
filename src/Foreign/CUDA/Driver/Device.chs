@@ -290,8 +290,6 @@ uuid !dev =
 #endif
 
 
--- TODO: cuDeviceGetLuid, introduced CUDA-10.0 (windows only)
-
 -- |
 -- Return the properties of the selected device
 --

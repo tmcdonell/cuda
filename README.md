@@ -22,3 +22,41 @@ For important information on installing on Windows, see:
 
   <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
 
+
+## Missing functionality
+
+An incomplete list of missing bindings. Pull requests welcome!
+
+### CUDA-9
+
+- cuLaunchCooperativeKernelMultiDevice
+
+### CUDA-10.0
+
+- cuDeviceGetLuid (windows only?)
+- cuLaunchHostFunc
+- cuGraphHostNode[Get/Set]Params
+- cuGraphKernelNode[Get/Set]Params
+- cuGraphMemcpyNode[Get/Set]Params
+- cuGraphMemsetNode[Get/Set]Params
+
+### CUDA-10.2
+
+- cuDeviceGetNvSciSyncAttributes
+- cuMemAddressFree
+- cuMemAddressReserve
+- cuMemCreate
+- cuMemExportToShareableHandle
+- cuMemGetAccess
+- cuMemGetAllocationGranularity
+- cuMemGetAllocationPrepertiesFromHandle
+- cuMemImportFromShareableHandle
+- cuMemMap
+- cuMemRelease
+- cuMemSetAccess
+- cuMemUnmap
+- cuGraphExecHostNodeSetParams
+- cuGraphExecMemcpyNodeSetParams
+- cuGraphExecMemsetNodeSetParams
+- cuGraphExecUpdate
+
