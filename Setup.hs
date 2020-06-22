@@ -64,7 +64,6 @@ main :: IO ()
 main = defaultMainWithHooks customHooks
   where
     readHook get_verbosity a flags = do
-        noExtraFlags a
         getHookedBuildInfo (fromFlag (get_verbosity flags))
 
     preprocessors = hookedPreProcessors simpleUserHooks
@@ -105,7 +104,6 @@ main = defaultMainWithHooks customHooks
           currentPlatform = hostPlatform lbi
           compilerId_     = compilerId (compiler lbi)
       --
-      noExtraFlags args
       generateAndStoreBuildInfo
           verbosity
           profile
