@@ -57,7 +57,7 @@ module Foreign.CUDA.Analysis.Occupancy (
 import Data.Ord
 import Data.List
 
-import Foreign.CUDA.Analysis.Device
+import Foreign.CUDA.Analysis.Device                                 hiding ( maxSharedMemPerBlock )
 
 
 -- GPU Occupancy per multiprocessor
@@ -97,7 +97,8 @@ occupancy !dev !threads !regs !smem
 
     -- Physical resources
     --
-    gpu = deviceResources dev
+    gpu                  = deviceResources dev
+    maxSharedMemPerBlock = fromIntegral (sharedMemPerBlock dev) -- 2080Ti reports 48KB, but should be 64KB !
 
     -- Allocated resource limits
     --
@@ -116,16 +117,16 @@ occupancy !dev !threads !regs !smem
 
     -- Maximum thread blocks per multiprocessor
     --
-    limitDueToWarps                     = threadBlocksPerMP gpu `min` (warpsPerMP gpu `div` limitWarpsPerBlock)
+    limitDueToWarps                 = threadBlocksPerMP gpu `min` (warpsPerMP gpu `div` limitWarpsPerBlock)
     limitDueToRegs
-      | regs > maxRegPerThread gpu      = 0
-      | regs > 0                        = (limitRegsPerSM `div` limitRegsPerBlock) * (regFileSizePerMP gpu `div` maxRegPerBlock gpu)
-      | otherwise                       = threadBlocksPerMP gpu
+      | regs > maxRegPerThread gpu  = 0
+      | regs > 0                    = (limitRegsPerSM `div` limitRegsPerBlock) * (regFileSizePerMP gpu `div` maxRegPerBlock gpu)
+      | otherwise                   = threadBlocksPerMP gpu
 
     limitDueToSMem
-      | smem > maxSharedMemPerBlock gpu = 0
-      | smem > 0                        = sharedMemPerMP gpu `div` limitSMemPerBlock
-      | otherwise                       = threadBlocksPerMP gpu
+      | smem > maxSharedMemPerBlock = 0
+      | smem > 0                    = sharedMemPerMP gpu `div` limitSMemPerBlock
+      | otherwise                   = threadBlocksPerMP gpu
 
 
 -- |
