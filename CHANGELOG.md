@@ -10,7 +10,13 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
-## [next]
+## [0.10.2.0] - 2020-08-26
+### Added
+  * Add support for CUDA-10.2
+  * Add support for Cabal-3
+  * Add device properties for SM7.x, SM8
+
+## [0.10.1.0] - 2019-04-29
 ### Added
   * Add support for CUDA-10.1
 
@@ -154,7 +160,8 @@ because NVIDIA are A-OK introducing breaking changes in minor updates.
   * Add functions from CUDA-6.5
 
 
-[next]:       https://github.com/tmcdonell/cuda/compare/v0.10.0.0...HEAD
+[0.10.2.0]:   https://github.com/tmcdonell/cuda/compare/v0.10.1.0...v0.10.2.0
+[0.10.1.0]:   https://github.com/tmcdonell/cuda/compare/v0.10.0.0...v0.10.1.0
 [0.10.0.0]:   https://github.com/tmcdonell/cuda/compare/0.9.0.3...v0.10.0.0
 [0.9.0.3]:    https://github.com/tmcdonell/cuda/compare/0.9.0.2...0.9.0.3
 [0.9.0.2]:    https://github.com/tmcdonell/cuda/compare/0.9.0.1...0.9.0.2
