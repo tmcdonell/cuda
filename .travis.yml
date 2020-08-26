@@ -4,10 +4,11 @@ language: c
 dist: trusty
 
 cache:
+  timeout: 600
   directories:
-    - $HOME/.stack/snapshots
+    - $HOME/.stack
     - $HOME/.local/bin
-    - .stack-work/install
+    - $TRAVIS_BUILD_DIR/.stack-work
 
 addons:
   apt:
@@ -18,12 +19,14 @@ addons:
       - happy-1.19.5
 
 compiler:
-  - GHC-8.6.4
+  - GHC-8.10.1
+  - GHC-8.8.3
+  - GHC-8.6.5
   - GHC-8.4.4
   - GHC-8.2.2
   - GHC-8.0.2
-  - GHC-7.10.3
-  - GHC-7.8.4
+  # - GHC-7.10.3
+  # - GHC-7.8.4
 
 env:
   # global:
@@ -60,10 +63,11 @@ before_install:
   - nvcc --version
 
 install:
-  - travis_retry stack build --fast --only-dependencies --no-terminal
+  - export FLAGS="--fast --jobs=2 --no-terminal --no-copy-bins --no-interleaved-output"
+  - travis_retry stack build --only-dependencies
 
 script:
-  - travis_retry stack build --fast --no-terminal --haddock --no-haddock-deps
+  - travis_retry stack build --haddock --no-haddock-deps
 
 after_success:
   - source .travis/update-accelerate-buildbot.sh

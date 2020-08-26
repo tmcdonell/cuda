@@ -1,5 +1,5 @@
 Name:                   cuda
-Version:                0.10.1.0
+Version:                0.10.2.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -28,7 +28,7 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    Tested with library versions up to CUDA-9.2. See also the
+    Tested with library versions up to CUDA-10.2. See also the
     <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix for
     version compatibility.
     .
@@ -65,7 +65,7 @@ Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
 Cabal-version:          >= 1.24
-Tested-with:            GHC >= 7.8
+Tested-with:            GHC >= 8.0
 Build-type:             Custom
 
 Extra-tmp-files:
@@ -86,7 +86,7 @@ custom-setup
 
 Library
   hs-source-dirs:       src
-  Exposed-Modules:
+  exposed-modules:
       Foreign.CUDA
       Foreign.CUDA.Path
       Foreign.CUDA.Ptr
@@ -138,16 +138,16 @@ Library
       -- Extras
       Foreign.C.Extra
 
-  Other-modules:
+  other-modules:
       Foreign.CUDA.Internal.C2HS
       Text.Show.Describe
 
-  Include-dirs:         .
-  C-sources:            cbits/stubs.c
+  include-dirs:         .
+  c-sources:            cbits/stubs.c
                         cbits/init.c
 
-  Build-tools:          c2hs >= 0.21
-  Build-depends:
+  build-tools:          c2hs >= 0.21
+  build-depends:
       base              >= 4.7 && < 5
     , bytestring        >= 0.10.4
     , filepath          >= 1.0
@@ -155,7 +155,7 @@ Library
     , uuid-types        >= 1.0
 
   default-language:     Haskell98
-  Extensions:
+
   ghc-options:
       -Wall
       -O2
@@ -172,10 +172,10 @@ Library
 
 
 Executable nvidia-device-query
-  Main-is:              DeviceQuery.hs
+  main-is:              DeviceQuery.hs
   hs-source-dirs:       examples/src/deviceQueryDrv
 
-  Build-depends:
+  build-depends:
       base              >= 4 && < 5
     , cuda
     , pretty
@@ -190,6 +190,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                v0.10.1.0
+    tag:                v0.10.2.0
 
 -- vim: nospell

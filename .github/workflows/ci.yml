@@ -1,0 +1,88 @@
+name: CI
+
+# Trigger the workflow on push or pull request
+on:
+  pull_request:
+  push:
+    # but only for the master branch
+    # branches: [master]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  stack:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }} / cuda ${{ matrix.cuda }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        ghc:
+          - "8.10"
+          - "8.8"
+          - "8.6"
+          - "8.4"
+          - "8.2"
+          - "8.0"
+          - "7.8"
+        cuda:
+          - "10.2"
+          - "10.1"
+          - "10.0"
+          - "9.2"
+          - "9.1"
+          - "9.0"
+        include:
+          - os: windows-latest
+            ghc: "8.10"
+            cuda: "10.2.89.20191206"
+
+    env:
+      STACK_FLAGS: "--system-ghc --no-install-ghc --fast --flag accelerate:nofib"
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-haskell@v1.1
+      with:
+        enable-stack: true
+        ghc-version: ${{ matrix.ghc }}
+
+    - name: Set up stack
+      id: stack-setup
+      run: |
+        ln -s stack-${{ matrix.ghc }}.yaml stack.yaml
+        echo "::set-output name=stack-root::$(stack path --system-ghc --no-install-ghc --stack-root)"
+
+    - uses: actions/cache@v1
+      with:
+        path: ${{ steps.stack-setup.outputs.stack-root }}
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-stack
+
+    - name: Setup (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+        sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+        sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+        sudo apt-get update
+        sudo apt-get -y install cuda-${{ matrix.cuda }}
+        echo "::set-env name=CUDA_HOME::/usr/local/cuda-${{ matrix.cuda }}"
+        echo "::set-env name=LD_LIBRARY_PATH::/usr/local/cuda-${{ matrix.cuda }}/lib64:$(stack exec ghc -- --print-libdir)/rts:/usr/local/cuda-${{ matrix.cuda }}/nvvm/lib64:${LD_LIBRARY_PATH}"
+        echo "::add-path::/usr/local/cuda-${{ matrix.cuda }}/bin"
+
+    - name: Setup (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install cuda --version=${{ matrix.cuda }}
+
+    - name: Build dependencies
+      run: |
+        stack build $STACK_FLAGS --only-dependencies
+
+    - name: Build
+      run: |
+        stack build $STACK_FLAGS
+

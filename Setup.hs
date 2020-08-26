@@ -64,7 +64,6 @@ main :: IO ()
 main = defaultMainWithHooks customHooks
   where
     readHook get_verbosity a flags = do
-        noExtraFlags a
         getHookedBuildInfo (fromFlag (get_verbosity flags))
 
     preprocessors = hookedPreProcessors simpleUserHooks
@@ -105,7 +104,6 @@ main = defaultMainWithHooks customHooks
           currentPlatform = hostPlatform lbi
           compilerId_     = compilerId (compiler lbi)
       --
-      noExtraFlags args
       generateAndStoreBuildInfo
           verbosity
           profile
@@ -196,7 +194,11 @@ libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVe
     , extraLibDirs        = extraLibDirs'
     , frameworks          = frameworks'
     , extraFrameworkDirs  = frameworkDirs'
+#if MIN_VERSION_Cabal(3,0,0)
+    , options             = PerCompilerFlavor (if os /= Windows then ghcOptions else []) []
+#else
     , options             = [(GHC, ghcOptions) | os /= Windows]
+#endif
     , customFieldsBI      = [c2hsExtraOptions]
     }
 

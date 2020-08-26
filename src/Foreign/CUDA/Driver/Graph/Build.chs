@@ -659,12 +659,6 @@ findInClone = requireSDK 'findInClone 10
 #endif
 
 
--- TODO: since CUDA-10.0
---  * cuGraphHostNode[Get/Set]Params
---  * cuGraphKernelNode[Get/Set]Params
---  * cuGraphMemcpyNode[Get/Set]Params
---  * cuGraphMemsetNode[Get/Set]Params
-
 --------------------------------------------------------------------------------
 -- Internal
 --------------------------------------------------------------------------------

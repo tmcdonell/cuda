@@ -150,6 +150,8 @@ data PCI = PCI
 -- wikipedia entry: <https://en.wikipedia.org/wiki/CUDA#Version_features_and_specifications>
 --
 data Allocation      = Warp | Block
+  deriving Show
+
 data DeviceResources = DeviceResources
   { threadsPerWarp          :: !Int         -- ^ Warp size
   , coresPerMP              :: !Int         -- ^ Number of SIMD arithmetic units per multiprocessor
@@ -168,6 +170,7 @@ data DeviceResources = DeviceResources
   , warpRegAllocUnit        :: !Int         -- ^ Warp register allocation granularity
   , maxGridsPerDevice       :: !Int         -- ^ Maximum number of resident grids per device (concurrent kernels)
   }
+  deriving Show
 
 
 -- |
@@ -322,8 +325,7 @@ deviceResources = resources . computeCapability
         , maxGridsPerDevice     = 16
         }
 
-      Compute 7 0 -> resources (Compute 7 2)      -- Volta GV100
-      Compute 7 2 -> DeviceResources
+      Compute 7 0 -> DeviceResources              -- Volta GV100
         { threadsPerWarp        = 32
         , coresPerMP            = 64
         , warpsPerMP            = 64
@@ -342,21 +344,35 @@ deviceResources = resources . computeCapability
         , maxGridsPerDevice     = 128
         }
 
-      Compute 7 5 -> DeviceResources              -- Turing TU1xx
-        { threadsPerWarp        = 32
-        , coresPerMP            = 64
-        , warpsPerMP            = 32
-        , threadsPerMP          = 1024
+      Compute 7 2 -> (resources (Compute 7 0))    -- Volta GV10B
+        { maxGridsPerDevice     = 16
+        , maxSharedMemPerBlock  = 49152
+        }
+
+      Compute 7 5 -> (resources (Compute 7 0))    -- Turing TU1xx
+        { warpsPerMP            = 32
         , threadBlocksPerMP     = 16
+        , threadsPerMP          = 1024
+        , maxGridsPerDevice     = 128
         , sharedMemPerMP        = 65536           -- of 96KB
         , maxSharedMemPerBlock  = 65536
+        }
+
+      Compute 8 0 -> DeviceResources              -- Ampere GA100
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 167936          -- of 192KB
+        , maxSharedMemPerBlock  = 163840
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
         , regAllocUnit          = 256
         , regAllocationStyle    = Warp
         , maxRegPerThread       = 255
-        , sharedMemAllocUnit    = 256
-        , warpAllocUnit         = 2
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
         , warpRegAllocUnit      = 256
         , maxGridsPerDevice     = 128
         }
