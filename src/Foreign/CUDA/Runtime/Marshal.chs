@@ -5,7 +5,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Marshal
--- Copyright : [2009..2018] Trevor L. McDonell
+-- Copyright : [2009..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Memory management for CUDA devices
