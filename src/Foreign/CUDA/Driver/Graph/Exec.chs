@@ -88,7 +88,11 @@ instantiate = requireSDK 'instantiate 10.0
 instantiate !g = do
   let logSize = 2048
   allocaArray logSize $ \p_elog -> do
+#if CUDA_VERSION < 11000
     (s, e, n) <- cuGraphInstantiate g p_elog logSize
+#else
+    (s, e, n) <- cuGraphInstantiate_v2 g p_elog logSize
+#endif
     --
     case s of
       Success -> return e
@@ -96,6 +100,7 @@ instantiate !g = do
         errLog <- peekCStringLen (p_elog, logSize)
         cudaErrorIO (unlines [describe s, "phErrorNode = " ++ show n, errLog])
 
+#if CUDA_VERSION < 11000
 {-# INLINE cuGraphInstantiate #-}
 {# fun unsafe cuGraphInstantiate
   { alloca-  `Executable' peekExecutable*
@@ -105,6 +110,17 @@ instantiate !g = do
   ,          `Int'
   }
   -> `Status' cToEnum #}
+#else
+{-# INLINE cuGraphInstantiate_v2 #-}
+{# fun unsafe cuGraphInstantiate_v2
+  { alloca-  `Executable' peekExecutable*
+  , useGraph `Graph'
+  , alloca-  `Maybe Node' peekErrNode*
+  , castPtr  `CString'
+  ,          `Int'
+  }
+  -> `Status' cToEnum #}
+#endif
   where
     peekExecutable  = liftM Executable . peek
     peekErrNode p   = if p == nullPtr

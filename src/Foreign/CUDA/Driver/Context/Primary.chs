@@ -84,11 +84,19 @@ status !dev =
 setup :: Device -> [ContextFlag] -> IO ()
 #if CUDA_VERSION < 7000
 setup _    _      = requireSDK 'setup 7.0
-#else
+#elif CUDA_VERSION < 11000
 setup !dev !flags = nothingIfOk =<< cuDevicePrimaryCtxSetFlags dev flags
 
 {-# INLINE cuDevicePrimaryCtxSetFlags #-}
 {# fun unsafe cuDevicePrimaryCtxSetFlags
+  { useDevice       `Device'
+  , combineBitMasks `[ContextFlag]'
+  } -> `Status' cToEnum #}
+#else
+setup !dev !flags = nothingIfOk =<< cuDevicePrimaryCtxSetFlags_v2 dev flags
+
+{-# INLINE cuDevicePrimaryCtxSetFlags_v2 #-}
+{# fun unsafe cuDevicePrimaryCtxSetFlags_v2
   { useDevice       `Device'
   , combineBitMasks `[ContextFlag]'
   } -> `Status' cToEnum #}
@@ -107,11 +115,17 @@ setup !dev !flags = nothingIfOk =<< cuDevicePrimaryCtxSetFlags dev flags
 reset :: Device -> IO ()
 #if CUDA_VERSION < 7000
 reset _    = requireSDK 'reset 7.0
-#else
+#elif CUDA_VERSION < 11000
 reset !dev = nothingIfOk =<< cuDevicePrimaryCtxReset dev
 
 {-# INLINE cuDevicePrimaryCtxReset #-}
 {# fun unsafe cuDevicePrimaryCtxReset
+  { useDevice `Device' } -> `Status' cToEnum #}
+#else
+reset !dev = nothingIfOk =<< cuDevicePrimaryCtxReset_v2 dev
+
+{-# INLINE cuDevicePrimaryCtxReset_v2 #-}
+{# fun unsafe cuDevicePrimaryCtxReset_v2
   { useDevice `Device' } -> `Status' cToEnum #}
 #endif
 
@@ -132,11 +146,17 @@ reset !dev = nothingIfOk =<< cuDevicePrimaryCtxReset dev
 release :: Device -> IO ()
 #if CUDA_VERSION < 7000
 release _    = requireSDK 'release 7.0
-#else
+#elif CUDA_VERSION < 11000
 release !dev = nothingIfOk =<< cuDevicePrimaryCtxRelease dev
 
 {-# INLINE cuDevicePrimaryCtxRelease #-}
 {# fun unsafe cuDevicePrimaryCtxRelease
+  { useDevice `Device' } -> `Status' cToEnum #}
+#else
+release !dev = nothingIfOk =<< cuDevicePrimaryCtxRelease_v2 dev
+
+{-# INLINE cuDevicePrimaryCtxRelease_v2 #-}
+{# fun unsafe cuDevicePrimaryCtxRelease_v2
   { useDevice `Device' } -> `Status' cToEnum #}
 #endif
 
