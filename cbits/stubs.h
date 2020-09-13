@@ -167,6 +167,18 @@ CUresult CUDAAPI cuStreamBeginCapture(CUstream hStream, CUstreamCaptureMode mode
 CUresult CUDAAPI cuGraphExecKernelNodeSetParams_simple(CUgraphExec hGraphExec, CUgraphNode hNode, CUfunction func, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, void** kernelParams);
 #endif
 
+#if CUDA_VERSION >= 11000
+#undef cuGraphInstantiate
+#undef cuDevicePrimaryCtxRelease
+#undef cuDevicePrimaryCtxReset
+#undef cuDevicePrimaryCtxSetFlags
+
+CUresult CUDAAPI cuGraphInstantiate(CUgraphExec *phGraphExec, CUgraph hGraph, CUgraphNode *phErrorNode, char *logBuffer, size_t bufferSize);
+CUresult CUDAAPI cuDevicePrimaryCtxRelease(CUdevice dev);
+CUresult CUDAAPI cuDevicePrimaryCtxReset(CUdevice dev);
+CUresult CUDAAPI cuDevicePrimaryCtxSetFlags(CUdevice dev, unsigned int flags);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
