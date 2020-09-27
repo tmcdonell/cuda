@@ -179,6 +179,11 @@ CUresult CUDAAPI cuDevicePrimaryCtxReset(CUdevice dev);
 CUresult CUDAAPI cuDevicePrimaryCtxSetFlags(CUdevice dev, unsigned int flags);
 #endif
 
+#if CUDA_VERSION >= 11010
+#undef cuIpcOpenMemHandle
+CUresult CUDAAPI cuIpcOpenMemHandle(CUdeviceptr *pdptr, CUipcMemHandle handle, unsigned int Flags);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
