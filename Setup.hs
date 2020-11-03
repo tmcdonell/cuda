@@ -222,7 +222,7 @@ cudaLibraryPaths (Platform arch os) installPath = (</>) <$> [installPath] <*> li
         (Windows, I386)   -> ["lib/Win32"]
         (Windows, X86_64) -> ["lib/x64"]
         (OSX,     _)      -> ["lib"]    -- MacOS does not distinguish 32- vs. 64-bit paths
-        (_,       X86_64) -> ["lib64"]  -- treat all others similarly
+        (_,       X86_64) -> ["lib64", "lib"]  -- Prefer lib64, but the nixpkgs distriubtion of cudatools moves files to lib. - AM
         _                 -> ["lib"]
 
 
