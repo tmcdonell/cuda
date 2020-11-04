@@ -233,7 +233,8 @@ cudaLibraries :: Platform -> [String]
 cudaLibraries (Platform _ os) =
   case os of
     OSX -> ["cudadevrt", "cudart_static"]
-    _   -> ["cudadevrt", "cudart", "cuda"]
+    Linux -> ["cudadevrt"]
+    _   -> ["cudart", "cuda"]
 
 cudaGHCiLibraries
     :: Platform
