@@ -460,7 +460,7 @@ findCUDAInstallPath verbosity platform = do
   result <- findFirstValidLocation verbosity platform (candidateCUDAInstallPaths verbosity platform)
   case result of
     Just installPath -> do
-      notice verbosity $ printf "Found CUDA toolkit at: %s" installPath
+      notice verbosity $ printf "Found CUDA toolkit at: %s (set CUDA_PATH to override this)" installPath
       return installPath
     Nothing -> die' verbosity cudaNotFoundMsg
 
