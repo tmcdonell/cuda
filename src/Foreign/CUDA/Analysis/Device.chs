@@ -381,7 +381,7 @@ deviceResources = resources . computeCapability
         { warpsPerMP            = 48
         , threadsPerMP          = 1536
         , threadBlocksPerMP     = 16
-        , sharedMemPerBlock     = 102400
+        , sharedMemPerMP        = 102400
         , maxSharedMemPerBlock  = 102400
         }
 
