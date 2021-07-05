@@ -131,3 +131,17 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuUserObjectRetain
 - cuGetProcAddress
 
+### CUDA-11.4
+
+- cuDeviceGetUuid_v2
+- cuCtxCreate_v3
+- cuCtxGetExecAffinity
+- cuDeviceGetGraphMemAttribute
+- cuDeviceGraphMemTrim
+- cuDeviceSetGraphMemAttribute
+- cuGraphAddMemAllocNode
+- cuGraphAddMemFreeNode
+- cuGraphInstantiateWithFlags
+- cuGraphMemAllocNodeGetParams
+- cuGraphMemFreeNodeGetParams
+
