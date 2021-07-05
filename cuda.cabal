@@ -1,3 +1,5 @@
+cabal-version:          1.24
+
 Name:                   cuda
 Version:                0.10.2.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
@@ -64,7 +66,6 @@ Maintainer:             Trevor L. McDonell <trevor.mcdonell@gmail.com>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
-Cabal-version:          >= 1.24
 Tested-with:            GHC >= 8.0
 Build-type:             Custom
 
