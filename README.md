@@ -72,3 +72,21 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuGraphKernelNodeSetAttribute
 - cuOccupancyAvailableDynamicSMemPerBlock
 
+### CUDA-11.1
+
+- cuDeviceGetTexture1DLinearMaxWidth
+- cuArrayGetSparseProperties
+- cuMipmappedArrayGetSparseProperties
+- cuMemMapArrayAsync
+- cuEventRecordWithFlags
+- cuGraphAddEventRecordNode
+- cuGraphAddEventWaitNode
+- cuGraphEventRecordNodeGetEvent
+- cuGraphEventRecordNodeSetEvent
+- cuGraphEventWaitNodeGetEvent
+- cuGraphEventWaitNodeSetEvent
+- cuGraphExecChildGraphNodeSetParams
+- cuGraphExecEventRecordNodeSetEvent
+- cuGraphExecEventWaitNodeSetEvent
+- cuGraphUpload
+
