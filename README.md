@@ -60,3 +60,15 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuGraphExecMemsetNodeSetParams
 - cuGraphExecUpdate
 
+### CUDA-11.0
+
+- cuCtxResetPersistentingL2Cache
+- cuMemRetainAllocationHandle
+- cuStreamCopyAttributes
+- cuStreamGetAttribute
+- cuStreamSetAttribute
+- cuGraphKernelNodeCopyAttributes
+- cuGraphKernelNodeGetAttribute
+- cuGraphKernelNodeSetAttribute
+- cuOccupancyAvailableDynamicSMemPerBlock
+
