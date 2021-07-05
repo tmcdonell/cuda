@@ -90,3 +90,32 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuGraphExecEventWaitNodeSetEvent
 - cuGraphUpload
 
+### CUDA-11.2
+
+- cuDeviceGetDefaultMemPool
+- cuDeviceGetMemPool
+- cuDeviceSetMemPool
+- cuArrayGetPlane
+- cuMemAllocAsync
+- cuMemAllocFromPoolAsync
+- cuMemFreeAsync
+- cuMemPoolCreate
+- cuMemPoolDestroy
+- cuMemPoolExportPointer
+- cuMemPoolExportToShareableHandle
+- cuMemPoolGetAccess
+- cuMemPoolGetAttribute
+- cuMemPoolImportFromShareableHandle
+- cuMemPoolImportPointer
+- cuMemPoolSetAccess
+- cuMemPoolSetAttribute
+- cuMemPoolTrimTo
+- cuGraphAddExternalSemaphoresSignalNode
+- cuGraphAddExternalSemaphoresWaitNode
+- cuGraphExecExternalSemaphoresSignalNodeSetParams
+- cuGraphExecExternalSemaphoresWaitNodeSetParams
+- cuGraphExternalSemaphoresSignalNodeGetParams
+- cuGraphExternalSemaphoresSignalNodeSetParams
+- cuGraphExternalSemaphoresWaitNodeGetParams
+- cuGraphExternalSemaphoresWaitNodeSetParams
+
