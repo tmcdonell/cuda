@@ -119,3 +119,15 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuGraphExternalSemaphoresWaitNodeGetParams
 - cuGraphExternalSemaphoresWaitNodeSetParams
 
+### CUDA-11.3
+
+- cuStreamGetCaptureInfo_v2
+- cuFuncGetModule
+- cuGraphDebugDotPrint
+- cuGraphReleaseUserObject
+- cuGraphRetainUserObject
+- cuUserObjectCreate
+- cuUserObjectRelease
+- cuUserObjectRetain
+- cuGetProcAddress
+
