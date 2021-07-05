@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Utils
--- Copyright : [2009..2018] Trevor L. McDonell
+-- Copyright : [2009..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Utility functions

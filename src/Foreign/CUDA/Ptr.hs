@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Ptr
--- Copyright : [2009..2018] Trevor L. McDonell
+-- Copyright : [2009..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Data pointers on the host and device. These can be shared freely between the

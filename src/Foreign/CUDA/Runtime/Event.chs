@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Event
--- Copyright : [2009..2018] Trevor L. McDonell
+-- Copyright : [2009..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Event management for C-for-CUDA runtime environment

@@ -1,7 +1,8 @@
+# Some commonly used options have been documented as comments in this file.
 # For advanced use and comprehensive documentation of the format, please see:
 # https://docs.haskellstack.org/en/stable/yaml_configuration/
 
-resolver: lts-18.0
+resolver: nightly-2021-07-02
 
 packages:
 - .
@@ -19,7 +20,7 @@ packages:
 #
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default
-# require-stack-version: ">=2.1"
+# require-stack-version: ">=1.9"
 #
 # Override the architecture used by stack, especially useful on Windows
 # arch: i386
@@ -31,5 +32,5 @@ packages:
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
-
+#
 # vim: nospell

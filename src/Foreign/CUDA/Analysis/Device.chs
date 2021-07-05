@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Analysis.Device
--- Copyright : [2009..2018] Trevor L. McDonell
+-- Copyright : [2009..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Common device functions
@@ -365,7 +365,7 @@ deviceResources = resources . computeCapability
         , threadsPerMP          = 2048
         , threadBlocksPerMP     = 32
         , sharedMemPerMP        = 167936          -- of 192KB
-        , maxSharedMemPerBlock  = 163840
+        , maxSharedMemPerBlock  = 167936
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
         , regAllocUnit          = 256
@@ -377,6 +377,14 @@ deviceResources = resources . computeCapability
         , maxGridsPerDevice     = 128
         }
 
+      Compute 8 6 -> (resources (Compute 8 0))    -- Ampere GA102
+        { warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 16
+        , sharedMemPerMP        = 102400
+        , maxSharedMemPerBlock  = 102400
+        }
+
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
       -- to pick a sensible default and carry on.
@@ -385,7 +393,7 @@ deviceResources = resources . computeCapability
       -- However, it should be OK because all library functions run in IO, so it
       -- is likely the user code is as well.
       --
-      _           -> trace warning $ resources (Compute 3 0)
+      _           -> trace warning $ resources (Compute 6 0)
         where warning = unlines [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
                                 , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
 

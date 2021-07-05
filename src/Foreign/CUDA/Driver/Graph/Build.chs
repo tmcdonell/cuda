@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Graph.Build
--- Copyright : [2018] Trevor L. McDonell
+-- Copyright : [2018..2020] Trevor L. McDonell
 -- License   : BSD
 --
 -- Graph construction functions for the low-level driver interface
