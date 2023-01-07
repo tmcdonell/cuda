@@ -200,11 +200,11 @@ cIntConv  = fromIntegral
 -- fromIntegral entirely (in particular, without relying on orphan instances).
 --
 {-# RULES
-  "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (narrow32Int# i#)) ;
+  "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (intToInt32# i#)) ;
   "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# i#) ;
  #-}
 {-# RULES
-  "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (narrow32Word# (int2Word# i#))) ;
+  "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (wordToWord32# (int2Word# i#))) ;
   "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (int2Word# i#)) ;
  #-}
 

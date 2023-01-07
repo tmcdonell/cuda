@@ -139,7 +139,7 @@ useAsCString (BI.SBS ba#) action = IO $ \s0 ->
   case newPinnedByteArray# (n# +# 1#) s0       of { (# s1, mba# #) ->
   case byteArrayContents# (unsafeCoerce# mba#) of { addr# ->
   case copyByteArrayToAddr# ba# 0# addr# n# s1 of { s2 ->
-  case writeWord8OffAddr# addr# n# 0## s2      of { s3 ->
+  case writeWord8OffAddr# addr# n# (wordToWord8# 0##) s2      of { s3 ->
   case action (Ptr addr#)                      of { IO action' ->
   case action' s3                              of { (# s4, r  #) ->
   case touch# mba# s4                          of { s5 ->
