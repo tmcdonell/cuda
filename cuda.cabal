@@ -147,7 +147,6 @@ Library
   c-sources:            cbits/stubs.c
                         cbits/init.c
 
-  build-tools:          c2hs >= 0.21
   build-depends:
       base              >= 4.7 && < 5
     , bytestring        >= 0.10.4
