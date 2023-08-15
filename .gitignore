@@ -5,3 +5,4 @@ dist/
 /stack.yaml
 /.stack-work
 /stack.yaml.lock
+dist-newstyle
