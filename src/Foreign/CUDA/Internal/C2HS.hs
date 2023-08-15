@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP       #-}
 {-# LANGUAGE MagicHash #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 --  C->Haskell Compiler: Marshalling library
@@ -200,12 +201,12 @@ cIntConv  = fromIntegral
 -- fromIntegral entirely (in particular, without relying on orphan instances).
 --
 {-# RULES
-  "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (narrow32Int# i#)) ;
-  "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# i#) ;
+  "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (intToInt32# i#)) ;
+  "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# (intToInt64# i#)) ;
  #-}
 {-# RULES
-  "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (narrow32Word# (int2Word# i#))) ;
-  "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (int2Word# i#)) ;
+  "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (wordToWord32# (int2Word# i#))) ;
+  "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (wordToWord64# (int2Word# i#))) ;
  #-}
 
   -- The C 'long' type might be 32- or 64-bits wide
@@ -254,4 +255,23 @@ cToEnum  = toEnum . cIntConv
 {-# INLINE [1] cFromEnum #-}
 cFromEnum :: (Enum e, Integral i) => e -> i
 cFromEnum  = cIntConv . fromEnum
+
+#if __GLASGOW_HASKELL__ < 902
+{-# INLINE intToInt32# #-}
+intToInt32# :: Int# -> Int#
+intToInt32# = narrow32Int#
+
+{-# INLINE wordToWord32# #-}
+wordToWord32# :: Word# -> Word#
+wordToWord32# = narrow32Word#
+#endif
+#if __GLASGOW_HASKELL__ < 904
+{-# INLINE intToInt64# #-}
+intToInt64# :: Int# -> Int#
+intToInt64# x = x
+
+{-# INLINE wordToWord64# #-}
+wordToWord64# :: Word# -> Word#
+wordToWord64# x = x
+#endif
 

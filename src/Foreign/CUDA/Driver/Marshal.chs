@@ -1166,12 +1166,22 @@ type DeviceHandle = {# type CUdeviceptr #}
 peekDeviceHandle :: Ptr DeviceHandle -> IO (DevicePtr a)
 peekDeviceHandle !p = do
   CULLong (W64# w#) <- peek p
-  return $! DevicePtr (Ptr (int2Addr# (word2Int# w#)))
+  return $! DevicePtr (Ptr (int2Addr# (word2Int# (word64ToWord# w#))))
 
 -- Use a device pointer as an opaque handle type
 --
 {-# INLINE useDeviceHandle #-}
 useDeviceHandle :: DevicePtr a -> DeviceHandle
 useDeviceHandle (DevicePtr (Ptr addr#)) =
-  CULLong (W64# (int2Word# (addr2Int# addr#)))
+  CULLong (W64# (wordToWord64# (int2Word# (addr2Int# addr#))))
+
+#if __GLASGOW_HASKELL__ < 904
+{-# INLINE word64ToWord# #-}
+word64ToWord# :: Word# -> Word#
+word64ToWord# x = x
+
+{-# INLINE wordToWord64# #-}
+wordToWord64# :: Word# -> Word#
+wordToWord64# x = x
+#endif
 

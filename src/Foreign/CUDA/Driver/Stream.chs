@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns             #-}
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE EmptyDataDecls           #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE MagicHash                #-}
@@ -474,5 +475,11 @@ defaultStreamPerThread = Stream (Ptr (int2Addr# 0x2#))
 {-# INLINE useDeviceHandle #-}
 useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
 useDeviceHandle (DevicePtr (Ptr addr#)) =
-  CULLong (W64# (int2Word# (addr2Int# addr#)))
+  CULLong (W64# (wordToWord64# (int2Word# (addr2Int# addr#))))
+
+#if __GLASGOW_HASKELL__ < 904
+{-# INLINE wordToWord64# #-}
+wordToWord64# :: Word# -> Word#
+wordToWord64# x = x
+#endif
 
