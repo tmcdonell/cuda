@@ -10,6 +10,10 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
+## [0.11.0.1] - 2023-08-15
+### Fixed
+  * Build fixes for GHC 9.2 .. 9.6
+
 ## [0.11.0.0] - 2021-07-05
 ### Added
   * Add support for CUDA-11.[0..4]
@@ -163,7 +167,8 @@ because NVIDIA are A-OK introducing breaking changes in minor updates.
 ### Added
   * Add functions from CUDA-6.5
 
-
+[next]:       https://github.com/tmcdonell/cuda/compare/v0.11.0.1...HEAD
+[0.11.0.1]:   https://github.com/tmcdonell/cuda/compare/v0.11.0.0...v0.11.0.1
 [0.11.0.0]:   https://github.com/tmcdonell/cuda/compare/v0.10.2.0...v0.11.0.0
 [0.10.2.0]:   https://github.com/tmcdonell/cuda/compare/v0.10.1.0...v0.10.2.0
 [0.10.1.0]:   https://github.com/tmcdonell/cuda/compare/v0.10.0.0...v0.10.1.0
