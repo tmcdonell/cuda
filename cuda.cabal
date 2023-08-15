@@ -80,8 +80,8 @@ Extra-source-files:
 
 custom-setup
   setup-depends:
-      base              >= 4.7
-    , Cabal             >= 1.24
+      base              >= 4.7  && < 5
+    , Cabal             >= 1.24 && < 3.11
     , directory         >= 1.0
     , filepath          >= 1.0
 
