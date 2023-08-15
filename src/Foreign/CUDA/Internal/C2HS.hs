@@ -202,11 +202,11 @@ cIntConv  = fromIntegral
 --
 {-# RULES
   "fromIntegral/Int->CInt"     fromIntegral = \(I# i#) -> CInt (I32# (intToInt32# i#)) ;
-  "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# i#) ;
+  "fromIntegral/Int->CLLong"   fromIntegral = \(I# i#) -> CLLong (I64# (intToInt64# i#)) ;
  #-}
 {-# RULES
   "fromIntegral/Int->CUInt"    fromIntegral = \(I# i#) -> CUInt (W32# (wordToWord32# (int2Word# i#))) ;
-  "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (int2Word# i#)) ;
+  "fromIntegral/Int->CULLong"  fromIntegral = \(I# i#) -> CULLong (W64# (wordToWord64# (int2Word# i#))) ;
  #-}
 
   -- The C 'long' type might be 32- or 64-bits wide
@@ -264,5 +264,14 @@ intToInt32# = narrow32Int#
 {-# INLINE wordToWord32# #-}
 wordToWord32# :: Word# -> Word#
 wordToWord32# = narrow32Word#
+#endif
+#if __GLASGOW_HASKELL__ < 904
+{-# INLINE intToInt64# #-}
+intToInt64# :: Int# -> Int#
+intToInt64# x = x
+
+{-# INLINE wordToWord64# #-}
+wordToWord64# :: Word# -> Word#
+wordToWord64# x = x
 #endif
 

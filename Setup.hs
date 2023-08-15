@@ -30,6 +30,9 @@ import Distribution.PackageDescription.Parsec
 #else
 import Distribution.PackageDescription.Parse
 #endif
+#if MIN_VERSION_Cabal(3,8,0)
+import Distribution.Simple.PackageDescription
+#endif
 
 import Control.Exception
 import Control.Monad
@@ -637,6 +640,9 @@ ppC2hs bi lbi
 #endif
     = PreProcessor {
         platformIndependent = False,
+#if MIN_VERSION_Cabal(3,8,0)
+        ppOrdering          = unsorted,
+#endif
         runPreProcessor     = \(inBaseDir, inRelativeFile)
                                (outBaseDir, outRelativeFile) verbosity ->
           runDbProgram verbosity c2hsProgram (withPrograms lbi) . filter (not . null) $
