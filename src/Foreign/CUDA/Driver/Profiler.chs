@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Profiler
--- Copyright : [2009..2020] Trevor L. McDonell
+-- Copyright : [2009..2023] Trevor L. McDonell
 -- License   : BSD
 --
 -- Profiler control for low-level driver interface

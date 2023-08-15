@@ -9,7 +9,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Graph.Capture
--- Copyright : [2018..2020] Trevor L. McDonell
+-- Copyright : [2018..2023] Trevor L. McDonell
 -- License   : BSD
 --
 -- Requires CUDA-10

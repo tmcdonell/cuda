@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Driver.Module.Query
--- Copyright : [2009..2020] Trevor L. McDonell
+-- Copyright : [2009..2023] Trevor L. McDonell
 -- License   : BSD
 --
 -- Querying module attributes for low-level driver interface

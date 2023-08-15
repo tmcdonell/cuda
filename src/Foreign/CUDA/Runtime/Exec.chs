@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module    : Foreign.CUDA.Runtime.Exec
--- Copyright : [2009..2020] Trevor L. McDonell
+-- Copyright : [2009..2023] Trevor L. McDonell
 -- License   : BSD
 --
 -- Kernel execution control for C-for-CUDA runtime interface
