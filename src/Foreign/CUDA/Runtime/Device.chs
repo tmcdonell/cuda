@@ -216,10 +216,10 @@ count = resultIfOk =<< cudaGetDeviceCount
 --
 {-# INLINEABLE props #-}
 props :: Device -> IO DeviceProperties
-props !n = resultIfOk =<< cudaGetDeviceProperties n
+props !n = resultIfOk =<< cudaGetDeviceProperties_v2 n
 
-{-# INLINE cudaGetDeviceProperties #-}
-{# fun unsafe cudaGetDeviceProperties
+{-# INLINE cudaGetDeviceProperties_v2 #-}
+{# fun unsafe cudaGetDeviceProperties_v2
   { alloca- `DeviceProperties' peek*
   ,         `Int'                    } -> `Status' cToEnum #}
 
