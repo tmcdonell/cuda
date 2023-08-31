@@ -1,7 +1,7 @@
 cabal-version:          1.24
 
 Name:                   cuda
-Version:                0.12.02.0
+Version:                0.12.2.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
