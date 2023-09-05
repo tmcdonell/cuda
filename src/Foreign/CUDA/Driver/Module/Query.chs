@@ -16,7 +16,7 @@
 module Foreign.CUDA.Driver.Module.Query (
 
   -- ** Querying module inhabitants
-  getFun, getPtr, getTex,
+  getFun, getPtr,
 
 ) where
 
@@ -28,7 +28,6 @@ import Foreign.CUDA.Driver.Error
 import Foreign.CUDA.Driver.Exec
 import Foreign.CUDA.Driver.Marshal                      ( peekDeviceHandle )
 import Foreign.CUDA.Driver.Module.Base
-import Foreign.CUDA.Driver.Texture
 import Foreign.CUDA.Internal.C2HS
 import Foreign.CUDA.Ptr
 
@@ -86,26 +85,6 @@ getPtr !mdl !name = do
 {# fun unsafe cuModuleGetGlobal
   { alloca-       `DevicePtr a'     peekDeviceHandle*
   , alloca-       `Int'             peekIntConv*
-  , useModule     `Module'
-  , useAsCString* `ShortByteString'
-  }
-  -> `Status' cToEnum #}
-
-
--- |
--- Return a handle to a texture reference. This texture reference handle
--- should not be destroyed, as the texture will be destroyed automatically
--- when the module is unloaded.
---
--- <http://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MODULE.html#group__CUDA__MODULE_1g9607dcbf911c16420d5264273f2b5608>
---
-{-# INLINEABLE getTex #-}
-getTex :: Module -> ShortByteString -> IO Texture
-getTex !mdl !name = resultIfFound "texture" name =<< cuModuleGetTexRef mdl name
-
-{-# INLINE cuModuleGetTexRef #-}
-{# fun unsafe cuModuleGetTexRef
-  { alloca-       `Texture'         peekTex*
   , useModule     `Module'
   , useAsCString* `ShortByteString'
   }
