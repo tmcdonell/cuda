@@ -385,6 +385,64 @@ deviceResources = resources . computeCapability
         , maxSharedMemPerBlock  = 102400
         }
 
+      Compute 8 7 -> DeviceResources              
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64 -- INT32 cores
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 16
+        , sharedMemPerMP        = 167936          
+        , maxSharedMemPerBlock  = 166912 -- 1024 less than above
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = _
+        , regAllocationStyle    = _
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = _
+        , warpAllocUnit         = _
+        , warpRegAllocUnit      = _
+        , maxGridsPerDevice     = 128
+        }
+
+        Compute 8 9 -> DeviceResources              
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64 -- INT32 cores
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 24
+        , sharedMemPerMP        = 102400       
+        , maxSharedMemPerBlock  = 101376 -- 1024 less than above
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = _
+        , regAllocationStyle    = _
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = _
+        , warpAllocUnit         = _
+        , warpRegAllocUnit      = _
+        , maxGridsPerDevice     = 128
+        }
+
+        Compute 9 0 -> DeviceResources              
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64 -- INT32 cores
+        , warpsPerMP            = 64
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 233472        
+        , maxSharedMemPerBlock  = 232448 -- 1024 less than above
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = _
+        , regAllocationStyle    = _
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = _
+        , warpAllocUnit         = _
+        , warpRegAllocUnit      = _
+        , maxGridsPerDevice     = 128
+        }
+
+
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
       -- to pick a sensible default and carry on.
@@ -393,7 +451,7 @@ deviceResources = resources . computeCapability
       -- However, it should be OK because all library functions run in IO, so it
       -- is likely the user code is as well.
       --
-      _           -> trace warning $ resources (Compute 6 0)
+      _           -> trace warning $ resources (Compute 6 0) -- TODO: is this still a sensible default?
         where warning = unlines [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
                                 , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
 
