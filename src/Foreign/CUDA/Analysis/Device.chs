@@ -180,6 +180,7 @@ deviceResources :: DeviceProperties -> DeviceResources
 deviceResources = resources . computeCapability
   where
     -- This is mostly extracted from tables in the CUDA occupancy calculator.
+    -- For Compute 8.7 and up, the Occupancy Calculator is hidden in Nsight Compute.
     --
     resources compute = case compute of
       Compute 1 0 -> resources (Compute 1 1)      -- Tesla G80
@@ -387,57 +388,57 @@ deviceResources = resources . computeCapability
 
       Compute 8 7 -> DeviceResources              
         { threadsPerWarp        = 32
-        , coresPerMP            = 64 -- INT32 cores
+        , coresPerMP            = 64
         , warpsPerMP            = 48
         , threadsPerMP          = 1536
         , threadBlocksPerMP     = 16
         , sharedMemPerMP        = 167936          
-        , maxSharedMemPerBlock  = 166912 -- 1024 less than above
+        , maxSharedMemPerBlock  = 167936
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
-        , regAllocUnit          = _
-        , regAllocationStyle    = _
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
         , maxRegPerThread       = 255
-        , sharedMemAllocUnit    = _
-        , warpAllocUnit         = _
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
         , warpRegAllocUnit      = _
         , maxGridsPerDevice     = 128
         }
 
         Compute 8 9 -> DeviceResources              
         { threadsPerWarp        = 32
-        , coresPerMP            = 64 -- INT32 cores
+        , coresPerMP            = 64 
         , warpsPerMP            = 48
         , threadsPerMP          = 1536
         , threadBlocksPerMP     = 24
         , sharedMemPerMP        = 102400       
-        , maxSharedMemPerBlock  = 101376 -- 1024 less than above
+        , maxSharedMemPerBlock  = 102400
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
-        , regAllocUnit          = _
-        , regAllocationStyle    = _
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
         , maxRegPerThread       = 255
-        , sharedMemAllocUnit    = _
-        , warpAllocUnit         = _
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
         , warpRegAllocUnit      = _
         , maxGridsPerDevice     = 128
         }
 
-        Compute 9 0 -> DeviceResources              
+        Compute 9 0 -> trace "*** Warning: Compute Capability 9.0 has Thread Block Clusters, which this occupancy calculation might not support" $ DeviceResources
         { threadsPerWarp        = 32
-        , coresPerMP            = 64 -- INT32 cores
+        , coresPerMP            = 64
         , warpsPerMP            = 64
         , threadsPerMP          = 1536
         , threadBlocksPerMP     = 32
         , sharedMemPerMP        = 233472        
-        , maxSharedMemPerBlock  = 232448 -- 1024 less than above
+        , maxSharedMemPerBlock  = 233472
         , regFileSizePerMP      = 65536
         , maxRegPerBlock        = 65536
-        , regAllocUnit          = _
-        , regAllocationStyle    = _
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
         , maxRegPerThread       = 255
-        , sharedMemAllocUnit    = _
-        , warpAllocUnit         = _
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
         , warpRegAllocUnit      = _
         , maxGridsPerDevice     = 128
         }
