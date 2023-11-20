@@ -401,11 +401,11 @@ deviceResources = resources . computeCapability
         , maxRegPerThread       = 255
         , sharedMemAllocUnit    = 128
         , warpAllocUnit         = 4
-        , warpRegAllocUnit      = _
+        , warpRegAllocUnit      = 256
         , maxGridsPerDevice     = 128
         }
 
-        Compute 8 9 -> DeviceResources              
+      Compute 8 9 -> DeviceResources              
         { threadsPerWarp        = 32
         , coresPerMP            = 64 
         , warpsPerMP            = 48
@@ -420,11 +420,11 @@ deviceResources = resources . computeCapability
         , maxRegPerThread       = 255
         , sharedMemAllocUnit    = 128
         , warpAllocUnit         = 4
-        , warpRegAllocUnit      = _
+        , warpRegAllocUnit      = 256
         , maxGridsPerDevice     = 128
         }
 
-        Compute 9 0 -> trace "*** Warning: Compute Capability 9.0 has Thread Block Clusters, which this occupancy calculation might not support" $ DeviceResources
+      Compute 9 0 -> trace "*** Warning: Compute Capability 9.0 has Thread Block Clusters, which this occupancy calculation might not support" $ DeviceResources
         { threadsPerWarp        = 32
         , coresPerMP            = 64
         , warpsPerMP            = 64
@@ -439,7 +439,7 @@ deviceResources = resources . computeCapability
         , maxRegPerThread       = 255
         , sharedMemAllocUnit    = 128
         , warpAllocUnit         = 4
-        , warpRegAllocUnit      = _
+        , warpRegAllocUnit      = 256
         , maxGridsPerDevice     = 128
         }
 
