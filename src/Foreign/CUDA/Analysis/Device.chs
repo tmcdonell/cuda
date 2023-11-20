@@ -180,6 +180,7 @@ deviceResources :: DeviceProperties -> DeviceResources
 deviceResources = resources . computeCapability
   where
     -- This is mostly extracted from tables in the CUDA occupancy calculator.
+    -- For Compute 8.7 and up, the Occupancy Calculator is hidden in Nsight Compute.
     --
     resources compute = case compute of
       Compute 1 0 -> resources (Compute 1 1)      -- Tesla G80
@@ -385,6 +386,64 @@ deviceResources = resources . computeCapability
         , maxSharedMemPerBlock  = 102400
         }
 
+      Compute 8 7 -> DeviceResources              
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 16
+        , sharedMemPerMP        = 167936          
+        , maxSharedMemPerBlock  = 167936
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
+      Compute 8 9 -> DeviceResources              
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64 
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 24
+        , sharedMemPerMP        = 102400       
+        , maxSharedMemPerBlock  = 102400
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
+      Compute 9 0 -> trace "*** Warning: Compute Capability 9.0 has Thread Block Clusters, which this occupancy calculation might not support" $ DeviceResources
+        { threadsPerWarp        = 32
+        , coresPerMP            = 64
+        , warpsPerMP            = 64
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 233472        
+        , maxSharedMemPerBlock  = 233472
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
+
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want
       -- to pick a sensible default and carry on.
@@ -393,7 +452,7 @@ deviceResources = resources . computeCapability
       -- However, it should be OK because all library functions run in IO, so it
       -- is likely the user code is as well.
       --
-      _           -> trace warning $ resources (Compute 6 0)
+      _           -> trace warning $ resources (Compute 6 0) -- TODO: is this still a sensible default?
         where warning = unlines [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
                                 , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
 
