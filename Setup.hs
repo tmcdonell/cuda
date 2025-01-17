@@ -139,9 +139,8 @@ libraryBuildInfo
     -> [FilePath]
     -> IO HookedBuildInfo
 libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
-  libPath <- cudaLibraryPath platform installPath
   let
-      libraryPaths      = libPath : extraLibs
+      libraryPaths      = cudaLibraryPaths platform installPath ++ extraLibs
       includePaths      = cudaIncludePath platform installPath : extraIncludes
 
       takeFirstExisting paths = do
@@ -216,18 +215,10 @@ cudaIncludePath :: Platform -> FilePath -> FilePath
 cudaIncludePath _ installPath = installPath </> "include"
 
 
--- Return the location of the libraries relative to the base CUDA installation.
+-- Return the potential locations of the libraries relative to the base CUDA installation.
 --
-cudaLibraryPath :: Platform -> FilePath -> IO FilePath
-cudaLibraryPath (Platform arch os) installPath =
-  case libpaths of
-    [path] -> return $ installPath </> path
-    _ -> do
-      -- attempt to choose a directory that exists
-      candidates <- filterM (\d -> doesDirectoryExist (installPath </> d)) libpaths
-      case candidates of
-        [] -> return (installPath </> head libpaths)  -- whatever
-        cand:_ -> return (installPath </> cand)
+cudaLibraryPaths :: Platform -> FilePath -> [FilePath]
+cudaLibraryPaths (Platform arch os) installPath = [ installPath </> path | path <- libpaths ]
   where
     libpaths =
       case (os, arch) of
@@ -273,8 +264,9 @@ cudaGhciLibrariesWindows
     -> [FilePath]
     -> IO [FilePath]
 cudaGhciLibrariesWindows platform installPath libraries = do
-  libPath <- cudaLibraryPath platform installPath
-  candidates <- mapM (importLibraryToDLLFileName platform) [ libPath </> lib <.> "lib" | lib <- libraries ]
+  candidates <- mapM (importLibraryToDLLFileName platform)
+                     [ libPath </> lib <.> "lib" | libPath <- cudaLibraryPaths platform installPath
+                                                 , lib <- libraries ]
   return [ dropExtension dll | Just dll <- candidates ]
 
 
