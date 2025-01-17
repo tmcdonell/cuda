@@ -224,7 +224,7 @@ cudaLibraryPath (Platform arch os) installPath =
     [path] -> return $ installPath </> path
     _ -> do
       -- attempt to choose a directory that exists
-      candidates <- filterM doesDirectoryExist libpaths
+      candidates <- filterM (\d -> doesDirectoryExist (installPath </> d)) libpaths
       case candidates of
         [] -> return (installPath </> head libpaths)  -- whatever
         cand:_ -> return (installPath </> cand)
