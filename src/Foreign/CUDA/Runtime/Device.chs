@@ -219,9 +219,15 @@ props :: Device -> IO DeviceProperties
 props !n = resultIfOk =<< cudaGetDeviceProperties n
 
 {-# INLINE cudaGetDeviceProperties #-}
+#if CUDA_VERSION < 12000
 {# fun unsafe cudaGetDeviceProperties
   { alloca- `DeviceProperties' peek*
   ,         `Int'                    } -> `Status' cToEnum #}
+#else
+{# fun unsafe cudaGetDeviceProperties_v2 as cudaGetDeviceProperties
+  { alloca- `DeviceProperties' peek*
+  ,         `Int'                    } -> `Status' cToEnum #}
+#endif
 
 
 -- |
