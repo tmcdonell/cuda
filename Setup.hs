@@ -140,7 +140,7 @@ libraryBuildInfo
     -> IO HookedBuildInfo
 libraryBuildInfo verbosity profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
   let
-      libraryPaths      = cudaLibraryPath platform installPath : extraLibs
+      libraryPaths      = cudaLibraryPaths platform installPath ++ extraLibs
       includePaths      = cudaIncludePath platform installPath : extraIncludes
 
       takeFirstExisting paths = do
@@ -215,18 +215,18 @@ cudaIncludePath :: Platform -> FilePath -> FilePath
 cudaIncludePath _ installPath = installPath </> "include"
 
 
--- Return the location of the libraries relative to the base CUDA installation.
+-- Return the potential locations of the libraries relative to the base CUDA installation.
 --
-cudaLibraryPath :: Platform -> FilePath -> FilePath
-cudaLibraryPath (Platform arch os) installPath = installPath </> libpath
+cudaLibraryPaths :: Platform -> FilePath -> [FilePath]
+cudaLibraryPaths (Platform arch os) installPath = [ installPath </> path | path <- libpaths ]
   where
-    libpath =
+    libpaths =
       case (os, arch) of
-        (Windows, I386)   -> "lib/Win32"
-        (Windows, X86_64) -> "lib/x64"
-        (OSX,     _)      -> "lib"    -- MacOS does not distinguish 32- vs. 64-bit paths
-        (_,       X86_64) -> "lib64"  -- treat all others similarly
-        _                 -> "lib"
+        (Windows, I386)   -> ["lib/Win32"]
+        (Windows, X86_64) -> ["lib/x64"]
+        (OSX,     _)      -> ["lib"]    -- MacOS does not distinguish 32- vs. 64-bit paths
+        (_,       X86_64) -> ["lib64", "lib"]  -- prefer lib64 for 64-bit systems
+        _                 -> ["lib"]
 
 
 -- On Windows and OSX we use different libraries depending on whether we are
@@ -264,7 +264,9 @@ cudaGhciLibrariesWindows
     -> [FilePath]
     -> IO [FilePath]
 cudaGhciLibrariesWindows platform installPath libraries = do
-  candidates <- mapM (importLibraryToDLLFileName platform) [ cudaLibraryPath platform installPath </> lib <.> "lib" | lib <- libraries ]
+  candidates <- mapM (importLibraryToDLLFileName platform)
+                     [ libPath </> lib <.> "lib" | libPath <- cudaLibraryPaths platform installPath
+                                                 , lib <- libraries ]
   return [ dropExtension dll | Just dll <- candidates ]
 
 
