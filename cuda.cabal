@@ -1,7 +1,7 @@
 cabal-version:          1.24
 
 Name:                   cuda
-Version:                0.11.0.1
+Version:                0.12.2.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -121,7 +121,6 @@ Library
       Foreign.CUDA.Driver.Module.Query
       Foreign.CUDA.Driver.Profiler
       Foreign.CUDA.Driver.Stream
-      Foreign.CUDA.Driver.Texture
       Foreign.CUDA.Driver.Unified
       Foreign.CUDA.Driver.Utils
 
@@ -133,7 +132,6 @@ Library
       Foreign.CUDA.Runtime.Exec
       Foreign.CUDA.Runtime.Marshal
       Foreign.CUDA.Runtime.Stream
-      Foreign.CUDA.Runtime.Texture
       Foreign.CUDA.Runtime.Utils
 
       -- Extras

@@ -149,17 +149,15 @@ status = requireSDK 'status 10.0
 --
 -- @since 0.10.1.0
 --
-#if CUDA_VERSION < 10010
-info :: Stream -> IO (Status, Int64)
-info = requireSDK 'info 10.1
-#else
-{# fun unsafe cuStreamGetCaptureInfo as info
+{# fun unsafe cuStreamGetCaptureInfo_v2 as info
   { useStream `Stream'
   , alloca-   `Status' peekEnum*
   , alloca-   `Int64'  peekIntConv*
+  , alloca-   `Graph'
+  , alloca-   `Node'
+  , alloca-   `CSize'
   }
   -> `()' checkStatus*- #}
-#endif
 
 
 -- | Set the stream capture interaction mode for this thread. Return the previous value.

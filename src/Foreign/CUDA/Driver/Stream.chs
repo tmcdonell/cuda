@@ -331,10 +331,10 @@ write32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWriteFlag] -> IO ()
 #if CUDA_VERSION < 8000
 write32 _   _   _      _     = requireSDK 'write32 8.0
 #else
-write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
+write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32_v2 stream ptr val flags
 
-{-# INLINE cuStreamWriteValue32 #-}
-{# fun unsafe cuStreamWriteValue32
+{-# INLINE cuStreamWriteValue32_v2 #-}
+{# fun unsafe cuStreamWriteValue32_v2
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word32'
   ,                 `Word32'
@@ -348,10 +348,10 @@ write64 :: DevicePtr Word64 -> Word64 -> Stream -> [StreamWriteFlag] -> IO ()
 #if CUDA_VERSION < 9000
 write64 _   _   _      _     = requireSDK 'write64 9.0
 #else
-write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64 stream ptr val flags
+write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64_v2 stream ptr val flags
 
-{-# INLINE cuStreamWriteValue64 #-}
-{# fun unsafe cuStreamWriteValue64
+{-# INLINE cuStreamWriteValue64_v2 #-}
+{# fun unsafe cuStreamWriteValue64_v2
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word64'
   ,                 `Word64'
@@ -385,10 +385,10 @@ wait32 :: DevicePtr Word32 -> Word32 -> Stream -> [StreamWaitFlag] -> IO ()
 #if CUDA_VERSION < 8000
 wait32 _   _   _      _     = requireSDK 'wait32 8.0
 #else
-wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
+wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32_v2 stream ptr val flags
 
-{-# INLINE cuStreamWaitValue32 #-}
-{# fun unsafe cuStreamWaitValue32
+{-# INLINE cuStreamWaitValue32_v2 #-}
+{# fun unsafe cuStreamWaitValue32_v2
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word32'
   ,                 `Word32'
@@ -401,10 +401,10 @@ wait64 :: DevicePtr Word64 -> Word64 -> Stream -> [StreamWaitFlag] -> IO ()
 #if CUDA_VERSION < 9000
 wait64 _   _   _      _     = requireSDK 'wait64 9.0
 #else
-wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val flags
+wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64_v2 stream ptr val flags
 
-{-# INLINE cuStreamWaitValue64 #-}
-{# fun unsafe cuStreamWaitValue64
+{-# INLINE cuStreamWaitValue64_v2 #-}
+{# fun unsafe cuStreamWaitValue64_v2
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word64'
   ,                 `Word64'
