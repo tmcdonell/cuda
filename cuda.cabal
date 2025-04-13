@@ -121,7 +121,6 @@ Library
       Foreign.CUDA.Driver.Module.Query
       Foreign.CUDA.Driver.Profiler
       Foreign.CUDA.Driver.Stream
-      Foreign.CUDA.Driver.Texture
       Foreign.CUDA.Driver.Unified
       Foreign.CUDA.Driver.Utils
 
@@ -133,7 +132,6 @@ Library
       Foreign.CUDA.Runtime.Exec
       Foreign.CUDA.Runtime.Marshal
       Foreign.CUDA.Runtime.Stream
-      Foreign.CUDA.Runtime.Texture
       Foreign.CUDA.Runtime.Utils
 
       -- Extras

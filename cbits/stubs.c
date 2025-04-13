@@ -22,17 +22,6 @@ cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, uns
 }
 #endif
 
-CUresult cuTexRefSetAddress2D_simple(CUtexref tex, CUarray_format format, unsigned int numChannels, CUdeviceptr dptr, size_t width, size_t height, size_t pitch)
-{
-    CUDA_ARRAY_DESCRIPTOR desc;
-    desc.Format      = format;
-    desc.NumChannels = numChannels;
-    desc.Width       = width;
-    desc.Height      = height;
-
-    return cuTexRefSetAddress2D(tex, &desc, dptr, pitch);
-}
-
 CUresult cuMemcpy2DHtoD(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height)
 {
     CUDA_MEMCPY2D desc;
@@ -283,11 +272,6 @@ CUresult CUDAAPI cuMemsetD16(CUdeviceptr dstDevice, unsigned short us, size_t N)
 CUresult CUDAAPI cuMemsetD32(CUdeviceptr dstDevice, unsigned int ui, size_t N)
 {
     return cuMemsetD32_v2(dstDevice, ui, N);
-}
-
-CUresult CUDAAPI cuTexRefSetAddress(size_t *ByteOffset, CUtexref hTexRef, CUdeviceptr dptr, size_t bytes)
-{
-    return cuTexRefSetAddress_v2(ByteOffset, hTexRef, dptr, bytes);
 }
 #endif
 
