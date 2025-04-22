@@ -179,7 +179,17 @@ data DeviceResources = DeviceResources
 deviceResources :: DeviceProperties -> DeviceResources
 deviceResources = resources . computeCapability
   where
-    -- This is mostly extracted from tables in the CUDA occupancy calculator.
+    -- Sources:
+    -- [1] https://github.com/NVIDIA/cuda-samples/blob/7b60178984e96bc09d066077d5455df71fee2a9f/Common/helper_cuda.h
+    --    - for: coresPerMP (line 643 _ConvertSMVer2Cores)
+    --    - for: architecture names (line 695 _ConvertSMVer2ArchName)
+    -- [2] https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications-technical-specifications-per-compute-capability
+    --    - for: maxGridsPerDevice
+    --    - archived here: https://web.archive.org/web/20250409220108/https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications-technical-specifications-per-compute-capability
+    --    - reproduced here: https://en.wikipedia.org/w/index.php?title=CUDA&oldid=1285775690#Technical_specification (note: link to specific page version)
+    -- [3] NVidia Nsight Compute
+    --    - for: the other fields
+    --    - left top "Start Activity" -> "Occupancy Calculator" -> "Launch"; tab "GPU Data"
     --
     resources compute = case compute of
       Compute 1 0 -> resources (Compute 1 1)      -- Tesla G80
@@ -283,7 +293,7 @@ deviceResources = resources . computeCapability
         }
       Compute 5 2 -> (resources (Compute 5 0))    -- Maxwell GM20x
         { sharedMemPerMP        = 98304
-        , maxRegPerBlock        = 32768
+        , maxRegPerBlock        = 32768  -- value from [3], wrong in [2]?
         , warpAllocUnit         = 2
         }
       Compute 5 3 -> (resources (Compute 5 0))    -- Maxwell GM20B
@@ -318,9 +328,15 @@ deviceResources = resources . computeCapability
         }
       Compute 6 2 -> (resources (Compute 6 0))    -- Pascal GP10B
         { coresPerMP            = 128
-        , warpsPerMP            = 128
-        , threadBlocksPerMP     = 4096
-        , maxRegPerBlock        = 32768
+        -- Commit 4f75ea889c2ade2bd3eab377b51bb5bbd28bfbae changed warpsPerMP
+        -- to 128, but [2] and [3] say 64 like CC 6.0; reverted back to 64 to
+        -- match NVIDIA documentation.
+        -- That commit also changed threadsPerMP (later mistakenly translated
+        -- to threadBlocksPerMP in 9df19adec8efc9df761deab40cf04d27810d97d3)
+        -- from 2048 to 4096, but again [2] and [3] retain 2048 so we keep it
+        -- at that.
+        , warpsPerMP            = 64
+        , maxRegPerBlock        = 32768  -- value from [2], wrong in [3]?
         , warpAllocUnit         = 4
         , maxGridsPerDevice     = 16
         }
@@ -346,7 +362,7 @@ deviceResources = resources . computeCapability
 
       Compute 7 2 -> (resources (Compute 7 0))    -- Volta GV10B
         { maxGridsPerDevice     = 16
-        , maxSharedMemPerBlock  = 49152
+        , maxSharedMemPerBlock  = 49152  -- unsure why this is here; [2] and [3] say still 98304
         }
 
       Compute 7 5 -> (resources (Compute 7 0))    -- Turing TU1xx
@@ -376,14 +392,91 @@ deviceResources = resources . computeCapability
         , warpRegAllocUnit      = 256
         , maxGridsPerDevice     = 128
         }
-
       Compute 8 6 -> (resources (Compute 8 0))    -- Ampere GA102
-        { warpsPerMP            = 48
+        { coresPerMP            = 128
+        , warpsPerMP            = 48
         , threadsPerMP          = 1536
         , threadBlocksPerMP     = 16
         , sharedMemPerMP        = 102400
         , maxSharedMemPerBlock  = 102400
         }
+      Compute 8 7 -> (resources (Compute 8 0))    -- Ampere
+        { coresPerMP            = 128
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 16
+        }
+      Compute 8 9 -> (resources (Compute 8 0))    -- Ada
+        { coresPerMP            = 128
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 24
+        , sharedMemPerMP        = 102400
+        , maxSharedMemPerBlock  = 102400
+        }
+
+      Compute 9 0 -> DeviceResources              -- Hopper
+        { threadsPerWarp        = 32
+        , coresPerMP            = 128
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 233472
+        , maxSharedMemPerBlock  = 233472
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
+      Compute 10 0 -> DeviceResources             -- Blackwell
+        { threadsPerWarp        = 32
+        , coresPerMP            = 128
+        , warpsPerMP            = 64
+        , threadsPerMP          = 2048
+        , threadBlocksPerMP     = 32
+        , sharedMemPerMP        = 233472
+        , maxSharedMemPerBlock  = 233472
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+      Compute 10 1 -> (resources (Compute 10 0))  -- Blackwell
+        { warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 24
+        }
+
+      Compute 12 0 -> DeviceResources             -- Blackwell
+        { threadsPerWarp        = 32
+        , coresPerMP            = 128
+        , warpsPerMP            = 48
+        , threadsPerMP          = 1536
+        , threadBlocksPerMP     = 24
+        , sharedMemPerMP        = 102400
+        , maxSharedMemPerBlock  = 102400
+        , regFileSizePerMP      = 65536
+        , maxRegPerBlock        = 65536
+        , regAllocUnit          = 256
+        , regAllocationStyle    = Warp
+        , maxRegPerThread       = 255
+        , sharedMemAllocUnit    = 128
+        , warpAllocUnit         = 4
+        , warpRegAllocUnit      = 256
+        , maxGridsPerDevice     = 128
+        }
+
 
       -- Something might have gone wrong, or the library just needs to be
       -- updated for the next generation of hardware, in which case we just want

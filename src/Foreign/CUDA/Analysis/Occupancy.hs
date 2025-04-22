@@ -28,6 +28,14 @@
 -- the number in the @.cubin@ file to the amount you dynamically allocate at run
 -- time to get the correct shared memory usage.
 --
+-- __Warning__: Like the official Occupancy Calculator in NVidia Nsight
+-- Compute, the calculator in this module does not support or consider Thread
+-- Block Clusters
+-- (<https://docs.nvidia.com/cuda/cuda-c-programming-guide/#thread-block-clusters>)
+-- that have been introduced with compute capability 9.0 (Hopper). If you use
+-- thread block clusters in your kernels, the results you get with the
+-- functions in this module may not be accurate. Profile and measure.
+--
 -- /Notes About Occupancy/
 --
 -- Higher occupancy does not necessarily mean higher performance.  If a kernel
