@@ -10,6 +10,19 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
+## [0.12.8.0] - ???
+### Added
+  * Support for CUDA-12
+      - Thanks to @noahmartinwilliams on GitHub for helping out!
+
+### Removed
+  * The following modules have been deprecated for a long time, and have
+    finally been removed in CUDA-12:
+      - `Foreign.CUDA.Driver.Texture`
+      - `Foreign.CUDA.Runtime.Texture`
+    Support for Texture Objects (their replacement) is missing in these
+    bindings so far. Contributions welcome.
+
 ## [0.11.0.1] - 2023-08-15
 ### Fixed
   * Build fixes for GHC 9.2 .. 9.6

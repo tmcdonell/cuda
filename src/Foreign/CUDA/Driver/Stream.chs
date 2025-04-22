@@ -334,6 +334,7 @@ write32 _   _   _      _     = requireSDK 'write32 8.0
 write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr val flags
 
 {-# INLINE cuStreamWriteValue32 #-}
+#if CUDA_VERSION < 12000
 {# fun unsafe cuStreamWriteValue32
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word32'
@@ -341,6 +342,15 @@ write32 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue32 stream ptr v
   , combineBitMasks `[StreamWriteFlag]'
   }
   -> `Status' cToEnum #}
+#else
+{# fun unsafe cuStreamWriteValue32_v2 as cuStreamWriteValue32
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word32'
+  ,                 `Word32'
+  , combineBitMasks `[StreamWriteFlag]'
+  }
+  -> `Status' cToEnum #}
+#endif
 #endif
 
 {-# INLINE write64 #-}
@@ -351,6 +361,7 @@ write64 _   _   _      _     = requireSDK 'write64 9.0
 write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64 stream ptr val flags
 
 {-# INLINE cuStreamWriteValue64 #-}
+#if CUDA_VERSION < 12000
 {# fun unsafe cuStreamWriteValue64
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word64'
@@ -358,6 +369,15 @@ write64 ptr val stream flags = nothingIfOk =<< cuStreamWriteValue64 stream ptr v
   , combineBitMasks `[StreamWriteFlag]'
   }
   -> `Status' cToEnum #}
+#else
+{# fun unsafe cuStreamWriteValue64_v2 as cuStreamWriteValue64
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word64'
+  ,                 `Word64'
+  , combineBitMasks `[StreamWriteFlag]'
+  }
+  -> `Status' cToEnum #}
+#endif
 #endif
 
 
@@ -388,12 +408,21 @@ wait32 _   _   _      _     = requireSDK 'wait32 8.0
 wait32 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue32 stream ptr val flags
 
 {-# INLINE cuStreamWaitValue32 #-}
+#if CUDA_VERSION < 12000
 {# fun unsafe cuStreamWaitValue32
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word32'
   ,                 `Word32'
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
+#else
+{# fun unsafe cuStreamWaitValue32_v2 as cuStreamWaitValue32
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word32'
+  ,                 `Word32'
+  , combineBitMasks `[StreamWaitFlag]'
+  } -> `Status' cToEnum #}
+#endif
 #endif
 
 {-# INLINE wait64 #-}
@@ -404,12 +433,21 @@ wait64 _   _   _      _     = requireSDK 'wait64 9.0
 wait64 ptr val stream flags = nothingIfOk =<< cuStreamWaitValue64 stream ptr val flags
 
 {-# INLINE cuStreamWaitValue64 #-}
+#if CUDA_VERSION < 12000
 {# fun unsafe cuStreamWaitValue64
   { useStream       `Stream'
   , useDeviceHandle `DevicePtr Word64'
   ,                 `Word64'
   , combineBitMasks `[StreamWaitFlag]'
   } -> `Status' cToEnum #}
+#else
+{# fun unsafe cuStreamWaitValue64_v2 as cuStreamWaitValue64
+  { useStream       `Stream'
+  , useDeviceHandle `DevicePtr Word64'
+  ,                 `Word64'
+  , combineBitMasks `[StreamWaitFlag]'
+  } -> `Status' cToEnum #}
+#endif
 #endif
 
 

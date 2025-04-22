@@ -145,3 +145,6 @@ An incomplete list of missing bindings. Pull requests welcome!
 - cuGraphMemAllocNodeGetParams
 - cuGraphMemFreeNodeGetParams
 
+### CUDA-12
+
+A lot. PRs welcome.
