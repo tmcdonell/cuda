@@ -149,6 +149,7 @@ Library
   build-depends:
       base              >= 4.7 && < 5
     , bytestring        >= 0.10.4
+    , containers
     , filepath          >= 1.0
     , template-haskell
     , uuid-types        >= 1.0

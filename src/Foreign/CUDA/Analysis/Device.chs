@@ -19,8 +19,12 @@ module Foreign.CUDA.Analysis.Device (
 
 #include "cbits/stubs.h"
 
+import qualified Data.Set as Set
+import Data.Set (Set)
 import Data.Int
+import Data.IORef
 import Text.Show.Describe
+import System.IO.Unsafe
 
 import Debug.Trace
 
@@ -486,7 +490,30 @@ deviceResources = resources . computeCapability
       -- However, it should be OK because all library functions run in IO, so it
       -- is likely the user code is as well.
       --
-      _           -> trace warning $ resources (Compute 6 0)
-        where warning = unlines [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
-                                , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues" ]
+      _ -> case warningForCC compute of
+             Just warning -> trace warning defaultResources
+             Nothing      -> defaultResources
 
+    defaultResources = resources (Compute 6 0)
+
+    -- All this logic is to ensure the warning is only shown once per unknown
+    -- compute capability. This sounds not worth it, but in practice, it is:
+    -- empirically, an unknown compute capability often leads to /screenfuls/
+    -- of warnings in accelerate-llvm-ptx otherwise.
+    {-# NOINLINE warningForCC #-}
+    warningForCC :: Compute -> Maybe String
+    warningForCC compute = unsafePerformIO $ do
+      unseen <- atomicModifyIORef' warningShown $ \seen ->
+                  -- This is just one tree traversal; lookup-insert would be two traversals.
+                  let seen' = Set.insert compute seen
+                  in (seen', Set.size seen' > Set.size seen)
+      return $ if unseen
+        then Just $ unlines
+               [ "*** Warning: Unknown CUDA device compute capability: " ++ show compute
+               , "*** Please submit a bug report at https://github.com/tmcdonell/cuda/issues"
+               , "*** (This warning will only be shown once for this compute capability)" ]
+        else Nothing
+
+    {-# NOINLINE warningShown #-}
+    warningShown :: IORef (Set Compute)
+    warningShown = unsafePerformIO $ newIORef mempty
