@@ -36,6 +36,7 @@ import Distribution.Simple.PackageDescription
 
 import Control.Exception
 import Control.Monad
+import Data.Char (isDigit)
 import Data.Function
 import Data.List
 import Data.Maybe
@@ -462,7 +463,7 @@ findCUDAInstallPath
     -> Platform
     -> IO FilePath
 findCUDAInstallPath verbosity platform = do
-  result <- findFirstValidLocation verbosity platform (candidateCUDAInstallPaths verbosity platform)
+  result <- findFirstValidLocation verbosity platform =<< candidateCUDAInstallPaths verbosity platform
   case result of
     Just installPath -> do
       notice verbosity $ printf "Found CUDA toolkit at: %s (set CUDA_PATH to override this)" installPath
@@ -549,19 +550,15 @@ validateLocation verbosity platform path = do
 candidateCUDAInstallPaths
     :: Verbosity
     -> Platform
-    -> [(IO FilePath, String)]
-candidateCUDAInstallPaths verbosity platform =
-  [ (getEnv "CUDA_PATH",      "environment variable CUDA_PATH")
-  , (findInPath,              "nvcc compiler executable in PATH")
-  , (return defaultPath,      printf "default install location (%s)" defaultPath)
-  , (getEnv "CUDA_PATH_V9_1", "environment variable CUDA_PATH_V9_1")
-  , (getEnv "CUDA_PATH_V9_0", "environment variable CUDA_PATH_V9_0")
-  , (getEnv "CUDA_PATH_V8_0", "environment variable CUDA_PATH_V8_0")
-  , (getEnv "CUDA_PATH_V7_5", "environment variable CUDA_PATH_V7_5")
-  , (getEnv "CUDA_PATH_V7_0", "environment variable CUDA_PATH_V7_0")
-  , (getEnv "CUDA_PATH_V6_5", "environment variable CUDA_PATH_V6_5")
-  , (getEnv "CUDA_PATH_V6_0", "environment variable CUDA_PATH_V6_0")
-  ]
+    -> IO [(IO FilePath, String)]
+candidateCUDAInstallPaths verbosity platform = do
+  let defaults =
+        [ (getEnv "CUDA_PATH", "environment variable CUDA_PATH")
+        , (findInPath,         "nvcc compiler executable in PATH")
+        , (return defaultPath, printf "default install location (%s)" defaultPath)
+        ]
+  verVars <- versionedVars
+  return $ defaults ++ verVars
   where
     findInPath :: IO FilePath
     findInPath = do
@@ -572,6 +569,21 @@ candidateCUDAInstallPaths verbosity platform =
 
     defaultPath :: FilePath
     defaultPath = defaultCUDAInstallPath platform
+
+    versionedVars :: IO [(IO FilePath, String)]
+    versionedVars = do
+      pairs <- getEnvironment
+      let sorted = sort (mapMaybe (\(k, v) -> (,k,v) <$> parseCudaPathVerVar k) pairs)
+      return [(return v, "environment variable " ++ k) | (_, k, v) <- sorted]
+
+    parseCudaPathVerVar :: String -> Maybe (Int, Int)
+    parseCudaPathVerVar var
+      | ("CUDA_PATH_V", s1) <- splitAt 11 var
+      , (n1, '_':n2) <- span isDigit s1, not (null n1)
+      , all isDigit n2, not (null n2)
+      = Just (read n1, read n2)
+      | otherwise
+      = Nothing
 
 
 -- NOTE: this function throws an exception when there is no `nvcc` in PATH.
