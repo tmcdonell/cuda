@@ -148,3 +148,20 @@ An incomplete list of missing bindings. Pull requests welcome!
 ### CUDA-12
 
 A lot. PRs welcome.
+
+
+# Old compatibility notes
+
+The setup script for this package requires at least Cabal-1.24. If you run into trouble with this:
+
+* Cabal users: ensure you are using a new `cabal` executable and have run `cabal update` anywhere in the last few years. If you have previously run `cabal install` on libraries and have a broken environment as a result, remove `~/.ghc/<platfom>/environments/default`.
+* Stack users: one may attempt @stack setup --upgrade-cabal@.
+
+Due to an interaction between GHC-8 and unified virtual address spaces in
+CUDA, this package does not currently work with GHCi on ghc-8.0.1 (compiled
+programs should work). See the following for more details:
+
+* <https://github.com/tmcdonell/cuda/issues/39>
+* <https://ghc.haskell.org/trac/ghc/ticket/12573>
+
+The bug should be fixed in ghc-8.0.2 and beyond.
