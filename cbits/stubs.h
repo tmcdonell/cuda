@@ -184,6 +184,11 @@ CUresult CUDAAPI cuDevicePrimaryCtxSetFlags(CUdevice dev, unsigned int flags);
 CUresult CUDAAPI cuIpcOpenMemHandle(CUdeviceptr *pdptr, CUipcMemHandle handle, unsigned int Flags);
 #endif
 
+#if CUDA_VERSION >= 13000
+CUresult cuMemAdvise_device(CUdeviceptr dptr, size_t count, CUmem_advise advice, CUdevice device);
+CUresult cuMemPrefetchAsync_device(CUdeviceptr dptr, size_t count, CUdevice device, CUstream hStream);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

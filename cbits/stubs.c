@@ -3,6 +3,7 @@
  */
 
 #include "cbits/stubs.h"
+#include <string.h>  // memset
 
 #if CUDART_VERSION >= 7000
 cudaError_t cudaLaunchKernel_simple(const void *func, unsigned int gridX, unsigned int gridY, unsigned int gridZ, unsigned int blockX, unsigned int blockY, unsigned int blockZ, void **args, size_t sharedMem, cudaStream_t stream)
@@ -196,7 +197,13 @@ CUresult CUDAAPI cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 
 CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
+#if CUDA_VERSION >= 13000
+    CUctxCreateParams params;
+    memset(&params, 0, sizeof params);
+    return cuCtxCreate_v4(pctx, &params, flags, dev);
+#else
     return cuCtxCreate_v2(pctx, flags, dev);
+#endif
 }
 
 CUresult CUDAAPI cuModuleGetGlobal(CUdeviceptr *dptr, size_t *bytes, CUmodule hmod, const char *name)
@@ -421,6 +428,21 @@ CUresult CUDAAPI cuGraphExecKernelNodeSetParams_simple(CUgraphExec hGraphExec, C
     nodeParams.extra          = NULL;
 
     return cuGraphExecKernelNodeSetParams(hGraphExec, hNode, &nodeParams);
+}
+#endif
+
+#if CUDA_VERSION >= 13000
+// This is the signature of the CUDA <=12 version; much easier to shim here than in Haskell.
+CUresult cuMemAdvise_device(CUdeviceptr dptr, size_t count, CUmem_advise advice, CUdevice device)
+{
+  return cuMemAdvise(dptr, count, advice, (CUmemLocation){.id = device, .type = CU_MEM_LOCATION_TYPE_DEVICE});
+}
+
+// This is the signature of the CUDA <=12 version; much easier to shim here than in Haskell.
+CUresult cuMemPrefetchAsync_device(CUdeviceptr dptr, size_t count, CUdevice device, CUstream hStream)
+{
+  // flags is reserved and must be 0 in CUDA 13
+  return cuMemPrefetchAsync(dptr, count, (CUmemLocation){.id = device, .type = CU_MEM_LOCATION_TYPE_DEVICE}, 0, hStream);
 }
 #endif
 

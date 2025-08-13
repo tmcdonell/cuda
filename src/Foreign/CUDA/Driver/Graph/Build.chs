@@ -204,12 +204,23 @@ addDependencies !g !deps = cuGraphAddDependencies g from to
   where
     (from, to) = unzip deps
 
+#if CUDA_VERSION < 13000
     {# fun unsafe cuGraphAddDependencies
       { useGraph          `Graph'
       , withNodeArray*    `[Node]'
       , withNodeArrayLen* `[Node]'&
       }
       -> `()' checkStatus*- #}
+#else
+    cuGraphAddDependencies g' from' to' = cuGraphAddDependencies_v2 g' from' to' (length deps)
+    {# fun unsafe cuGraphAddDependencies_v2
+      { useGraph          `Graph'
+      , withNodeArray*    `[Node]'
+      , withNodeArray*    `[Node]'
+      , withNullEdgeDataLen* `Int'&
+      }
+      -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -230,12 +241,23 @@ removeDependencies !g !deps = cuGraphRemoveDependencies g from to
   where
     (from, to) = unzip deps
 
+#if CUDA_VERSION < 13000
     {# fun unsafe cuGraphRemoveDependencies
       { useGraph          `Graph'
       , withNodeArray*    `[Node]'
       , withNodeArrayLen* `[Node]'&
       }
       -> `()' checkStatus*- #}
+#else
+    cuGraphRemoveDependencies g' from' to' = cuGraphRemoveDependencies_v2 g' from' to' (length deps)
+    {# fun unsafe cuGraphRemoveDependencies_v2
+      { useGraph          `Graph'
+      , withNodeArray*    `[Node]'
+      , withNodeArray*    `[Node]'
+      , withNullEdgeDataLen* `Int'&
+      }
+      -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -507,6 +529,7 @@ getEdges !g =
        to   <- peekArray count p_to
        return $ zip from to
   where
+#if CUDA_VERSION < 13000
     {# fun unsafe cuGraphGetEdges
       { useGraph     `Graph'
       , castPtr      `Ptr Node'
@@ -514,6 +537,17 @@ getEdges !g =
       , id           `Ptr CULong'
       }
       -> `()' checkStatus*- #}
+#else
+    cuGraphGetEdges g' f t c = cuGraphGetEdges_v2 g' f t nullPtr c
+    {# fun unsafe cuGraphGetEdges_v2
+      { useGraph     `Graph'
+      , castPtr      `Ptr Node'
+      , castPtr      `Ptr Node'
+      , castPtr      `Ptr edgeData'
+      , id           `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -598,12 +632,23 @@ getDependencies !n =
       cuGraphNodeGetDependencies n p_deps p_count
       peekArray count p_deps
   where
+#if CUDA_VERSION < 13000
     {# fun unsafe cuGraphNodeGetDependencies
       { useNode `Node'
       , castPtr `Ptr Node'
       , id      `Ptr CULong'
       }
       -> `()' checkStatus*- #}
+#else
+    cuGraphNodeGetDependencies n' d c = cuGraphNodeGetDependencies_v2 n' d nullPtr c
+    {# fun unsafe cuGraphNodeGetDependencies_v2
+      { useNode `Node'
+      , castPtr `Ptr Node'
+      , castPtr `Ptr edgeData'
+      , id      `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -628,12 +673,23 @@ getDependents n =
       cuGraphNodeGetDependentNodes n p_deps p_count
       peekArray count p_deps
   where
+#if CUDA_VERSION < 13000
     {# fun unsafe cuGraphNodeGetDependentNodes
       { useNode `Node'
       , castPtr `Ptr Node'
       , id      `Ptr CULong'
       }
       -> `()' checkStatus*- #}
+#else
+    cuGraphNodeGetDependentNodes n' d c = cuGraphNodeGetDependentNodes_v2 n' d nullPtr c
+    {# fun unsafe cuGraphNodeGetDependentNodes_v2
+      { useNode `Node'
+      , castPtr `Ptr Node'
+      , castPtr `Ptr edgeData'
+      , id      `Ptr CULong'
+      }
+      -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -679,5 +735,9 @@ withNodeArray ns f = withArray ns (f . castPtr)
 {-# INLINE withNodeArrayLen #-}
 withNodeArrayLen :: [Node] -> ((Ptr {# type CUgraphNode #}, CULong) -> IO a) -> IO a
 withNodeArrayLen ns f = withArrayLen ns $ \i p -> f (castPtr p, cIntConv i)
+
+{-# INLINE withNullEdgeDataLen #-}
+withNullEdgeDataLen :: Int -> ((Ptr (), CULong) -> IO a) -> IO a
+withNullEdgeDataLen len f = f (nullPtr, cIntConv len)
 #endif
 
