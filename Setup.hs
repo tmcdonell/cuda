@@ -35,6 +35,11 @@ import Distribution.PackageDescription.Parse
 import Distribution.Simple.PackageDescription
 #endif
 #if MIN_VERSION_Cabal(3,14,0)
+-- Note [Cabal 3.14]
+--
+-- If you change any path stuff, either test that the package still works with
+-- Cabal 3.12 or stop declaring support for it in cuda.cabal. (If you do the
+-- latter, also remove all of the other conditionals in this file.)
 import Distribution.Utils.Path (SymbolicPath, FileOrDir(File, Dir), Lib, Include, Pkg, CWD, makeSymbolicPath, interpretSymbolicPath, makeRelativePathEx)
 import qualified Distribution.Types.LocalBuildConfig as LBC
 #else
@@ -75,6 +80,7 @@ defaultCUDAInstallPath _ = "/usr/local/cuda"  -- windows?
 main :: IO ()
 main = defaultMainWithHooks customHooks
   where
+    -- Be careful changing flags/paths stuff here; see Note [Cabal 3.14].
     readHook get_verbosity a flags = do
         getHookedBuildInfo (flagToMaybe (workingDirFlag flags)) (fromFlag (get_verbosity flags))
 
@@ -154,6 +160,7 @@ libraryBuildInfo
     -> IO HookedBuildInfo
 libraryBuildInfo cwd verbosity profile installPath platform@(Platform arch os) ghcVersion extraLibs extraIncludes = do
   let
+      -- Be careful changing flags/paths stuff here; see Note [Cabal 3.14].
       libraryPaths      = map makeSymbolicPath (cudaLibraryPaths platform installPath) ++ extraLibs
       includePaths      = makeSymbolicPath (cudaIncludePath platform installPath) : extraIncludes
 
