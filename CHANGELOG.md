@@ -5,7 +5,7 @@ Notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 **NOTE:** The version numbers of this package roughly align to the latest
-version of the CUDA API this package is built against This means that this
+version of the CUDA API this package is built against. This means that this
 package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
