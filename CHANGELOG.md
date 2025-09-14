@@ -10,6 +10,14 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
+## [0.13.0.0] - ???
+### Added
+  * Support for CUDA-13
+
+### Removed
+  * A number of fields from DeviceProperties, as they have been removed from
+    `cudaDeviceProp`. Use `Foreign.CUDA.Driver.Device.attribute` to query them.
+
 ## [0.12.8.0] - 2025-08-21
 ### Added
   * Support for CUDA-12
