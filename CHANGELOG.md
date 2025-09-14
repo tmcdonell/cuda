@@ -10,7 +10,7 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
-## [0.12.8.0] - ???
+## [0.12.8.0] - 2025-08-21
 ### Added
   * Support for CUDA-12
       - Thanks to @noahmartinwilliams on GitHub for helping out!
