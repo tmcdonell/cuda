@@ -40,6 +40,8 @@ import Distribution.Simple.PackageDescription
 -- If you change any path stuff, either test that the package still works with
 -- Cabal 3.12 or stop declaring support for it in cuda.cabal. (If you do the
 -- latter, also remove all of the other conditionals in this file.)
+-- Note that supporting old versions of Cabal is useful for being able to run
+-- e.g. Accelerate on old GPU clusters, which is nice.
 import Distribution.Utils.Path (SymbolicPath, FileOrDir(File, Dir), Lib, Include, Pkg, CWD, makeSymbolicPath, interpretSymbolicPath, makeRelativePathEx)
 import qualified Distribution.Types.LocalBuildConfig as LBC
 #else
