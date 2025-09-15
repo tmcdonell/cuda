@@ -5,6 +5,7 @@
 module Main where
 
 import Control.Monad
+import Foreign.Marshal.Utils                            ( toBool )
 import Numeric
 import Prelude                                          hiding ( (<>) )
 import Text.PrettyPrint
@@ -13,6 +14,31 @@ import Text.Printf
 import Foreign.CUDA.Driver.Device                       ( Device(..) )
 import Foreign.CUDA.Analysis                            as CUDA
 import qualified Foreign.CUDA.Driver                    as CUDA
+
+
+-- In CUDA 13, a number of device properties became things only queryable using
+-- cu(da)DeviceGetAttribute. This data type captures those.
+$(if CUDA.libraryVersion >= 13000 then [d|
+    data AttrProperties = AttrProperties
+      { clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
+      , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
+      , computeMode                   :: !ComputeMode
+      , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
+      , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
+      }
+    getAttrProperties :: Device -> IO AttrProperties
+    getAttrProperties d = do
+      clockRate <- CUDA.attribute d CUDA.ClockRate
+      memClockRate <- CUDA.attribute d CUDA.MemoryClockRate
+      computeMode <- toEnum <$> CUDA.attribute d CUDA.ComputeMode
+      kernelExecTimeoutEnabled <- toBool <$> CUDA.attribute d CUDA.KernelExecTimeout
+      singleToDoublePerfRatio <- CUDA.attribute d CUDA.SingleToDoublePrecisionPerfRatio
+      return AttrProperties{..}
+  |] else [d|
+    data AttrProperties = AttrProperties {}
+    getAttrProperties :: Device -> IO AttrProperties
+    getAttrProperties _ = return AttrProperties
+  |])
 
 
 main :: IO ()
@@ -32,16 +58,17 @@ main = do
   infos   <- forM [0 .. numDevices-1] $ \n -> do
     dev <- CUDA.device n
     prp <- CUDA.props dev
-    return (n, dev, prp)
+    prp2 <- getAttrProperties dev
+    return (n, dev, prp, prp2)
 
-  forM_ infos $ \(n, dev, prp) -> do
+  forM_ infos $ \(n, dev, prp, prp2) -> do
     p2p <- statP2P dev prp infos
-    printf "\nDevice %d: %s\n%s\n" n (deviceName prp) (statDevice prp)
+    printf "\nDevice %d: %s\n%s\n" n (deviceName prp) (statDevice prp prp2)
     unless (null p2p) $ printf "%s\n" p2p
 
 
-statDevice :: DeviceProperties -> String
-statDevice dev@DeviceProperties{..} =
+statDevice :: DeviceProperties -> AttrProperties -> String
+statDevice dev@DeviceProperties{..} AttrProperties{..} =
   let
       DeviceResources{..} = deviceResources dev
 
@@ -69,22 +96,34 @@ statDevice dev@DeviceProperties{..} =
         ,("  2D:",                                      grid maxTextureDim2D)
         ,("  3D:",                                      cube maxTextureDim3D)
         ,("Texture alignment:",                         text $ showBytes textureAlignment)
-        ,("Maximum memory pitch:",                      text $ showBytes memPitch)
-        ,("Concurrent kernel execution:",               bool concurrentKernels)
-        ,("Concurrent copy and execution:",             bool deviceOverlap <> text (printf ", with %d copy engine%s" asyncEngineCount (if asyncEngineCount > 1 then "s" else "")))
-        ,("Runtime limit on kernel execution:",         bool kernelExecTimeoutEnabled)
+        ,("Maximum memory pitch:",                      text $ showBytes memPitch)]++
+
+        $(if CUDA.libraryVersion >= 13000 then [|
+        [("Concurrent copy and kernel execution:",      bool concurrentKernels <> text (printf " with %d copy engine%s" asyncEngineCount (if asyncEngineCount > 1 then "s" else "")))]
+        |] else [|
+        [("Concurrent kernel execution:",               bool concurrentKernels)
+        ,("Concurrent copy and execution:",             bool deviceOverlap <> text (printf ", with %d copy engine%s" asyncEngineCount (if asyncEngineCount > 1 then "s" else "")))]
+        |])++
+
+        [("Runtime limit on kernel execution:",         bool kernelExecTimeoutEnabled)
         ,("Integrated GPU sharing host memory:",        bool integrated)
         ,("Host page-locked memory mapping:",           bool canMapHostMemory)
         ,("ECC memory support:",                        bool eccEnabled)
         ,("Unified addressing (UVA):",                  bool unifiedAddressing)]++
-#if __GLASGOW_HASKELL__ > 710
+
         $(if CUDA.libraryVersion >= 8000 then [|
         [("Single to double precision performance:",    text $ printf "%d : 1" singleToDoublePerfRatio)
-        ,("Supports compute pre-emption:",              bool preemption)]|] else [|[]|])++
+        ,("Supports compute pre-emption:",              bool preemption)]
+        |] else [|[]|])++
+
         $(if CUDA.libraryVersion >= 9000 then [|
-        [("Supports cooperative launch:",               bool cooperativeLaunch)
-        ,("Supports multi-device cooperative launch:",  bool cooperativeLaunchMultiDevice)]|] else [|[]|])++
-#endif
+        [("Supports cooperative launch:",               bool cooperativeLaunch)]
+        |] else [|[]|])++
+
+        $(if CUDA.libraryVersion >= 9000 && CUDA.libraryVersion < 13000 then [|
+        [("Supports multi-device cooperative launch:",  bool cooperativeLaunchMultiDevice)]
+        |] else [|[]|])++
+
         [("PCI bus/location:",                          int (busID pciInfo) <> char '/' <> int (deviceID pciInfo))
         ,("Compute mode:",                              text (show computeMode))
         ]
@@ -94,7 +133,7 @@ statDevice dev@DeviceProperties{..} =
     $ text (describe computeMode)
 
 
-statP2P :: Device -> DeviceProperties -> [(Int, Device, DeviceProperties)] -> IO String
+statP2P :: Device -> DeviceProperties -> [(Int, Device, DeviceProperties, AttrProperties)] -> IO String
 statP2P dev prp infos
   | CUDA.libraryVersion < 4000          = return []
 
@@ -103,7 +142,7 @@ statP2P dev prp infos
   | otherwise
   = let
         go []                 = return []
-        go ((m, peer, pp):is) =
+        go ((m, peer, pp, _):is) =
           if dev == peer
             then go is
             else do

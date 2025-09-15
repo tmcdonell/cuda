@@ -98,15 +98,23 @@ instance Storable DeviceProperties where
     warpSize                      <- cIntConv <$> {#get cudaDeviceProp.warpSize#} p
     memPitch                      <- cIntConv <$> {#get cudaDeviceProp.memPitch#} p
     maxThreadsPerBlock            <- cIntConv <$> {#get cudaDeviceProp.maxThreadsPerBlock#} p
+#if CUDART_VERSION < 13000
     clockRate                     <- cIntConv <$> {#get cudaDeviceProp.clockRate#} p
+#endif
     totalConstMem                 <- cIntConv <$> {#get cudaDeviceProp.totalConstMem#} p
     textureAlignment              <- cIntConv <$> {#get cudaDeviceProp.textureAlignment#} p
+#if CUDART_VERSION < 13000
     deviceOverlap                 <- cToBool  <$> {#get cudaDeviceProp.deviceOverlap#} p
+#endif
     multiProcessorCount           <- cIntConv <$> {#get cudaDeviceProp.multiProcessorCount#} p
+#if CUDART_VERSION < 13000
     kernelExecTimeoutEnabled      <- cToBool  <$> {#get cudaDeviceProp.kernelExecTimeoutEnabled#} p
+#endif
     integrated                    <- cToBool  <$> {#get cudaDeviceProp.integrated#} p
     canMapHostMemory              <- cToBool  <$> {#get cudaDeviceProp.canMapHostMemory#} p
+#if CUDART_VERSION < 13000
     computeMode                   <- cToEnum  <$> {#get cudaDeviceProp.computeMode#} p
+#endif
 #if CUDART_VERSION >= 3000
     concurrentKernels             <- cToBool  <$> {#get cudaDeviceProp.concurrentKernels#} p
     maxTextureDim1D               <- cIntConv <$> {#get cudaDeviceProp.maxTexture1D#} p
@@ -123,7 +131,9 @@ instance Storable DeviceProperties where
     cacheMemL2                    <- cIntConv <$> {#get cudaDeviceProp.l2CacheSize#} p
     maxThreadsPerMultiProcessor   <- cIntConv <$> {#get cudaDeviceProp.maxThreadsPerMultiProcessor#} p
     memBusWidth                   <- cIntConv <$> {#get cudaDeviceProp.memoryBusWidth#} p
+#if CUDART_VERSION < 13000
     memClockRate                  <- cIntConv <$> {#get cudaDeviceProp.memoryClockRate#} p
+#endif
     pciInfo                       <- PCI <$> (cIntConv <$> {#get cudaDeviceProp.pciBusID#} p)
                                          <*> (cIntConv <$> {#get cudaDeviceProp.pciDeviceID#} p)
                                          <*> (cIntConv <$> {#get cudaDeviceProp.pciDomainID#} p)
@@ -157,11 +167,15 @@ instance Storable DeviceProperties where
 #else
     preemption                    <- cToBool  <$> {#get cudaDeviceProp.computePreemptionSupported#} p
 #endif
+#if CUDART_VERSION < 13000
     singleToDoublePerfRatio       <- cIntConv <$> {#get cudaDeviceProp.singleToDoublePrecisionPerfRatio#} p
+#endif
 #endif
 #if CUDART_VERSION >= 9000
     cooperativeLaunch             <- cToBool <$> {#get cudaDeviceProp.cooperativeLaunch#} p
+#if CUDART_VERSION < 13000
     cooperativeLaunchMultiDevice  <- cToBool <$> {#get cudaDeviceProp.cooperativeMultiDeviceLaunch#} p
+#endif
 #endif
 
     return DeviceProperties{..}
@@ -219,7 +233,7 @@ props :: Device -> IO DeviceProperties
 props !n = resultIfOk =<< cudaGetDeviceProperties n
 
 {-# INLINE cudaGetDeviceProperties #-}
-#if CUDA_VERSION < 12000
+#if CUDA_VERSION < 12000 || CUDA_VERSION >= 13000
 {# fun unsafe cudaGetDeviceProperties
   { alloca- `DeviceProperties' peek*
   ,         `Int'                    } -> `Status' cToEnum #}

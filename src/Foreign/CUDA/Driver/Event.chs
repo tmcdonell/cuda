@@ -114,10 +114,17 @@ elapsedTime :: Event -> Event -> IO Float
 elapsedTime !ev1 !ev2 = resultIfOk =<< cuEventElapsedTime ev1 ev2
 
 {-# INLINE cuEventElapsedTime #-}
+#if CUDA_VERSION < 13000
 {# fun unsafe cuEventElapsedTime
   { alloca-  `Float' peekFloatConv*
   , useEvent `Event'
   , useEvent `Event'                } -> `Status' cToEnum #}
+#else
+{# fun unsafe cuEventElapsedTime_v2 as cuEventElapsedTime
+  { alloca-  `Float' peekFloatConv*
+  , useEvent `Event'
+  , useEvent `Event'                } -> `Status' cToEnum #}
+#endif
 
 
 -- |
