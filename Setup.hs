@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wall        #-}
+{-# LANGUAGE Haskell2010     #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP             #-}
 {-# LANGUAGE DataKinds       #-}
@@ -11,7 +13,7 @@
 #define MIN_VERSION_Cabal(major1,major2,minor) 0
 #endif
 
-import Distribution.PackageDescription
+import Distribution.PackageDescription                              hiding ( Flag )
 import Distribution.Simple
 import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
@@ -789,8 +791,6 @@ interpretSymbolicPath :: Maybe CWDPath -> FilePath -> FilePath
 interpretSymbolicPath _ = id
 
 type HasCommonFlags flags = () :: Constraint
-getCommonFlags :: flags -> ()
-getCommonFlags _ = ()
 
 readHookedBuildInfoWithCWD :: Verbosity -> Maybe CWDPath -> FilePath -> IO HookedBuildInfo
 readHookedBuildInfoWithCWD verb _ path = readHookedBuildInfo verb path
