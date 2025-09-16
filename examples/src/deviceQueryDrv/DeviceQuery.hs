@@ -35,9 +35,10 @@ $(if CUDA.libraryVersion >= 13000 then [d|
       singleToDoublePerfRatio <- CUDA.attribute d CUDA.SingleToDoublePrecisionPerfRatio
       return AttrProperties{..}
   |] else [d|
-    data AttrProperties = AttrProperties {}
+    -- make it a record to ensure the {..} syntax is accepted
+    data AttrProperties = AttrProperties { _dummyAttrProperty :: () }
     getAttrProperties :: Device -> IO AttrProperties
-    getAttrProperties _ = return AttrProperties
+    getAttrProperties _ = return (AttrProperties ())
   |])
 
 
