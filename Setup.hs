@@ -739,7 +739,6 @@ die' _ = die
 -- Compatibility across Cabal 3.14 symbolic paths.
 -- If we want to drop pre-Cabal-3.14 compatibility at some point, this should all be merged in above.
 
-workingDirFlag :: HasCommonFlags flags => flags -> Flag CWDPath
 lbiCWD :: LocalBuildInfo -> Maybe CWDPath
 
 #if MIN_VERSION_Cabal(3,14,0)
@@ -750,6 +749,7 @@ type CWDPath = SymbolicPath CWD ('Dir Pkg)
 regVerbosity :: RegisterFlags -> Flag Verbosity
 regVerbosity = setupVerbosity . registerCommonFlags
 
+workingDirFlag :: HasCommonFlags flags => flags -> Flag CWDPath
 workingDirFlag = setupWorkingDir . getCommonFlags
 
 lbiCWD = flagToMaybe . setupWorkingDir . configCommonFlags . LBC.configFlags . LBC.packageBuildDescr . localBuildDescr
@@ -777,6 +777,7 @@ type CWDPath = ()
 
 -- regVerbosity is still present as an actual field in Cabal 3.12
 
+workingDirFlag :: flags -> Flag CWDPath
 workingDirFlag _ = NoFlag
 
 lbiCWD _ = Nothing
@@ -789,8 +790,6 @@ makeRelativePathEx = id
 
 interpretSymbolicPath :: Maybe CWDPath -> FilePath -> FilePath
 interpretSymbolicPath _ = id
-
-type HasCommonFlags flags = () :: Constraint
 
 readHookedBuildInfoWithCWD :: Verbosity -> Maybe CWDPath -> FilePath -> IO HookedBuildInfo
 readHookedBuildInfoWithCWD verb _ path = readHookedBuildInfo verb path
