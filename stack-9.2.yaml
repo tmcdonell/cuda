@@ -1,0 +1,8 @@
+resolver: lts-20.26
+
+packages:
+- .
+
+extra-deps:
+- c2hs-0.28.8@rev:3
+- language-c-0.10.0@rev:1
