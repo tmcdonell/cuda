@@ -1,5 +1,8 @@
-{-# OPTIONS_GHC -Wall        #-}
+-- Decouple from GHC's default language setting, so that it's easier
+-- to maintain compatibility with old GHCs.
 {-# LANGUAGE Haskell2010     #-}
+{-# OPTIONS_GHC -Wall        #-}
+
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP             #-}
 {-# LANGUAGE DataKinds       #-}
