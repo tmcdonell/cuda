@@ -358,6 +358,7 @@ prefetchArrayAsync ptr n mdev mst = go undefined ptr
     go x _ = nothingIfOk =<< cuMemPrefetchAsync ptr (n * sizeOf x) (maybe (-1) useDevice mdev) (fromMaybe defaultStream mst)
 
 {-# INLINE cuMemPrefetchAsync #-}
+#if CUDA_VERSION < 13000
 {# fun unsafe cuMemPrefetchAsync
   { useDeviceHandle `DevicePtr a'
   ,                 `Int'
@@ -365,6 +366,15 @@ prefetchArrayAsync ptr n mdev mst = go undefined ptr
   , useStream       `Stream'
   }
   -> `Status' cToEnum #}
+#else
+{# fun unsafe cuMemPrefetchAsync_device as cuMemPrefetchAsync
+  { useDeviceHandle `DevicePtr a'
+  ,                 `Int'
+  , id              `CInt'
+  , useStream       `Stream'
+  }
+  -> `Status' cToEnum #}
+#endif
 #endif
 
 

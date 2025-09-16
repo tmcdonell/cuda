@@ -1,14 +1,22 @@
+-- Decouple from GHC's default language setting, so that it's easier
+-- to maintain compatibility with old GHCs.
+{-# LANGUAGE Haskell2010     #-}
+{-# OPTIONS_GHC -Wall        #-}
+
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP             #-}
 {-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE KindSignatures  #-}
 {-# LANGUAGE QuasiQuotes     #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections   #-}
 
 -- The MIN_VERSION_Cabal macro was introduced with Cabal-1.24 (??)
 #ifndef MIN_VERSION_Cabal
 #define MIN_VERSION_Cabal(major1,major2,minor) 0
 #endif
 
-import Distribution.PackageDescription
+import Distribution.PackageDescription                              hiding ( Flag )
 import Distribution.Simple
 import Distribution.Simple.BuildPaths
 import Distribution.Simple.Command
@@ -249,7 +257,9 @@ cudaLibraryPaths (Platform arch os) installPath = [ installPath </> path | path 
         (Windows, X86_64)  -> ["lib/x64"]
         (OSX,     _)       -> ["lib"]    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64)  -> ["lib64", "lib"]  -- prefer lib64 for 64-bit systems
+#if MIN_VERSION_Cabal(2,4,0)
         (_,       AArch64) -> ["lib64", "lib"]
+#endif
         _                  -> ["lib"]           -- otherwise
 
 
@@ -734,7 +744,6 @@ die' _ = die
 -- Compatibility across Cabal 3.14 symbolic paths.
 -- If we want to drop pre-Cabal-3.14 compatibility at some point, this should all be merged in above.
 
-workingDirFlag :: HasCommonFlags flags => flags -> Flag CWDPath
 lbiCWD :: LocalBuildInfo -> Maybe CWDPath
 
 #if MIN_VERSION_Cabal(3,14,0)
@@ -745,6 +754,7 @@ type CWDPath = SymbolicPath CWD ('Dir Pkg)
 regVerbosity :: RegisterFlags -> Flag Verbosity
 regVerbosity = setupVerbosity . registerCommonFlags
 
+workingDirFlag :: HasCommonFlags flags => flags -> Flag CWDPath
 workingDirFlag = setupWorkingDir . getCommonFlags
 
 lbiCWD = flagToMaybe . setupWorkingDir . configCommonFlags . LBC.configFlags . LBC.packageBuildDescr . localBuildDescr
@@ -772,6 +782,7 @@ type CWDPath = ()
 
 -- regVerbosity is still present as an actual field in Cabal 3.12
 
+workingDirFlag :: flags -> Flag CWDPath
 workingDirFlag _ = NoFlag
 
 lbiCWD _ = Nothing
@@ -784,10 +795,6 @@ makeRelativePathEx = id
 
 interpretSymbolicPath :: Maybe CWDPath -> FilePath -> FilePath
 interpretSymbolicPath _ = id
-
-type HasCommonFlags flags = () :: Constraint
-getCommonFlags :: flags -> ()
-getCommonFlags _ = ()
 
 readHookedBuildInfoWithCWD :: Verbosity -> Maybe CWDPath -> FilePath -> IO HookedBuildInfo
 readHookedBuildInfoWithCWD verb _ path = readHookedBuildInfo verb path

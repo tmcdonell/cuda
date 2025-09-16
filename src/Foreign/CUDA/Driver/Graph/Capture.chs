@@ -143,6 +143,10 @@ status = requireSDK 'status 10.0
 -- | Query the capture status of a stream and get an id for the capture
 -- sequence, which is unique over the lifetime of the process.
 --
+-- Since CUDA-13, "edge data" can be associated with an edge in the graph. This
+-- function assumes no such data is present (if there is, a CUDA error
+-- (@CUDA_ERROR_LOSSY_QUERY@) will be raised).
+--
 -- Requires CUDA-10.1
 --
 -- <https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__STREAM.html#group__CUDA__STREAM_1g13145ece1d79a1d79a1d22abb9663216>
@@ -152,23 +156,37 @@ status = requireSDK 'status 10.0
 #if CUDA_VERSION < 10010
 info :: Stream -> IO (Status, Int64)
 info = requireSDK 'info 10.1
-#elif CUDA_VERSION < 12000
+-- Not another elif because c2hs seems to be buggy
+#else
+#if CUDA_VERSION < 12000
 {# fun unsafe cuStreamGetCaptureInfo as info
   { useStream `Stream'
   , alloca-   `Status' peekEnum*
   , alloca-   `Int64'  peekIntConv*
   }
   -> `()' checkStatus*- #}
-#else
+#elif CUDA_VERSION < 13000
 {# fun unsafe cuStreamGetCaptureInfo_v2 as info
   { useStream `Stream'
   , alloca-   `Status' peekEnum*
   , alloca-   `Int64'  peekIntConv*
-  , alloca-   `Graph'
-  , alloca-   `Node'
-  , alloca-   `CSize'
+  , withNullPtr- `Graph'
+  , withNullPtr- `Node'
+  , withNullPtr- `CSize'
   }
   -> `()' checkStatus*- #}
+#else
+{# fun unsafe cuStreamGetCaptureInfo_v3 as info
+  { useStream `Stream'
+  , alloca-   `Status' peekEnum*
+  , alloca-   `Int64'  peekIntConv*
+  , withNullPtr- `Graph'
+  , withNullPtr- `()'
+  , withNullPtr- `Node'
+  , withNullPtr- `CSize'
+  }
+  -> `()' checkStatus*- #}
+#endif
 #endif
 
 
@@ -201,3 +219,5 @@ peekGraph :: Ptr {# type CUgraph #} -> IO Graph
 peekGraph = liftM Graph . peek
 #endif
 
+withNullPtr :: (Ptr a -> r) -> r
+withNullPtr f = f nullPtr

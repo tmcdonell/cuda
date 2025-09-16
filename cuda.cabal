@@ -1,7 +1,7 @@
 cabal-version:          1.24
 
 Name:                   cuda
-Version:                0.12.8.0
+Version:                0.13.0.0
 Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
@@ -30,7 +30,7 @@ Description:
     .
     * "Foreign.CUDA.Runtime"
     .
-    Tested with library versions up to CUDA-12.8. See also the
+    Tested with library versions up to CUDA-13.0. See also the
     <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix for
     version compatibility.
     .
@@ -177,6 +177,6 @@ source-repository head
 source-repository this
     type:               git
     location:           https://github.com/tmcdonell/cuda
-    tag:                v0.12.8.0
+    tag:                v0.13.0.0
 
 -- vim: nospell

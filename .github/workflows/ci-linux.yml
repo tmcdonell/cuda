@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - '.github/workflows/ci-linux.yml'
+      - 'Setup.hs'
       - 'stack*.yaml'
       - '*.cabal'
       - '*/src/**'
@@ -18,20 +19,20 @@ jobs:
     strategy:
       matrix:
         ghc:
-          - "8.10"
-          - "8.8"
-          - "8.6"
-          - "8.4"
-          - "8.2"
-          - "8.0"
-          - "7.8"
-        cuda:
-          - "10.2"
-          - "10.1"
-          - "10.0"
+          - "9.10"
+          - "9.8"
+          - "9.6"
+          - "9.4"
           - "9.2"
-          - "9.1"
           - "9.0"
+          # - "8.10"  # save some resources
+          # - "8.8"
+          # - "8.6"
+          - "8.4"
+        cuda:
+          - "13.0"
+          - "12.9"
+          # - "12.5"  # save some resources
 
         # include:
         #   - os: windows-latest
@@ -43,16 +44,16 @@ jobs:
       HADDOCK_FLAGS: "--haddock --no-haddock-deps --no-haddock-hyperlink-source --haddock-arguments=\"--no-print-missing-docs\""
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
       - run: ln -s stack-${{ matrix.ghc }}.yaml stack.yaml
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: snapshot.pkgdb
           key: ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-snapshot.pkgdb
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.local/bin
@@ -61,7 +62,6 @@ jobs:
             .stack-work
           key: ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('snapshot.pkgdb') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-${{ hashFiles('stack.yaml') }}-${{ hashFiles('snapshot.pkgdb') }}
             ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-${{ hashFiles('stack.yaml') }}-
             ${{ runner.os }}-${{ matrix.ghc }}-${{ matrix.cuda }}-
 
@@ -80,10 +80,9 @@ jobs:
       - name: Install CUDA
         run: |
           MATRIX_CUDA=${{ matrix.cuda }}
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-          sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          UBUNTUVER=$(sed -n '/^DISTRIB_RELEASE=/ { s/.*=//; s/\.//; p; q; }' /etc/lsb-release)
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu$UBUNTUVER/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
           sudo apt-get update
           sudo apt-get -y install cuda-${MATRIX_CUDA/./-}
           echo "CUDA_HOME=/usr/local/cuda-${MATRIX_CUDA}" >> $GITHUB_ENV

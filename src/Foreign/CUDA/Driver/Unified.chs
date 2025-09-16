@@ -258,6 +258,7 @@ advise ptr n a mdev = go undefined ptr
     go x _ = nothingIfOk =<< cuMemAdvise ptr (n * sizeOf x) a (maybe (-1) useDevice mdev)
 
 {-# INLINE cuMemAdvise #-}
+#if CUDA_VERSION < 13000
 {# fun unsafe cuMemAdvise
   { useHandle `Ptr a'
   ,           `Int'
@@ -265,7 +266,15 @@ advise ptr n a mdev = go undefined ptr
   ,           `CInt'
   }
   -> `Status' cToEnum #}
+#else
+{# fun unsafe cuMemAdvise_device as cuMemAdvise
+  { useHandle `Ptr a'
+  ,           `Int'
+  , cFromEnum `Advice'
+  ,           `CInt'
+  }
+  -> `Status' cToEnum #}
+#endif
   where
     useHandle = fromIntegral . ptrToIntPtr
 #endif
-

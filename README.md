@@ -150,9 +150,12 @@ Here is an incomplete historical list of missing bindings. Pull requests welcome
 - cuGraphMemAllocNodeGetParams
 - cuGraphMemFreeNodeGetParams
 
-### CUDA-12
+### CUDA >= 12
 
 A lot. PRs welcome.
+
+- CUDA-12.3
+  - Edge data in the driver Graph API (`cuGraphAddDependencies_v2` etc.)
 
 
 # Old compatibility notes
