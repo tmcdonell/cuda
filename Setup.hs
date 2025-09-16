@@ -254,7 +254,9 @@ cudaLibraryPaths (Platform arch os) installPath = [ installPath </> path | path 
         (Windows, X86_64)  -> ["lib/x64"]
         (OSX,     _)       -> ["lib"]    -- MacOS does not distinguish 32- vs. 64-bit paths
         (_,       X86_64)  -> ["lib64", "lib"]  -- prefer lib64 for 64-bit systems
+#if MIN_VERSION_Cabal(2,4,0)
         (_,       AArch64) -> ["lib64", "lib"]
+#endif
         _                  -> ["lib"]           -- otherwise
 
 
