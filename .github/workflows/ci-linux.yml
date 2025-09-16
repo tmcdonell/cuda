@@ -19,14 +19,20 @@ jobs:
     strategy:
       matrix:
         ghc:
-          - "8.10"
-          - "8.8"
-          - "8.6"
+          - "9.10"
+          - "9.8"
+          - "9.6"
+          - "9.4"
+          - "9.2"
+          - "9.0"
+          # - "8.10"  # save some resources
+          # - "8.8"
+          # - "8.6"
           - "8.4"
         cuda:
           - "13.0"
           - "12.9"
-          - "12.5"
+          # - "12.5"  # save some resources
 
         # include:
         #   - os: windows-latest
