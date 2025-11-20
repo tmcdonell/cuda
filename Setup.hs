@@ -53,7 +53,6 @@ import Distribution.Simple.PackageDescription
 import Distribution.Utils.Path (SymbolicPath, FileOrDir(File, Dir), Lib, Include, Pkg, CWD, makeSymbolicPath, interpretSymbolicPath, makeRelativePathEx)
 import qualified Distribution.Types.LocalBuildConfig as LBC
 #else
-import Data.Kind (Constraint)
 #endif
 
 import Control.Exception
