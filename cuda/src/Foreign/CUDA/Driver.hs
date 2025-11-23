@@ -31,7 +31,7 @@
 -- Next, we must select a GPU that we will execute operations on. Each GPU
 -- is assigned a unique identifier (beginning at zero). We can get a handle
 -- to a compute device at a given ordinal using the 'device' operation.
--- Given a device handle, we can query the properties of that device using
+-- Given a device handle, we can query some properties of that device using
 -- 'props'. The number of available CUDA-capable devices is given via
 -- 'count'. For example:
 --

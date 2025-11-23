@@ -38,7 +38,7 @@ module Foreign.CUDA.Runtime.Device (
 {# context lib="cudart" #}
 
 -- Friends
-import Foreign.CUDA.Analysis.Device
+import Foreign.CUDA.Analysis.Device hiding (DeviceProperties(..))
 import Foreign.CUDA.Runtime.Error
 import Foreign.CUDA.Internal.C2HS
 
@@ -73,6 +73,91 @@ typedef enum
 -- A device identifier
 --
 type Device = Int
+
+-- |
+-- The properties of a compute device, mirroring @struct cudaDeviceProp@ in CUDA.
+--
+-- In CUDA-13.0, a number of fields were removed from this struct and are now
+-- only available by querying individual attributes on the device.
+--
+data DeviceProperties = DeviceProperties
+  {
+    deviceName                    :: !String          -- ^ Identifier
+  , computeCapability             :: !Compute         -- ^ Supported compute capability
+  , totalGlobalMem                :: !Int64           -- ^ Available global memory on the device in bytes
+  , totalConstMem                 :: !Int64           -- ^ Available constant memory on the device in bytes
+  , sharedMemPerBlock             :: !Int64           -- ^ Available shared memory per block in bytes
+  , regsPerBlock                  :: !Int             -- ^ 32-bit registers per block
+  , warpSize                      :: !Int             -- ^ Warp size in threads (SIMD width)
+  , maxThreadsPerBlock            :: !Int             -- ^ Maximum number of threads per block
+#if CUDA_VERSION >= 4000
+  , maxThreadsPerMultiProcessor   :: !Int             -- ^ Maximum number of threads per multiprocessor
+#endif
+  , maxBlockSize                  :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a block
+  , maxGridSize                   :: !(Int,Int,Int)   -- ^ Maximum size of each dimension of a grid
+#if CUDA_VERSION >= 3000
+  , maxTextureDim1D               :: !Int             -- ^ Maximum texture dimensions
+  , maxTextureDim2D               :: !(Int,Int)
+  , maxTextureDim3D               :: !(Int,Int,Int)
+#endif
+#if CUDA_VERSION < 13000
+  , clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
+#endif
+  , multiProcessorCount           :: !Int             -- ^ Number of multiprocessors on the device
+  , memPitch                      :: !Int64           -- ^ Maximum pitch in bytes allowed by memory copies
+#if CUDA_VERSION >= 4000
+  , memBusWidth                   :: !Int             -- ^ Global memory bus width in bits
+#if CUDA_VERSION < 13000
+  , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
+#endif
+#endif
+  , textureAlignment              :: !Int64           -- ^ Alignment requirement for textures
+#if CUDA_VERSION < 13000
+  , computeMode                   :: !ComputeMode
+  , deviceOverlap                 :: !Bool            -- ^ Device can concurrently copy memory and execute a kernel
+#endif
+#if CUDA_VERSION >= 3000
+  , concurrentKernels             :: !Bool            -- ^ Device can possibly execute multiple kernels concurrently
+  , eccEnabled                    :: !Bool            -- ^ Device supports and has enabled error correction
+#endif
+#if CUDA_VERSION >= 4000
+  , asyncEngineCount              :: !Int             -- ^ Number of asynchronous engines
+  , cacheMemL2                    :: !Int             -- ^ Size of the L2 cache in bytes
+  , pciInfo                       :: !PCI             -- ^ PCI device information for the device
+  , tccDriverEnabled              :: !Bool            -- ^ Whether this is a Tesla device using the TCC driver
+#endif
+#if CUDA_VERSION < 13000
+  , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
+#endif
+  , integrated                    :: !Bool            -- ^ As opposed to discrete
+  , canMapHostMemory              :: !Bool            -- ^ Device can use pinned memory
+#if CUDA_VERSION >= 4000
+  , unifiedAddressing             :: !Bool            -- ^ Device shares a unified address space with the host
+#endif
+#if CUDA_VERSION >= 5050
+  , streamPriorities              :: !Bool            -- ^ Device supports stream priorities
+#endif
+#if CUDA_VERSION >= 6000
+  , globalL1Cache                 :: !Bool            -- ^ Device supports caching globals in L1 cache
+  , localL1Cache                  :: !Bool            -- ^ Device supports caching locals in L1 cache
+  , managedMemory                 :: !Bool            -- ^ Device supports allocating managed memory on this system
+  , multiGPUBoard                 :: !Bool            -- ^ Device is on a multi-GPU board
+  , multiGPUBoardGroupID          :: !Int             -- ^ Unique identifier for a group of devices associated with the same board
+#endif
+#if CUDA_VERSION >= 8000
+  , preemption                    :: !Bool            -- ^ Device supports compute pre-emption
+#if CUDA_VERSION < 13000
+  , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
+#endif
+#endif
+#if CUDA_VERSION >= 9000
+  , cooperativeLaunch             :: !Bool            -- ^ Device supports launching cooperative kernels
+#if CUDA_VERSION < 13000
+  , cooperativeLaunchMultiDevice  :: !Bool            -- ^ Device can participate in cooperative multi-device kernels
+#endif
+#endif
+  }
+  deriving (Show)
 
 {# pointer *cudaDeviceProp as ^ foreign -> DeviceProperties nocode #}
 

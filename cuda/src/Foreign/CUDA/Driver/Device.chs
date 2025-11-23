@@ -329,9 +329,7 @@ props !d = do
   sharedMemPerBlock     <- fromIntegral <$> attribute d SharedMemoryPerBlock
   memPitch              <- fromIntegral <$> attribute d MaxPitch
   textureAlignment      <- fromIntegral <$> attribute d TextureAlignment
-#if CUDA_VERSION < 13000
   clockRate             <- attribute d ClockRate
-#endif
   warpSize              <- attribute d WarpSize
   regsPerBlock          <- attribute d RegistersPerBlock
   maxThreadsPerBlock    <- attribute d MaxThreadsPerBlock
@@ -345,11 +343,9 @@ props !d = do
   computeCapability             <- capability d
   totalGlobalMem                <- totalMem d
   multiProcessorCount           <- attribute d MultiprocessorCount
-#if CUDA_VERSION < 13000
   computeMode                   <- toEnum <$> attribute d ComputeMode
   deviceOverlap                 <- toBool <$> attribute d GpuOverlap
   kernelExecTimeoutEnabled      <- toBool <$> attribute d KernelExecTimeout
-#endif
   integrated                    <- toBool <$> attribute d Integrated
   canMapHostMemory              <- toBool <$> attribute d CanMapHostMemory
 #if CUDA_VERSION >= 3000
@@ -364,9 +360,7 @@ props !d = do
   cacheMemL2                    <- attribute d L2CacheSize
   maxThreadsPerMultiProcessor   <- attribute d MaxThreadsPerMultiprocessor
   memBusWidth                   <- attribute d GlobalMemoryBusWidth
-#if CUDA_VERSION < 13000
   memClockRate                  <- attribute d MemoryClockRate
-#endif
   pciInfo                       <- PCI <$> attribute d PciBusId <*> attribute d PciDeviceId <*> attribute d PciDomainId
   unifiedAddressing             <- toBool <$> attribute d UnifiedAddressing
   tccDriverEnabled              <- toBool <$> attribute d TccDriver
@@ -383,15 +377,11 @@ props !d = do
 #endif
 #if CUDA_VERSION >= 8000
   preemption                    <- toBool <$> attribute d ComputePreemptionSupported
-#if CUDA_VERSION < 13000
   singleToDoublePerfRatio       <- attribute d SingleToDoublePrecisionPerfRatio
-#endif
 #endif
 #if CUDA_VERSION >= 9000
   cooperativeLaunch             <- toBool <$> attribute d CooperativeLaunch
-#if CUDA_VERSION < 13000
   cooperativeLaunchMultiDevice  <- toBool <$> attribute d CooperativeMultiDeviceLaunch
-#endif
 #endif
 
   return DeviceProperties{..}

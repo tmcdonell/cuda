@@ -15,8 +15,8 @@ because NVIDIA are A-OK introducing breaking changes in minor updates.
   * Support for CUDA-13
 
 ### Removed
-  * A number of fields from DeviceProperties, as they have been removed from
-    `cudaDeviceProp`. Use `Foreign.CUDA.Driver.Device.attribute` to query them.
+  * Support for the runtime API. There is an experimental cuda-runtime package
+    in the Git repository; contact us if you depend on this.
 
 ## [0.12.8.0] - 2025-08-21
 ### Added

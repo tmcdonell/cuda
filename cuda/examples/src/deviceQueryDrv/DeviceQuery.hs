@@ -16,32 +16,6 @@ import Foreign.CUDA.Analysis                            as CUDA
 import qualified Foreign.CUDA.Driver                    as CUDA
 
 
--- In CUDA 13, a number of device properties became things only queryable using
--- cu(da)DeviceGetAttribute. This data type captures those.
-$(if CUDA.libraryVersion >= 13000 then [d|
-    data AttrProperties = AttrProperties
-      { clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
-      , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
-      , computeMode                   :: !ComputeMode
-      , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
-      , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
-      }
-    getAttrProperties :: Device -> IO AttrProperties
-    getAttrProperties d = do
-      clockRate <- CUDA.attribute d CUDA.ClockRate
-      memClockRate <- CUDA.attribute d CUDA.MemoryClockRate
-      computeMode <- toEnum <$> CUDA.attribute d CUDA.ComputeMode
-      kernelExecTimeoutEnabled <- toBool <$> CUDA.attribute d CUDA.KernelExecTimeout
-      singleToDoublePerfRatio <- CUDA.attribute d CUDA.SingleToDoublePrecisionPerfRatio
-      return AttrProperties{..}
-  |] else [d|
-    -- make it a record to ensure the {..} syntax is accepted
-    data AttrProperties = AttrProperties { _dummyAttrProperty :: () }
-    getAttrProperties :: Device -> IO AttrProperties
-    getAttrProperties _ = return (AttrProperties ())
-  |])
-
-
 main :: IO ()
 main = do
   version    <- CUDA.driverVersion
@@ -59,17 +33,16 @@ main = do
   infos   <- forM [0 .. numDevices-1] $ \n -> do
     dev <- CUDA.device n
     prp <- CUDA.props dev
-    prp2 <- getAttrProperties dev
-    return (n, dev, prp, prp2)
+    return (n, dev, prp)
 
-  forM_ infos $ \(n, dev, prp, prp2) -> do
+  forM_ infos $ \(n, dev, prp) -> do
     p2p <- statP2P dev prp infos
-    printf "\nDevice %d: %s\n%s\n" n (deviceName prp) (statDevice prp prp2)
+    printf "\nDevice %d: %s\n%s\n" n (deviceName prp) (statDevice prp)
     unless (null p2p) $ printf "%s\n" p2p
 
 
-statDevice :: DeviceProperties -> AttrProperties -> String
-statDevice dev@DeviceProperties{..} AttrProperties{..} =
+statDevice :: DeviceProperties -> String
+statDevice dev@DeviceProperties{..} =
   let
       DeviceResources{..} = deviceResources dev
 
@@ -134,7 +107,7 @@ statDevice dev@DeviceProperties{..} AttrProperties{..} =
     $ text (describe computeMode)
 
 
-statP2P :: Device -> DeviceProperties -> [(Int, Device, DeviceProperties, AttrProperties)] -> IO String
+statP2P :: Device -> DeviceProperties -> [(Int, Device, DeviceProperties)] -> IO String
 statP2P dev prp infos
   | CUDA.libraryVersion < 4000          = return []
 
@@ -143,7 +116,7 @@ statP2P dev prp infos
   | otherwise
   = let
         go []                 = return []
-        go ((m, peer, pp, _):is) =
+        go ((m, peer, pp):is) =
           if dev == peer
             then go is
             else do

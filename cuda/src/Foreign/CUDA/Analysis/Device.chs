@@ -75,10 +75,13 @@ cap a b = let a' = fromIntegral a in
 --}
 
 -- |
--- The properties of a compute device, mirroring @struct cudaDeviceProp@ in CUDA.
+-- Some properties of a compute device. Originally, this mirrored
+-- @struct cudaDeviceProp@ in CUDA, but since CUDA 13 some fields have been
+-- removed from that struct, and this data type keeps them for backwards
+-- compatibility.
 --
--- In CUDA-13.0, a number of fields were removed from this struct and are now
--- only available by querying individual attributes on the device.
+-- There are more device "properties" than those listed in this data type; use
+-- 'Foreign.CUDA.Driver.Device.attribute' to query them.
 --
 data DeviceProperties = DeviceProperties
   {
@@ -100,22 +103,16 @@ data DeviceProperties = DeviceProperties
   , maxTextureDim2D               :: !(Int,Int)
   , maxTextureDim3D               :: !(Int,Int,Int)
 #endif
-#if CUDA_VERSION < 13000
   , clockRate                     :: !Int             -- ^ Clock frequency in kilohertz
-#endif
   , multiProcessorCount           :: !Int             -- ^ Number of multiprocessors on the device
   , memPitch                      :: !Int64           -- ^ Maximum pitch in bytes allowed by memory copies
 #if CUDA_VERSION >= 4000
   , memBusWidth                   :: !Int             -- ^ Global memory bus width in bits
-#if CUDA_VERSION < 13000
   , memClockRate                  :: !Int             -- ^ Peak memory clock frequency in kilohertz
 #endif
-#endif
   , textureAlignment              :: !Int64           -- ^ Alignment requirement for textures
-#if CUDA_VERSION < 13000
   , computeMode                   :: !ComputeMode
   , deviceOverlap                 :: !Bool            -- ^ Device can concurrently copy memory and execute a kernel
-#endif
 #if CUDA_VERSION >= 3000
   , concurrentKernels             :: !Bool            -- ^ Device can possibly execute multiple kernels concurrently
   , eccEnabled                    :: !Bool            -- ^ Device supports and has enabled error correction
@@ -126,9 +123,7 @@ data DeviceProperties = DeviceProperties
   , pciInfo                       :: !PCI             -- ^ PCI device information for the device
   , tccDriverEnabled              :: !Bool            -- ^ Whether this is a Tesla device using the TCC driver
 #endif
-#if CUDA_VERSION < 13000
   , kernelExecTimeoutEnabled      :: !Bool            -- ^ Whether there is a runtime limit on kernels
-#endif
   , integrated                    :: !Bool            -- ^ As opposed to discrete
   , canMapHostMemory              :: !Bool            -- ^ Device can use pinned memory
 #if CUDA_VERSION >= 4000
@@ -146,15 +141,11 @@ data DeviceProperties = DeviceProperties
 #endif
 #if CUDA_VERSION >= 8000
   , preemption                    :: !Bool            -- ^ Device supports compute pre-emption
-#if CUDA_VERSION < 13000
   , singleToDoublePerfRatio       :: !Int             -- ^ Ratio of single precision performance (in floating-point operations per second) to double precision performance
-#endif
 #endif
 #if CUDA_VERSION >= 9000
   , cooperativeLaunch             :: !Bool            -- ^ Device supports launching cooperative kernels
-#if CUDA_VERSION < 13000
   , cooperativeLaunchMultiDevice  :: !Bool            -- ^ Device can participate in cooperative multi-device kernels
-#endif
 #endif
   }
   deriving (Show)
