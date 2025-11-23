@@ -1,7 +1,8 @@
 resolver: lts-21.25
 
 packages:
-- .
+- cuda
+- cuda-runtime
 
 extra-deps:
 - c2hs-0.28.8@rev:3

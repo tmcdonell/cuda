@@ -2,44 +2,38 @@ cabal-version:          1.24
 
 Name:                   cuda
 Version:                0.13.0.0
-Synopsis:               FFI binding to the CUDA interface for programming NVIDIA GPUs
+Synopsis:               FFI binding to the CUDA driver interface for programming NVIDIA GPUs
 Description:
     The CUDA library provides a direct, general purpose C-like SPMD programming
     model for NVIDIA graphics cards (G8x series onwards). This is a collection
     of bindings to allow you to call and control, although not write, such
     functions from Haskell-land. You will need to install the CUDA driver and
     developer toolkit.
-    .
+
     <http://developer.nvidia.com/cuda-downloads>
-    .
+
     The setup script will look for your CUDA installation by checking, in the
     following order:
-    .
+
       1. The @CUDA_PATH@ environment variable
-    .
+
       2. Searching for @nvcc@ on the @PATH@
-    .
+
       3. Checking at @\/usr\/local\/cuda@
-    .
+
       4. @CUDA_PATH_Vx_y@ environment variable, for recent CUDA toolkit versions x.y
-    .
-    This library provides bindings to both the CUDA Driver and Runtime APIs. To
-    get started, see one of:
-    .
-    * "Foreign.CUDA.Driver" (a short tutorial is available here)
-    .
-    * "Foreign.CUDA.Runtime"
-    .
-    Tested with library versions up to CUDA-13.0. See also the
-    <https://travis-ci.org/tmcdonell/cuda travis-ci.org> build matrix for
-    version compatibility.
-    .
+
+    This library provides bindings to the CUDA Driver API. To
+    get started, see "Foreign.CUDA.Driver"; a short tutorial is available there.
+
+    Tested with library versions up to CUDA-13.0.
+
     [/NOTES:/]
-    .
+
     For additional notes on installing on Windows, see:
-    .
+
     * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
-    .
+
     This library is currently in __maintenance mode__. While we plan to release
     updates to keep the existing interface working with newer CUDA versions (as
     long as the underlying APIs remain available), no binding of new features is
@@ -49,7 +43,8 @@ License:                BSD3
 License-file:           LICENSE
 Copyright:              Copyright (c) [2009..2023]. Trevor L. McDonell <trevor.mcdonell@gmail.com>
 Author:                 Trevor L. McDonell <trevor.mcdonell@gmail.com>
-Maintainer:             Trevor L. McDonell <trevor.mcdonell@gmail.com>
+Maintainer:             Trevor L. McDonell <trevor.mcdonell@gmail.com>,
+                        Tom Smeding <tom@tomsmeding.com>
 Homepage:               https://github.com/tmcdonell/cuda
 Bug-reports:            https://github.com/tmcdonell/cuda/issues
 Category:               Foreign
@@ -75,7 +70,6 @@ custom-setup
 Library
   hs-source-dirs:       src
   exposed-modules:
-      Foreign.CUDA
       Foreign.CUDA.Path
       Foreign.CUDA.Ptr
 
@@ -111,22 +105,10 @@ Library
       Foreign.CUDA.Driver.Unified
       Foreign.CUDA.Driver.Utils
 
-      -- Runtime API
-      Foreign.CUDA.Runtime
-      Foreign.CUDA.Runtime.Device
-      Foreign.CUDA.Runtime.Error
-      Foreign.CUDA.Runtime.Event
-      Foreign.CUDA.Runtime.Exec
-      Foreign.CUDA.Runtime.Marshal
-      Foreign.CUDA.Runtime.Stream
-      Foreign.CUDA.Runtime.Utils
-
       -- Extras
       Foreign.C.Extra
-
-  other-modules:
       Foreign.CUDA.Internal.C2HS
-      Text.Show.Describe
+      Foreign.CUDA.Internal.Describe
 
   include-dirs:         .
   c-sources:            cbits/stubs.c

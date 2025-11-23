@@ -5,24 +5,6 @@
 #include "cbits/stubs.h"
 #include <string.h>  // memset
 
-#if CUDART_VERSION >= 7000
-cudaError_t cudaLaunchKernel_simple(const void *func, unsigned int gridX, unsigned int gridY, unsigned int gridZ, unsigned int blockX, unsigned int blockY, unsigned int blockZ, void **args, size_t sharedMem, cudaStream_t stream)
-{
-    dim3 gridDim  = {gridX, gridY, gridZ};
-    dim3 blockDim = {blockX, blockY, blockZ};
-
-    return cudaLaunchKernel(func, gridDim, blockDim, args, sharedMem, stream);
-}
-#else
-cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, unsigned int blockX, unsigned int blockY, unsigned int blockZ, size_t sharedMem, cudaStream_t stream)
-{
-    dim3 gridDim  = {gridX, gridY, 1};
-    dim3 blockDim = {blockX,blockY,blockZ};
-
-    return cudaConfigureCall(gridDim, blockDim, sharedMem, stream);
-}
-#endif
-
 CUresult cuMemcpy2DHtoD(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height)
 {
     CUDA_MEMCPY2D desc;
@@ -445,4 +427,3 @@ CUresult cuMemPrefetchAsync_device(CUdeviceptr dptr, size_t count, CUdevice devi
   return cuMemPrefetchAsync(dptr, count, (CUmemLocation){.id = device, .type = CU_MEM_LOCATION_TYPE_DEVICE}, 0, hStream);
 }
 #endif
-

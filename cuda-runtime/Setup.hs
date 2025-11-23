@@ -46,7 +46,7 @@ import Distribution.Simple.PackageDescription
 -- Note [Cabal 3.14]
 --
 -- If you change any path stuff, either test that the package still works with
--- Cabal 3.12 or stop declaring support for it in cuda.cabal. (If you do the
+-- Cabal 3.12 or stop declaring support for it in cuda-runtime.cabal. (If you do the
 -- latter, also remove all of the other conditionals in this file.)
 -- Note that supporting old versions of Cabal is useful for being able to run
 -- e.g. Accelerate on old GPU clusters, which is nice.
@@ -74,7 +74,7 @@ import Prelude
 -- -------------
 
 customBuildInfoFilePath :: FilePath
-customBuildInfoFilePath = "cuda" <.> "buildinfo"
+customBuildInfoFilePath = "cuda-runtime" <.> "buildinfo"
 
 generatedBuildInfoFilePath :: FilePath
 generatedBuildInfoFilePath = customBuildInfoFilePath <.> "generated"
@@ -123,7 +123,7 @@ main = defaultMainWithHooks customHooks
 
     -- The hook scans system in search for CUDA Toolkit. If the toolkit is not
     -- found, an error is raised. Otherwise the toolkit location is used to
-    -- create a `cuda.buildinfo.generated` file with all the resulting flags.
+    -- create a `cuda-runtime.buildinfo.generated` file with all the resulting flags.
     --
     postConfHook :: Args -> ConfigFlags -> PackageDescription -> LocalBuildInfo -> IO ()
     postConfHook args flags pkg_descr lbi = do
@@ -429,7 +429,7 @@ validateLinker verbosity (Platform arch os) db =
 
 
 windowsHelpPage :: String
-windowsHelpPage = "https://github.com/tmcdonell/cuda/blob/master/WINDOWS.markdown"
+windowsHelpPage = "https://github.com/tmcdonell/cuda/blob/master/cuda/WINDOWS.md"
 
 windowsLinkerBugMsg :: FilePath -> String
 windowsLinkerBugMsg ldPath = printf (unlines msg) windowsHelpPage ldPath
@@ -648,7 +648,7 @@ findProgram verbosity prog = do
 #endif
 
 
--- Reads user-provided `cuda.buildinfo` if present, otherwise loads `cuda.buildinfo.generated`
+-- Reads user-provided `cuda-runtime.buildinfo` if present, otherwise loads `cuda-runtime.buildinfo.generated`
 -- Outputs message informing about the other possibility.
 -- Calls die when neither of the files is available.
 -- (generated one should be always present, as it is created in the post-conf step)

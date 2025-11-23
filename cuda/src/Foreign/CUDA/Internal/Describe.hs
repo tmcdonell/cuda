@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- |
--- Module    : Text.Show.Describe
+-- Module    : Foreign.CUDA.Internal.Describe
 -- Copyright : [2016..2023] Trevor L. McDonell
 -- License   : BSD
 --
 --------------------------------------------------------------------------------
 
-module Text.Show.Describe
+module Foreign.CUDA.Internal.Describe
   where
 
 

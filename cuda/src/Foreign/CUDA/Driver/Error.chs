@@ -23,7 +23,7 @@ module Foreign.CUDA.Driver.Error (
 
 -- Friends
 import Foreign.CUDA.Internal.C2HS
-import Text.Show.Describe
+import Foreign.CUDA.Internal.Describe
 
 -- System
 import Control.Exception

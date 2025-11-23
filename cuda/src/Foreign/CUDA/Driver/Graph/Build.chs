@@ -735,7 +735,9 @@ withNodeArray ns f = withArray ns (f . castPtr)
 {-# INLINE withNodeArrayLen #-}
 withNodeArrayLen :: [Node] -> ((Ptr {# type CUgraphNode #}, CULong) -> IO a) -> IO a
 withNodeArrayLen ns f = withArrayLen ns $ \i p -> f (castPtr p, cIntConv i)
+#endif
 
+#if CUDA_VERSION >= 13000
 {-# INLINE withNullEdgeDataLen #-}
 withNullEdgeDataLen :: Int -> ((Ptr (), CULong) -> IO a) -> IO a
 withNullEdgeDataLen len f = f (nullPtr, cIntConv len)

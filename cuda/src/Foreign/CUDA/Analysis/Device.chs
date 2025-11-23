@@ -23,7 +23,7 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import Data.Int
 import Data.IORef
-import Text.Show.Describe
+import Foreign.CUDA.Internal.Describe
 import System.IO.Unsafe
 
 import Debug.Trace

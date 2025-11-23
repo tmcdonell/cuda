@@ -1,0 +1,3 @@
+packages:
+  cuda
+  cuda-runtime

@@ -21,12 +21,6 @@ extern "C" {
 
 void enable_constructors();
 
-#if CUDART_VERSION >= 7000
-cudaError_t cudaLaunchKernel_simple(const void *func, unsigned int gridX, unsigned int gridY, unsigned int gridZ, unsigned int blockX, unsigned int blockY, unsigned int blockZ, void **args, size_t sharedMem, cudaStream_t stream);
-#else
-cudaError_t cudaConfigureCall_simple(unsigned int gridX, unsigned int gridY, unsigned int blockX, unsigned int blockY, unsigned int blockZ, size_t sharedMem, cudaStream_t stream);
-#endif
-
 CUresult cuTexRefSetAddress2D_simple(CUtexref tex, CUarray_format format, unsigned int numChannels, CUdeviceptr dptr, size_t width, size_t height, size_t pitch);
 CUresult cuMemcpy2DHtoD(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height);
 CUresult cuMemcpy2DHtoDAsync(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int dstXInBytes, unsigned int dstY, void* srcHost, unsigned int srcPitch, unsigned int srcXInBytes, unsigned int srcY, unsigned int widthInBytes, unsigned int height, CUstream hStream);

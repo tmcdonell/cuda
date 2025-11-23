@@ -4,7 +4,8 @@
 resolver: lts-14.27
 
 packages:
-- .
+- cuda
+- cuda-runtime
 
 extra-deps:
 - c2hs-0.28.8@rev:3

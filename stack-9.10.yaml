@@ -1,4 +1,5 @@
 resolver: lts-24.10
 
 packages:
-- .
+- cuda
+- cuda-runtime

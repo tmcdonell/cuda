@@ -1,5 +1,7 @@
-/cuda.buildinfo
-/cuda.buildinfo.generated
+cuda.buildinfo
+cuda.buildinfo.generated
+cuda-runtime.buildinfo
+cuda-runtime.buildinfo.generated
 *.i
 dist/
 /stack.yaml
