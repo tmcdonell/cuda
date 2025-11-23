@@ -21,7 +21,7 @@ before_build:
 
   # install CUDA-13.0
   - appveyor DownloadFile "https://developer.download.nvidia.com/compute/cuda/13.0.2/network_installers/cuda_13.0.2_windows_network.exe" -FileName install_cuda.exe
-  - install_cuda.exe -s compiler_13.0 cudart_13.0 cublas_13.0 cublas_dev_13.0 cufft_13.0 cufft_dev_13.0 cusolver_13.0 cusolver_dev_13.0 cusparse_13.0 cusparse_dev_13.0
+  - install_cuda.exe -s crt_13.0 cudart_13.0 nvcc_13.0
   - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v13.0\nvvm\bin;%PATH%
   - set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v13.0\bin;%PATH%
   - nvcc --version
