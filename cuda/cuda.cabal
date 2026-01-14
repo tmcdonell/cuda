@@ -21,12 +21,13 @@ Description:
 
       3. Checking at @\/usr\/local\/cuda@
 
-      4. @CUDA_PATH_Vx_y@ environment variable, for recent CUDA toolkit versions x.y
+      4. Environment variables of the form @CUDA_PATH_Vx_y@ (deprecated)
 
-    This library provides bindings to the CUDA Driver API. To
-    get started, see "Foreign.CUDA.Driver"; a short tutorial is available there.
+    This library provides bindings to the CUDA Driver API, not the Runtime API.
+    To get started, see "Foreign.CUDA.Driver"; a short tutorial is available
+    there.
 
-    Tested with library versions up to CUDA-13.0.
+    Tested with library versions up to and including CUDA-13.0.
 
     [/NOTES:/]
 
@@ -34,10 +35,11 @@ Description:
 
     * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
 
-    This library is currently in __maintenance mode__. While we plan to release
-    updates to keep the existing interface working with newer CUDA versions (as
-    long as the underlying APIs remain available), no binding of new features is
-    planned at the moment. Get in touch if you want to contribute.
+    This library is currently in __maintenance mode__. While we are happy to
+    release updates to keep the existing interface working with newer CUDA
+    versions (as long as the underlying APIs remain available), no binding of
+    new features is planned at the moment. Get in touch if you want to
+    contribute.
 
 License:                BSD3
 License-file:           LICENSE

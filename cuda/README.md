@@ -25,10 +25,10 @@ For important information on installing on Windows, see:
 
 ## Missing functionality
 
-_This library is currently in **maintenance mode**. While we plan to release
-updates to keep the existing interface working with newer CUDA versions (as
-long as the underlying APIs remain available), no binding of new features is
-planned at the moment. Get in touch if you want to contribute._
+This library is currently in **maintenance mode**. While we are happy to
+release updates to keep the existing interface working with newer CUDA versions
+(as long as the underlying APIs remain available), no binding of new features
+is planned at the moment. Get in touch if you want to contribute.
 
 Here is an incomplete historical list of missing bindings. Pull requests welcome!
 
