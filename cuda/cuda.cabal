@@ -9,32 +9,32 @@ Description:
     of bindings to allow you to call and control, although not write, such
     functions from Haskell-land. You will need to install the CUDA driver and
     developer toolkit.
-
+    .
     <http://developer.nvidia.com/cuda-downloads>
-
+    .
     The setup script will look for your CUDA installation by checking, in the
     following order:
-
+    .
       1. The @CUDA_PATH@ environment variable
-
+    .
       2. Searching for @nvcc@ on the @PATH@
-
+    .
       3. Checking at @\/usr\/local\/cuda@
-
+    .
       4. Environment variables of the form @CUDA_PATH_Vx_y@ (deprecated)
-
+    .
     This library provides bindings to the CUDA Driver API, not the Runtime API.
     To get started, see "Foreign.CUDA.Driver"; a short tutorial is available
     there.
-
+    .
     Tested with library versions up to and including CUDA-13.0.
-
+    .
     [/NOTES:/]
-
+    .
     For additional notes on installing on Windows, see:
-
+    .
     * <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
-
+    .
     This library is currently in __maintenance mode__. While we are happy to
     release updates to keep the existing interface working with newer CUDA
     versions (as long as the underlying APIs remain available), no binding of
