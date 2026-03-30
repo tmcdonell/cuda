@@ -10,13 +10,14 @@ package _DOES NOT_ follow the PVP, or indeed any sensible version scheme,
 because NVIDIA are A-OK introducing breaking changes in minor updates.
 
 
-## [0.13.0.0] - ???
+## [0.13.0.0] - 2026-03-30
 ### Added
   * Support for CUDA-13
 
 ### Removed
-  * Support for the runtime API. There is an experimental cuda-runtime package
-    in the Git repository; contact us if you depend on this.
+  * Support for the runtime API (`Foreign.CUDA.RUntime`). There is an
+    experimental cuda-runtime package in the Git repository; contact us if you
+    depend on this.
 
 ## [0.12.8.0] - 2025-08-21
 ### Added
