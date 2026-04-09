@@ -63,6 +63,10 @@ import Foreign
 import Foreign.C
 import Foreign.Storable
 
+{#typedef size_t CSize#}
+{#default in `Int' [size_t] fromIntegral#}
+{#default out `Int' [size_t] fromIntegral#}
+
 
 -- | Callback function executed on the host
 --
@@ -534,7 +538,7 @@ getEdges !g =
       { useGraph     `Graph'
       , castPtr      `Ptr Node'
       , castPtr      `Ptr Node'
-      , id           `Ptr CULong'
+      , id           `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #else
@@ -544,7 +548,7 @@ getEdges !g =
       , castPtr      `Ptr Node'
       , castPtr      `Ptr Node'
       , castPtr      `Ptr edgeData'
-      , id           `Ptr CULong'
+      , id           `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #endif
@@ -575,7 +579,7 @@ getNodes !g =
     {# fun unsafe cuGraphGetNodes
       { useGraph `Graph'
       , castPtr  `Ptr Node'
-      , id       `Ptr CULong'
+      , id       `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #endif
@@ -605,7 +609,7 @@ getRootNodes g =
     {# fun unsafe cuGraphGetRootNodes
       { useGraph `Graph'
       , castPtr  `Ptr Node'
-      , id       `Ptr CULong'
+      , id       `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #endif
@@ -636,7 +640,7 @@ getDependencies !n =
     {# fun unsafe cuGraphNodeGetDependencies
       { useNode `Node'
       , castPtr `Ptr Node'
-      , id      `Ptr CULong'
+      , id      `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #else
@@ -645,7 +649,7 @@ getDependencies !n =
       { useNode `Node'
       , castPtr `Ptr Node'
       , castPtr `Ptr edgeData'
-      , id      `Ptr CULong'
+      , id      `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #endif
@@ -677,7 +681,7 @@ getDependents n =
     {# fun unsafe cuGraphNodeGetDependentNodes
       { useNode `Node'
       , castPtr `Ptr Node'
-      , id      `Ptr CULong'
+      , id      `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #else
@@ -686,7 +690,7 @@ getDependents n =
       { useNode `Node'
       , castPtr `Ptr Node'
       , castPtr `Ptr edgeData'
-      , id      `Ptr CULong'
+      , id      `Ptr CSize'
       }
       -> `()' checkStatus*- #}
 #endif
@@ -733,13 +737,13 @@ withNodeArray :: [Node] -> (Ptr {# type CUgraphNode #} -> IO a) -> IO a
 withNodeArray ns f = withArray ns (f . castPtr)
 
 {-# INLINE withNodeArrayLen #-}
-withNodeArrayLen :: [Node] -> ((Ptr {# type CUgraphNode #}, CULong) -> IO a) -> IO a
+withNodeArrayLen :: [Node] -> ((Ptr {# type CUgraphNode #}, CSize) -> IO a) -> IO a
 withNodeArrayLen ns f = withArrayLen ns $ \i p -> f (castPtr p, cIntConv i)
 #endif
 
 #if CUDA_VERSION >= 13000
 {-# INLINE withNullEdgeDataLen #-}
-withNullEdgeDataLen :: Int -> ((Ptr (), CULong) -> IO a) -> IO a
+withNullEdgeDataLen :: Int -> ((Ptr (), CSize) -> IO a) -> IO a
 withNullEdgeDataLen len f = f (nullPtr, cIntConv len)
 #endif
 
