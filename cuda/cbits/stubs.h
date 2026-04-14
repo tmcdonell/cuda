@@ -5,6 +5,9 @@
 #ifndef C_STUBS_H
 #define C_STUBS_H
 
+/* Suppress C11 keywords before any CUDA header */
+#include "compat/cuda_c2hs_compat.h"
+
 #ifdef __MINGW32__
 #include <host_defines.h>
 #undef CUDARTAPI
