@@ -210,7 +210,19 @@ libraryBuildInfo cwd verbosity profile installPath platform@(Platform arch os) g
                             _      -> ""
       emptyCase         = ["-DUSE_EMPTY_CASE" | versionBranch ghcVersion >= [7,8]]
       blocksExtension   = [ "-U__BLOCKS__" | os == OSX ]
+      -- Pass include dirs, CUDA path macros, and cbits/ to c2hs so that:
+      --   * stubs.h resolves (needs cbits/ and package root in -I)
+      --   * Path.chs resolves CUDA_INSTALL_PATH / CUDA_LIBRARY_PATH string consts
+      --   * CUDA system headers are found without relying on c2hs default search
+      c2hsIncludePaths  = map (("--cppopts=-I" ++) . interpretSymbolicPath cwd) includePaths
+                       ++ [ "--cppopts=-I."        -- package root for cbits/stubs.h
+                          , "--cppopts=-Icbits"    -- cbits/ for compat headers
+                          ]
+      cudaInstallMacro  = "--cppopts=-DCUDA_INSTALL_PATH=\"" ++ escDefPath installPath ++ "\""
+      cudaLibraryMacro  = "--cppopts=-DCUDA_LIBRARY_PATH=\"" ++ escDefPath canonicalLibraryPath ++ "\""
       c2hsOptions       = unwords $ map ("--cppopts="++) ("-E" : archFlag : emptyCase ++ blocksExtension)
+                       ++ c2hsIncludePaths
+                       ++ [cudaInstallMacro, cudaLibraryMacro]
       c2hsExtraOptions  = ("x-extra-c2hs-options", c2hsOptions)
 
       addSystemSpecificOptions :: BuildInfo -> IO BuildInfo
