@@ -1,3 +1,6 @@
 packages:
   cuda
   cuda-runtime
+
+constraints:
+  language-c >= 0.10
