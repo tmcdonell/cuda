@@ -23,6 +23,23 @@ For important information on installing on Windows, see:
   <https://github.com/tmcdonell/cuda/blob/master/WINDOWS.md>
 
 
+## c2hs parse errors for CUDA 12+
+
+If you get this:
+```
+c2hs: C header contains errors:
+cuda.h:2862: (column 5) [ERROR]  >>> Syntax error !
+  The symbol `_Alignas' does not fit here.
+```
+you need to ensure you are building c2hs (a `build-tool-depends` of `cuda` using `language-c >= 0.10`).
+If this doesn't happen automatically after `cabal update` (and potentially a refreshing of your freeze file), your can force it by including the following in a `cabal.project` or `cabal.project.local` file:
+```
+constraints:
+  any.language-c >= 0.10
+```
+For more information about `cabal.project` files, see [the documentation](https://cabal.readthedocs.io/en/stable/cabal-project-description-file.html).
+
+
 ## Missing functionality
 
 This library is currently in **maintenance mode**. While we are happy to
