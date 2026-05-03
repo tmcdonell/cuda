@@ -3,4 +3,4 @@ packages:
   cuda-runtime
 
 constraints:
-  language-c >= 0.10
+  any.language-c >= 0.10
