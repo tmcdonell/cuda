@@ -515,7 +515,7 @@ useDeviceHandle :: DevicePtr a -> {# type CUdeviceptr #}
 useDeviceHandle (DevicePtr (Ptr addr#)) =
   CULLong (W64# (wordToWord64# (int2Word# (addr2Int# addr#))))
 
-#if __GLASGOW_HASKELL__ < 904
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 902
 {-# INLINE wordToWord64# #-}
 wordToWord64# :: Word# -> Word#
 wordToWord64# x = x

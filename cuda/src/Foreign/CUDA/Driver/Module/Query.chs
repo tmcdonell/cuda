@@ -131,7 +131,7 @@ useAsCString (BI.SBS ba#) action = IO $ \s0 ->
 unpack :: ShortByteString -> [Char]
 unpack = P.map BI.w2c . BS.unpack
 
-#if __GLASGOW_HASKELL__ < 902
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 902
 {-# INLINE wordToWord8# #-}
 wordToWord8# :: Word# -> Word#
 wordToWord8# x = x
