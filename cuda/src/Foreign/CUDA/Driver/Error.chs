@@ -55,9 +55,6 @@ import Text.Printf
     , CUDA_ERROR_NO_BINARY_FOR_GPU      as NoBinaryForGPU
     , CUDA_ERROR_INVALID_PTX            as InvalidPTX
     , CUDA_ERROR_INVALID_PC             as InvalidPC
-#if CUDA_VERSION >= 11010
-    , CUDA_ERROR_STUB_LIBRARY           as StubLibrary
-#endif
     }
     with prefix="CUDA_ERROR" deriving (Eq, Show) #}
 
