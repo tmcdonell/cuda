@@ -64,6 +64,10 @@ import Text.Printf
 --
 instance Describe Status where
 #if CUDA_VERSION >= 6000
+#if CUDA_VERSION >= 11010
+  -- Prevent SEGFAULT when CUDA stub-library is being accessed.
+  describe StubLibrary = "stub library"
+#endif
   describe status =
     case cuGetErrorString status of
       (Success, msg) -> msg
